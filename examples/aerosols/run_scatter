@@ -1,0 +1,246 @@
+#!/bin/bash
+
+# Calculates monochromatic single scattering properties of the
+# aerosols used operationally with HadGEM3.
+
+# Initialise error status (to test for output differences)
+ierr=0
+
+# Clear out files from previous run
+yes | rm *.mon 2> /dev/null
+
+echo "Running Cscatter for Cusack aerosols..."
+# soluble     | IP_WATER_SOLUBLE (1)
+#(John Edwards, ~haddb/radiat/data/aerosol)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_soluble \
+         -l -C 1 -g 1.0 5.0e-9 2.99 \
+         -n 1.8583e12 -o soluble.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/soluble.mon soluble.mon || ierr=1
+
+# dustlike    | IP_DUST_LIKE     (2)
+#(John Edwards, ~haddb/radiat/data/aerosol)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust \
+         -l -C 2 -g 1.0 5.0e-7 2.99 \
+         -n 5.386e7 -o dustlike.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/dustlike.mon dustlike.mon || ierr=1
+
+# oceanic     | IP_OCEANIC       (3)
+#(John Edwards, ~haddb/radiat/data/aerosol)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_oceanic \
+         -l -C 3 -g 1.0 3.e-7 2.51 \
+         -n 2.696e8 -o oceanic.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/oceanic.mon oceanic.mon || ierr=1
+
+# soot        | IP_SOOT          (4)
+#(John Edwards, ~haddb/radiat/data/aerosol)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_soot \
+         -l -C 4 -g 1.0 1.18e-8 2.00 \
+         -n 1.7897e12 -o soot.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/soot.mon soot.mon || ierr=1
+
+# ash         | IP_ASH           (5)
+#(John Edwards, ~haddb/radiat/data/aerosol)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_ash \
+         -l -C 5 -m 1.0 2.0 3.906e-9 0.5 \
+         -n 1.10927e10 -o ash.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/ash.mon ash.mon || ierr=1
+
+# sulphuric   | IP_SULPHURIC     (6)
+#(John Edwards, ~haddb/radiat/data/aerosol)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_sulphuric \
+         -l -C 6 -m 1.0 2.0 5.5555e-8 1.0 \
+         -n 9.0855e9 -o sulphuric.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/sulphuric.mon sulphuric.mon || ierr=1
+
+echo "Running Cscatter for Sulphate aerosols..."
+# accumsulp   | IP_ACCUM_SULPHATE (10)
+#(John Edwards, ~haddb/radiat/dlrsd)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_ammoniumsulphate \
+         -l -C 10 -g 1.0 9.5e-8 1.4 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o accumsulp.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/accumsulp.mon accumsulp.mon || ierr=1
+
+# aitkensulp  | IP_AITKEN_SULPHATE (11)
+#(N. Bellouin, ~hadnd/model/specfiles/new_aitken)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_ammoniumsulphate \
+         -l -C 11 -g 1.0 6.5e-9 1.30 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o aitkensulp.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/aitkensulp.mon aitkensulp.mon || ierr=1
+
+echo "Running Cscatter for Soot aerosols..."
+# freshsoot   | IP_FRESH_SOOT   (12)
+#(John Edwards, ~haddb/radiat/dlrsd)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_soot \
+         -l -C 12 -g 1.0 4.0e-8 2.0 \
+         -n 1.e8 -o freshsoot.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/freshsoot.mon freshsoot.mon || ierr=1
+
+# agedsoot    | IP_AGED_SOOT    (13)
+#(John Edwards, ~haddb/radiat/dlrsd)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_soot \
+         -l -C 13 -g 1.0 4.0e-8 2.0 \
+         -n 1.e8 -o agedsoot.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/agedsoot.mon agedsoot.mon || ierr=1
+
+echo "Running Cscatter for Sea Salt aerosols..."
+# seasaltfilm | IP_SEASALT_FILM (15)
+#(John Edwards, ~haddb/radiat/dlrsd)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_nacl \
+         -l -C 15 -g 1.0 1.0e-7 1.90 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o seasaltfilm.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/seasaltfilm.mon seasaltfilm.mon || ierr=1
+
+# seasaltjet  | IP_SEASALT_JET  (16)
+#(John Edwards, ~haddb/radiat/dlrsd)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_nacl \
+         -l -C 16 -g 1.0 1.0e-6 2.0 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o seasaltjet.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/seasaltjet.mon seasaltjet.mon || ierr=1
+
+echo "Running Cscatter for Dust aerosols..."
+# dust_div1   | IP_DUST_1       (17)
+#(N. Bellouin, ~hadnd/model/specfiles/dust_balkanski)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 17 -f $RAD_DATA/aerosol/dust_div1.size \
+         -o dust_div1.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/dust_div1.mon dust_div1.mon || ierr=1
+
+# dust_div2   | IP_DUST_2       (18)
+#(N. Bellouin, ~hadnd/model/specfiles/dust_balkanski)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 18 -f $RAD_DATA/aerosol/dust_div2.size \
+         -o dust_div2.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/dust_div2.mon dust_div2.mon || ierr=1
+
+# dust_div3   | IP_DUST_3       (19)
+#(N. Bellouin, ~hadnd/model/specfiles/dust_balkanski)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 19 -f $RAD_DATA/aerosol/dust_div3.size \
+         -o dust_div3.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/dust_div3.mon dust_div3.mon || ierr=1
+
+# dust_div4   | IP_DUST_4       (20)
+#(N. Bellouin, ~hadnd/model/specfiles/dust_balkanski)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 20 -f $RAD_DATA/aerosol/dust_div4.size \
+         -o dust_div4.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/dust_div4.mon dust_div4.mon || ierr=1
+
+# dust_div5   | IP_DUST_5       (21)
+#(N. Bellouin, ~hadnd/model/specfiles/dust_balkanski)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 21 -f $RAD_DATA/aerosol/dust_div5.size \
+         -o dust_div5.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/dust_div5.mon dust_div5.mon || ierr=1
+
+# dust_div6   | IP_DUST_6       (22)
+#(N. Bellouin, ~hadnd/model/specfiles/dust_balkanski)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 22 -f $RAD_DATA/aerosol/dust_div6.size \
+         -o dust_div6.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/dust_div6.mon dust_div6.mon || ierr=1
+
+echo "Running Cscatter for Biomass aerosols..."
+# freshbiomass| IP_BIOMASS_1    (23)
+#(N. Bellouin, ~hadnd/model/specfiles/new_biomass)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_biomass_safari_fresh_875 \
+         -l -C 23 -g 1.0 1.0e-7 1.30 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o freshbiomass.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/freshbiomass.mon freshbiomass.mon || ierr=1
+
+# freshbiomass| IP_BIOMASS_2    (24)
+#(N. Bellouin, ~hadnd/model/specfiles/new_biomass)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_biomass_safari_aged \
+         -l -C 24 -g 1.0 1.2e-7 1.30 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o agedbiomass.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/agedbiomass.mon agedbiomass.mon || ierr=1
+
+echo "Running Cscatter for Biogenic aerosol..."
+# biogenic    | IP_BIOGENIC     (25)
+#(N. Bellouin, ~hadnd/model/specfiles/new_biogenic)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_biogenic -l -C 25 \
+         -g 1.0 0.095e-06 1.50 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o biogenic.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/biogenic.mon biogenic.mon || ierr=1
+
+echo "Running Cscatter for Organic Carbon Fossil Fuel aerosols..."
+# freshocff   | IP_OCFF_FRESH   (26)
+#(N. Bellouin, ~hadnd/model/specfiles/organic_carbon)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_ocff \
+         -l -C 26 -g 1.0 1.0e-7 1.30 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o freshocff.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/freshocff.mon freshocff.mon || ierr=1
+
+# agedocff    | IP_OCFF_AGED    (27)
+#(N. Bellouin, ~hadnd/model/specfiles/organic_carbon)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_ocff \
+         -l -C 27 -g 1.0 1.2e-7 1.30 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o agedocff.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/agedocff.mon agedocff.mon || ierr=1
+
+echo "Running Cscatter for Nitrate aerosol..."
+# nitrate     | IP_NITRATE      (30)
+#(N. Bellouin, ~hadnd/model/specfiles/nitrate)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_ammoniumnitrate \
+         -l -C 30 -g 1.0 9.5e-8 1.40 \
+         -h $RAD_DATA/cloud/refract_water $RAD_DATA/aerosol/humidities \
+         -n 1.e8 -o nitrate.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/nitrate.mon nitrate.mon || ierr=1
+
+echo "Running Cscatter for Two-Bin Dust aerosols..."
+# twobindust_1| IP_TWOBINDUST_1 (31)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 31 -f $RAD_DATA/aerosol/twobindust_1.size \
+         -o twobindust_1.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/twobindust_1.mon twobindust_1.mon || ierr=1
+
+# twobindust_2| IP_TWOBINDUST_2 (32)
+Cscatter -w $RAD_DATA/aerosol/wl_aerosol \
+         -r $RAD_DATA/aerosol/refract_dust_balkanski \
+         -l -C 32 -f $RAD_DATA/aerosol/twobindust_2.size \
+         -o twobindust_2.mon -t 1 -M
+diff -q $RAD_DATA/aerosol/twobindust_2.mon twobindust_2.mon || ierr=1
+
+
+
+if [ $ierr -gt 0 ] ; then
+  exit 1
+else
+  rm *.mon
+  echo OK
+  exit 0
+fi
