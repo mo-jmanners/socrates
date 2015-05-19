@@ -273,10 +273,9 @@ SUBROUTINE monochromatic_radiance_tseq(ierr                             &
 ! DEPENDS ON: copy_clr_full
     CALL copy_clr_full(n_profile, n_layer, n_cloud_top                  &
       , 1                                                               &
-      , ss_prop%tau_clr, ss_prop%omega_clr                              &
-      , ss_prop%phase_fnc_clr(1, 1, 1)                                  &
-      , ss_prop%tau, ss_prop%omega, ss_prop%phase_fnc(1, 1, 1, 0)       &
-      , tau_clr_f, omega_clr_f, phase_fnc_clr_f(1, 1, 1)                &
+      , ss_prop%tau_clr, ss_prop%omega_clr, ss_prop%phase_fnc_clr       &
+      , ss_prop%tau, ss_prop%omega, ss_prop%phase_fnc                   &
+      , tau_clr_f, omega_clr_f, phase_fnc_clr_f                         &
 !                   Sizes of arrays
       , nd_profile, nd_layer, nd_layer_clr, id_ct, 1                    &
       )

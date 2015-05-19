@@ -119,8 +119,6 @@ TYPE StrCtrl
 !   Type of ice crystal in stratiform clouds
   INTEGER :: i_cnv_ice                                            = imdi
 !   Type of ice crystal in convective clouds
-  INTEGER :: i_fsd                                                = imdi
-!   Method of obtaining values of cloud water content variability
   INTEGER :: i_inhom                                              = imdi
 !   Method of treating cloud water content variability
   INTEGER :: i_overlap                                            = imdi

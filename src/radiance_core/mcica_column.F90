@@ -253,7 +253,7 @@ SUBROUTINE mcica_column(ierr                                            &
     CALL two_coeff(ierr                                                 &
     , n_profile, 1, n_cloud_top-1                                       &
     , i_2stream, l_ir_source_quad                                       &
-    , ss_prop%phase_fnc_clr(1, 1, 1)                                    &
+    , ss_prop%phase_fnc_clr                                             &
     , ss_prop%omega_clr, ss_prop%tau_clr                                &
     , isolir, sec_0                                                     &
     , trans, reflect, trans_0                                           &

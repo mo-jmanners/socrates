@@ -265,30 +265,6 @@ INTEGER, PARAMETER :: ip_mcica            = 2
 !   the McICA scheme.
 
 ! ------------------------------------------------------------------
-! parametrisation of water content variability
-! ------------------------------------------------------------------
-INTEGER, PARAMETER :: ip_fsd_constant     = 0
-!   flag to use constant value of FSD/scaling factor
-INTEGER, PARAMETER :: ip_fsd_param        = 1
-!   flag to use FSD parametrisation described in Hill et al (2012)
-!   doi: 10.1002/qj.1893
-INTEGER, PARAMETER :: ip_fsd_regime        = 2
-!   flag to use regime dependent FSD parametrisation
-INTEGER, PARAMETER :: ip_fsd_regime_no_sh  = 3
-!   flag to use regime dependent FSD parametrisation
-!   doesn't include shallow convection
-INTEGER, PARAMETER :: ip_fsd_boutle        = 4
-!   flag to use FSD parametrisation described in Boutle et al (2013)
-!   doi: 10.1002/qj.2140
-INTEGER, PARAMETER :: ip_fsd_regime_smooth = 5
-!   flag to use regime dependent FSD parametrisation on smoothed
-!   cca field
-INTEGER, PARAMETER :: ip_fsd_regime_smooth_no_sh  = 6
-!   flag to use regime dependent FSD parametrisation on smoothed
-!   cca field. Doesn't include shallow convection
-
-
-! ------------------------------------------------------------------
 ! treatment of cloud vertical overlap
 ! ------------------------------------------------------------------
 INTEGER, PARAMETER :: ip_max_rand         = 0

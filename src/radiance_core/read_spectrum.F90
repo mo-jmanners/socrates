@@ -61,7 +61,7 @@ INTEGER :: i_version
 !   Version for type and subtype
 INTEGER :: i
 !   Loop variable
-LOGICAL :: l_exist, l_exist_k
+LOGICAL :: l_exist_k
 !   Existence flag for file
 
 ! Local values for dimensions: used to shorten declarations later
@@ -149,19 +149,12 @@ ALLOCATE(Sp%Basic%l_present(0:Sp%Dim%nd_type))
 Sp%Basic%l_present = .FALSE.
 Sp%Planck%l_planck_tbl = .FALSE.
 
-! Check that the spectral file exists.
-INQUIRE(FILE=file_spectral, EXIST=l_exist)
-IF (.NOT. l_exist) THEN
-  cmessage = 'Spectral file does not exist.'
-  ierr=i_err_exist
-  CALL ereport(RoutineName, ierr, cmessage)
-END IF
-
 ! Get a unit to read the file.
 CALL assign_file_unit(file_spectral, iu_spc, handler="fortran")
 
 ! Open the file for reading
-OPEN(UNIT=iu_spc, FILE=file_spectral, IOSTAT=ios, STATUS='OLD', IOMSG=iomessage)
+OPEN(UNIT=iu_spc, FILE=file_spectral, IOSTAT=ios, STATUS='OLD', &
+     ACTION='READ', IOMSG=iomessage)
 IF (ios /= 0) THEN
   cmessage = 'Spectral file could not be opened: ' // TRIM(iomessage)
   ierr=i_err_fatal
@@ -174,7 +167,8 @@ spectral_k = file_spectral(1:i) // '_k'
 INQUIRE(FILE=spectral_k, EXIST=l_exist_k)
 IF (l_exist_k) THEN
   CALL assign_file_unit(spectral_k, iu_spc1, handler="fortran")
-  OPEN(UNIT=iu_spc1,FILE=spectral_k,IOSTAT=ios,STATUS='OLD', IOMSG=iomessage)
+  OPEN(UNIT=iu_spc1,FILE=spectral_k,IOSTAT=ios,STATUS='OLD',               &
+       ACTION='READ',IOMSG=iomessage)
   IF (ios /= 0) THEN
     cmessage = 'Extended spectral file exists but could not be opened: '// &
                 TRIM(iomessage)

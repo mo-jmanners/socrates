@@ -249,6 +249,7 @@ SUBROUTINE scale_absorb(ierr, n_profile, n_layer                        &
           jp   = INT((5.5+cgp)*2.)+1
           jp1  = jp+1
           jt   = INT((t(l,i)-240.0)/20.+7.)
+          jt   = MIN(MAX(jt,1),10)
           jt1  = MIN(jt+1,10)
           gkpb = gk4(jt,jp,iex)+(gk4(jt,jp1,iex)-                       &
              gk4(jt,jp,iex))*(cgp-plg(jp))*2.
@@ -265,7 +266,7 @@ SUBROUTINE scale_absorb(ierr, n_profile, n_layer                        &
           jp   = INT((5.5+cgp)*2.)+1
           jp1  = jp+1
           jt   = INT((t(l,i)-240.0)/20.+5.)
-          jt   = MAX(jt, 1)
+          jt   = MIN(MAX(jt, 1),9)
           jt1  = MIN(jt+1,9)
           gkpb = gk6(jt,jp,iex)+(gk6(jt,jp1,iex)-                       &
                   gk6(jt,jp,iex))*(cgp-plg(jp))*2.
