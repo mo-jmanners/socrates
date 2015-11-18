@@ -31,7 +31,8 @@ SOURCE90_GEN =	d_planck_90.f90 \
 		spline_evaluate.f90 \
 		spline_fit.f90 \
 		sum_unity.f90 \
-		trapezoid_90.f90
+		trapezoid_90.f90 \
+		rayleigh_scatter_h2he.f90
 
 SOURCE77_GEN = 	back_substitute.f \
 		calc_thermal_coeff.f \
@@ -49,7 +50,7 @@ SOURCE77_GEN = 	back_substitute.f \
 		planck.f \
 		point_bracket.f \
 		rayleigh_jeans_tail.f \
-		rayleigh_scatter.f \
+		rayleigh_scatter_air.f \
 		read_line.f \
 		read_word.f \
 		read_solar_spectrum.f \

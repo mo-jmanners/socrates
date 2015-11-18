@@ -21,7 +21,7 @@ USE realtype_rd
 
 IMPLICIT NONE
 
-INTEGER, PARAMETER :: npd_gases = 27
+INTEGER, PARAMETER :: npd_gases = 35
 !   Number of indexed gases
 
 INTEGER, PARAMETER :: IP_h2o = 1
@@ -78,6 +78,22 @@ INTEGER, PARAMETER :: IP_na = 26
 !   Identifier for sodium
 INTEGER, PARAMETER :: IP_k = 27
 !   Identifier for potassium
+INTEGER, PARAMETER :: IP_feh = 28
+!   Identifier for iron hydride
+INTEGER, PARAMETER :: IP_crh = 29
+!   Identifier for chromium hydride
+INTEGER, PARAMETER :: IP_li = 30
+!   Identifier for lithium
+INTEGER, PARAMETER :: IP_rb = 31
+!   Identifier for rubidium
+INTEGER, PARAMETER :: IP_cs = 32
+!   Identifier for cesium
+INTEGER, PARAMETER :: IP_ph3 = 33
+!   Identifier for phosphine
+INTEGER, PARAMETER :: IP_c2h2 = 34
+!   Identifier for acetylene
+INTEGER, PARAMETER :: IP_hcn = 35
+!   Identifier for hydrogen cyanide
 
 CHARACTER (LEN=20), PARAMETER :: name_absorb(npd_gases) = (/ &
                                    "Water Vapour        ", &
@@ -106,7 +122,15 @@ CHARACTER (LEN=20), PARAMETER :: name_absorb(npd_gases) = (/ &
                                    "H2-He CIA           ", &
                                    "Carbonyl sulphide   ", &
                                    "Sodium              ", &
-                                   "Potassium           " /)
+                                   "Potassium           ", &
+                                   "Iron hydride        ", &
+                                   "Chromium hydride    ", &
+                                   "Lithium             ", &
+                                   "Rubidium            ", &
+                                   "Cesium              ", &
+                                   "Phosphine           ", &
+                                   "Acetylene           ", &
+                                   "Hydrogen cyanide    " /)
 
 
 ! Molecular weights taken from "General Inorganic Chemistry"
@@ -138,7 +162,15 @@ REAL (RealK), PARAMETER :: molar_weight(npd_gases) = (/ &
   4.002602_RealK,    & ! He (from NIST)
   60.075_RealK,      & ! OCS
   22.98976928_RealK, & ! Na (from NIST)
-  39.0983_RealK /)     ! K (from NIST)
+  39.0983_RealK,     & ! K (from NIST)
+  56.853_RealK,      & ! FeH (from NIST)
+  53.004_RealK,      & ! CrH (from NIST)
+  6.941_RealK,       & ! Li (from NIST)
+  85.4678_RealK,     & ! Rb (from NIST)
+  132.9054519_RealK, & ! Cs (from NIST)
+  33.99758_RealK,    & ! PH3 (from NIST)
+  26.0373_RealK,     & ! C2H2 (from NIST)
+  27.0253_RealK     /) ! HCN (from NIST)
 
 
 ! Array of identifiers in HITRAN for each gas in the radiation code.
@@ -169,6 +201,14 @@ INTEGER, PARAMETER :: hitran_number(npd_gases) = (/ &
   0,   & ! He
   19,  & ! OCS
   0,   & ! Na
-  0 /)   ! K
+  0,   & ! K
+  0,   & ! FeH
+  0,   & ! CrH
+  0,   & ! Li
+  0,   & ! Rb
+  0,   & ! Cs
+  28,  & ! PH3
+  26,  & ! C2H2
+  23  /) ! HCN
 
 END MODULE gas_list_pcf

@@ -10,7 +10,7 @@
 !	Straightforward.
 !
 !- ---------------------------------------------------------------------
-      FUNCTION rayleigh_scatter(lambda)
+      FUNCTION rayleigh_scatter_air(lambda)
 
       USE realtype_rd
       USE rad_ccf
@@ -20,7 +20,7 @@
 
 !     Dummy variables.
       REAL  (RealK) ::
-     &    rayleigh_scatter
+     &    rayleigh_scatter_air
 !           Name of function
       REAL  (RealK), Intent(IN) ::
      &    lambda
@@ -44,7 +44,7 @@
 !     Use the standard expression for the Rayleigh scattering
 !     coefficient, but include an extra density factor to give it
 !     in units of mass.
-      rayleigh_scatter
+      rayleigh_scatter_air
      &   =(8.0_RealK*pi**3/3.0_RealK)
      &   *(((refract_index_m1+2.0_RealK)
      &   *refract_index_m1*lambda_m2)**2/n_avogadro)

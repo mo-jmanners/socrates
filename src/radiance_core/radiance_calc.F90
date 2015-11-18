@@ -359,6 +359,9 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
   LOGICAL :: l_grey_cont
 !       Flag to add continuum in grey_opt_prop
 
+  INTEGER :: nd_esft_max
+!   Maximum number of ESFT terms needed in each band (for
+!   arrays when using random overlap with resorting and rebinning)
 
 ! Functions called:
   LOGICAL, EXTERNAL :: l_cloud_density
@@ -1483,6 +1486,107 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , dimen%nd_j_profile                                                 &
           , spectrum%dim%nd_band, spectrum%dim%nd_species                      &
           , spectrum%dim%nd_k_term, spectrum%dim%nd_scale_variable             &
+          , dimen%nd_cloud_type, dimen%nd_region, dimen%nd_overlap_coeff       &
+          , dimen%nd_max_order, dimen%nd_sph_coeff                             &
+          , dimen%nd_brdf_basis_fnc, dimen%nd_brdf_trunc                       &
+          , dimen%nd_viewing_level, dimen%nd_direction                         &
+          , dimen%nd_source_coeff, dimen%nd_point_tile, dimen%nd_tile          &
+          )
+          
+      CASE (ip_overlap_random_resort_rebin)
+!       Set maximum number of ESFT terms needed
+        nd_esft_max = MAX(control%n_esft_red, spectrum%dim%nd_k_term)
+! DEPENDS ON: solve_band_random_overlap_resort_rebin
+        CALL solve_band_random_overlap_resort_rebin(ierr                       &
+          , control, cld, bound                                                &
+!                 Atmospheric properties
+          , atm%n_profile, atm%n_layer, i_top, atm%p, atm%t, atm%mass          &
+!                 Angular integration
+          , control%i_angular_integration, control%i_2stream                   &
+          , n_order_phase, control%l_rescale, control%n_order_gauss            &
+          , control%ms_min, control%ms_max, control%i_truncation               &
+          , ls_local_trunc                                                     &
+          , control%accuracy_adaptive, control%euler_factor                    &
+          , control%i_sph_algorithm, control%i_sph_mode                        &
+!                 Precalculated angular arrays
+          , ia_sph_mm, cg_coeff, uplm_zero, uplm_sol                           &
+!                 Treatment of scattering
+          , control%i_scatter_method_band(i_band)                              &
+!                 Options for solver
+          , control%i_solver                                                   &
+          , control%n_esft_red, control%gpnt_split                             &
+!                 Gaseous properties
+          , i_band, n_gas                                                      &
+          , spectrum%gas%index_absorb, spectrum%gas%i_band_k                   &
+          , spectrum%gas%i_scale_k, spectrum%gas%i_scale_fnc                   &
+          , spectrum%gas%k, k_esft_layer, spectrum%gas%w                       &
+          , spectrum%gas%scale                                                 &
+          , spectrum%gas%p_ref, spectrum%gas%t_ref                             &
+          , atm%gas_mix_ratio, gas_frac_rescaled                               &
+          , spectrum%gas%l_doppler, spectrum%gas%doppler_cor                   &
+!                 Spectral region
+          , control%isolir                                                     &
+!                 Solar properties
+          , bound%zen_0, solar_irrad_band                                      &
+!                 Infra-red properties
+          , planck_flux_band(1, 0)                                             &
+          , planck_flux_band(1, atm%n_layer)                                   &
+          , diff_planck_band                                                   &
+          , control%l_ir_source_quad, diff_planck_band_2                       &
+!                 Surface properties
+          , control%ls_brdf_trunc, bound%n_brdf_basis_fnc                      &
+          , bound%rho_alb(1, 1, i_band)                                        &
+          , bound%f_brdf, brdf_sol, brdf_hemi                                  &
+          , planck_flux_ground                                                 &
+!                 Tiling of the surface
+          , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile  &
+          , bound%rho_alb_tile(1, 1, 1, i_band)                                &
+          , planck_flux_tile                                                   &
+!                 Optical Properties
+          , ss_prop                                                            &
+!                 Cloudy properties
+          , control%l_cloud, control%i_cloud                                   &
+!                 Cloud geometry
+          , n_cloud_top                                                        &
+          , n_region, k_clr, i_region_cloud, frac_region                       &
+          , w_free, cloud_overlap                                              &
+          , n_column_slv, list_column_slv                                      &
+          , i_clm_lyr_chn, i_clm_cld_typ, area_column                          &
+!                 Levels for calculating radiances
+          , atm%n_viewing_level, i_rad_layer, frac_rad_layer                   &
+!                 Viewing Geometry
+          , atm%n_direction, atm%direction                                     &
+!                 Weighting factor for the band
+          , control%weight_band(i_band), l_initial                             &
+!                 Fluxes calculated
+          , radout%flux_direct(1, 0, control%map_channel(i_band))              &
+          , radout%flux_down(1, 0, control%map_channel(i_band))                &
+          , radout%flux_up(1, 0, control%map_channel(i_band))                  &
+!                 Radiances
+          , i_direct, radout%radiance(1, 1, 1, control%map_channel(i_band))    &
+!                 Rate of photolysis
+          , radout%photolysis(1, 1, control%map_channel(i_band))               &
+!                 Flags for clear-sky calculations
+          , l_clear_band, control%i_solver_clear                               &
+!                 Clear-sky fluxes
+          , radout%flux_direct_clear(1, 0, control%map_channel(i_band))        &
+          , radout%flux_down_clear(1, 0, control%map_channel(i_band))          &
+          , radout%flux_up_clear(1, 0, control%map_channel(i_band))            &
+!                 Tiled Surface Fluxes
+          , radout%flux_up_tile(1, 1, control%map_channel(i_band))             &
+          , radout%flux_up_blue_tile(1, 1, control%map_channel(i_band))        &
+!                 Special Surface Fluxes
+          , control%l_blue_flux_surf, spectrum%solar%weight_blue(i_band)       &
+          , radout%flux_direct_blue_surf                                       &
+          , radout%flux_down_blue_surf, radout%flux_up_blue_surf               &
+!                 Dimensions of arrays
+          , dimen%nd_profile, dimen%nd_layer, dimen%nd_layer_clr               &
+          , dimen%id_cloud_top, dimen%nd_column                                &
+          , dimen%nd_flux_profile, dimen%nd_radiance_profile                   &
+          , dimen%nd_j_profile                                                 &
+          , spectrum%dim%nd_band, spectrum%dim%nd_species                      &
+          , spectrum%dim%nd_k_term, nd_esft_max                                &
+          , spectrum%dim%nd_scale_variable                                     &
           , dimen%nd_cloud_type, dimen%nd_region, dimen%nd_overlap_coeff       &
           , dimen%nd_max_order, dimen%nd_sph_coeff                             &
           , dimen%nd_brdf_basis_fnc, dimen%nd_brdf_trunc                       &

@@ -7,6 +7,7 @@ SOURCE_RAD =	adjust_ir_radiance.f90 \
 		calc_brdf.f90 \
 		calc_cg_coeff.f90 \
 		calc_flux_ipa.f90 \
+		calc_gauss_weight_90.f90 \
 		calc_radiance_ipa.f90 \
 		calc_surf_rad.f90 \
 		calc_top_rad.f90 \
@@ -40,6 +41,7 @@ SOURCE_RAD =	adjust_ir_radiance.f90 \
 		ir_source.f90 \
 		l_cloud_density.f90 \
 		layer_part_integ.f90 \
+		legendre_weight.f90 \
 		mcica_column.f90 \
                 mcica_order.f90 \
 		mcica_sample.f90 \
@@ -59,8 +61,10 @@ SOURCE_RAD =	adjust_ir_radiance.f90 \
 		overlap_coupled.f90 \
 		prsc_gather_spline.f90 \
 		prsc_opt_prop.f90 \
+		quicksort.f90 \
 		radiance_calc.f90 \
                 rand_no_mcica.f90 \
+		rebin_esft_terms.f90 \
 		rescale_continuum.f90 \
 		rescale_phase_fnc.f90 \
 		rescale_tau_omega.f90 \
@@ -86,6 +90,7 @@ SOURCE_RAD =	adjust_ir_radiance.f90 \
 		solve_band_k_eqv.f90 \
 		solve_band_one_gas.f90 \
 		solve_band_random_overlap.f90 \
+		solve_band_random_overlap_resort_rebin.f90 \
 		solve_band_ses.f90 \
 		solve_band_without_gas.f90 \
 		solver_homogen_direct.f90 \

@@ -4,9 +4,7 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-!+ Subroutine to calculate a Legendre polynomial and a weight.
-!
-SUBROUTINE legendre_weight(x, n, lpy, wt)
+! Subroutine to calculate a Legendre polynomial and a weight.
 !
 ! Purpose:
 !   This subroutine uses a recurrence relation to calculate the
@@ -14,14 +12,14 @@ SUBROUTINE legendre_weight(x, n, lpy, wt)
 !   Gaussian integration on the assumption that the polynomial
 !   is actually zero.
 !
-! Modules used:
-  USE realtype_rd
-!
-!
-!
+!------------------------------------------------------------------------------
+SUBROUTINE legendre_weight(x, n, lpy, wt)
+
+  USE realtype_rd, ONLY: RealK
+
   IMPLICIT NONE
-!
-!
+
+
   INTEGER, Intent(IN) :: n
 !   Order of polynomial
   REAL  (RealK), Intent(IN) :: x
@@ -30,8 +28,7 @@ SUBROUTINE legendre_weight(x, n, lpy, wt)
 !   Value of polynomial
   REAL  (RealK), Intent(OUT) :: wt
 !   Corresponding weight
-!
-!
+
 ! Local variables
   INTEGER ::  j
 !   Loop variable 
@@ -43,11 +40,9 @@ SUBROUTINE legendre_weight(x, n, lpy, wt)
 !   Polynomial at order J-1
   REAL  (RealK) :: d_lpy
 !   Derivative of polynomial at order N
-!
-!
-!
-! Initialize at the zeroth and first orders to start the 
-! recurrence.
+
+
+! Initialize at the zeroth and first orders to start the recurrence.
   lpy_m2=1.0_RealK
   lpy_m1=x
   DO j=2, n
@@ -59,8 +54,5 @@ SUBROUTINE legendre_weight(x, n, lpy, wt)
   lpy=y
   d_lpy=-DBLE(n)*lpy_m2/(x*x-1.0_RealK)
   wt=2.0_RealK/MAX((REAL(n, RealK)*d_lpy*lpy_m2),TINY(d_lpy))
-!
-!
-!
-  RETURN
+
 END SUBROUTINE legendre_weight

@@ -66,6 +66,12 @@ TYPE StrCtrl
 ! Gaseous absorption:
   INTEGER :: i_gas_overlap                                        = imdi
 !   Treatment of gaseous overlaps
+  INTEGER :: n_esft_red                                           = imdi
+!   Number of reduced (resorted and rebinned) ESFT terms in
+!   each band using random overlap with resorting and rebinning
+  REAL (RealK) :: gpnt_split                                      = rmdi
+!   g-coordinate point for splitting into two subintervals using
+!   random overlap with resorting and rebinning
   INTEGER :: i_gas                                                = imdi
 !   Gas to be considered (if only one gas)
   LOGICAL :: l_o2                                                 = .FALSE.
@@ -106,6 +112,23 @@ TYPE StrCtrl
 !   Flag for absorption by potassium
   LOGICAL :: l_co2                                                = .FALSE.
 !   Flag for absorption by carbon dioxide
+  LOGICAL :: l_feh                                                = .FALSE.
+!   Flag for absorption by iron hydride
+  LOGICAL :: l_crh                                                = .FALSE.
+!   Flag for absorption by chromium hydride
+  LOGICAL :: l_li                                                 = .FALSE.
+!   Flag for absorption by lithium
+  LOGICAL :: l_rb                                                 = .FALSE.
+!   Flag for absorption by rubidium
+  LOGICAL :: l_cs                                                 = .FALSE.
+!   Flag for absorption by cesium
+  LOGICAL :: l_ph3                                                = .FALSE.
+!   Flag for absorption by phosphine
+  LOGICAL :: l_c2h2                                               = .FALSE.
+!   Flag for absorption by acetylene
+  LOGICAL :: l_hcn                                                = .FALSE.
+!   Flag for absorption by hydrogen cyanide
+
 
 ! Properties of clouds:
   INTEGER :: i_cloud                                              = imdi

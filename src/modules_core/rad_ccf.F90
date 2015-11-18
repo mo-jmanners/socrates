@@ -113,9 +113,15 @@ MODULE rad_ccf
 ! Exoplanet constants
 ! ------------------------------------------------------------------
 ! Physical constants for hot Jupiters.
-  REAL (RealK), PARAMETER :: A_H  = 0.91183e+00_RealK
+  REAL (RealK), PARAMETER :: A_H             = 0.91183e+00_RealK
 !   Number fraction of H
-  REAL (RealK), PARAMETER :: A_He = 1.0e+00_RealK - A_H
+  REAL (RealK), PARAMETER :: A_He            = 1.0e+00_RealK - A_H
 !   Number fraction of He
+  REAL (RealK), PARAMETER :: mol_weight_h2he = 2.3376e-03_RealK
+!   Mean molecular weight
+  REAL (RealK), PARAMETER :: rho_n_h2he      = 2.00e-02_RealK
+!   Depolarizing factor
+  REAL (RealK), PARAMETER :: rho_h2he_stp    = 1.042921e-01_RealK
+!   Density at standard temperature and pressure
 
 END MODULE rad_ccf

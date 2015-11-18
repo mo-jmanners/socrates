@@ -43,7 +43,13 @@ do case $1 in
       -G) brdf_basis=$2 ; ls_brdf_trunc=$3 ; shift 3 ;;
       -g) c_gas=g ; gas_overlap=$2 ; shift 2 ; \
           if [ $gas_overlap -eq $IP_OVERLAP_SINGLE ] ; \
-          then gas_type=$1 ; shift ; fi ;;
+          then gas_type=$1 ; shift ; \
+          elif [ $gas_overlap -eq $IP_OVERLAP_RANDOM_RESORT_REBIN ] ; \
+          then ; n_esft_red=$1 ; \
+            if [ $n_esft_red -ne "0" ] ; then ; \
+            gpnt_split=$2 ; shift 2 ; \
+            else ; shift ; fi ; \
+          fi ;;
       -H) hg_phf=T ; shift ;;
       -I) isolir=$IP_INFRA_RED ; shift ;;
       +i) convective_ice_type=$2 ; shift 2 ;;
@@ -128,6 +134,9 @@ if [ "$gas_overlap" ]
    then echo $gas_overlap >> /tmp/lrcdl.$$
    if [ $gas_overlap -eq $IP_OVERLAP_SINGLE ]
       then echo $gas_type >> /tmp/lrcdl.$$
+   elif [ $gas_overlap -eq $IP_OVERLAP_RANDOM_RESORT_REBIN ]
+      then echo $n_esft_red >> /tmp/lrcdl.$$
+           echo $gpnt_split >> /tmp/lrcdl.$$
    fi
 fi
 if [ "$c_aerosol" ] 
@@ -154,8 +163,9 @@ if [ $cloud_scheme -ne $IP_CLOUD_CLEAR ]
    echo $cloud_representation >> /tmp/lrcdl.$$
    if [ "$c_ice" ] && [ "$c_drop" ]
       then if [ $cloud_representation -eq $IP_CLOUD_HOMOGEN ] \
-         || [ $cloud_representation -eq $IP_CLOUD_ICE_WATER ]
-         then echo $drop_type >> /tmp/lrcdl.$$
+         || [ $cloud_representation -eq $IP_CLOUD_ICE_WATER ];
+         then
+         echo $drop_type >> /tmp/lrcdl.$$
          echo $ice_type >> /tmp/lrcdl.$$
       elif [ $cloud_representation -eq $IP_CLOUD_CONV_STRAT ] \
          || [ $cloud_representation -eq $IP_CLOUD_CSIW ]

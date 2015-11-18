@@ -261,7 +261,9 @@ MODULE input_head_pcf
     'N2        ', 'CFC11     ', 'CFC12     ', 'CFC113    ', &
     'HCFC22    ', 'HFC125    ', 'HFC134A   ', 'CFC114    ', &
     'TiO       ', 'VO        ', 'H2        ', 'He        ', &
-    'OCS       ', 'Na        ', 'K         ' /) 
+    'OCS       ', 'Na        ', 'K         ', 'FeH       ', &
+    'CrH       ', 'Li        ', 'Rb        ', 'Cs        ', &
+    'PH3       ', 'C2H2      ', 'HCN       ' /) 
 !   Headers for gaseous data
 !
 !
@@ -273,7 +275,9 @@ MODULE input_head_pcf
     'n2          ', 'cfc11       ', 'cfc12       ', 'cfc113      ', &
     'hcfc22      ', 'hfc125      ', 'hfc134a     ', 'cfc114      ', &
     'tio         ', 'vo          ', 'h2          ', 'he          ', &
-    'ocs         ', 'na          ', 'k           ' /) 
+    'ocs         ', 'na          ', 'k           ', 'feh         ', &
+    'crh         ', 'li          ', 'rb          ', 'cs          ', &
+    'ph3         ', 'c2h2        ', 'hcn         ' /) 
 !   File suffixes for gaseous data
 !
 !
@@ -292,7 +296,11 @@ MODULE input_head_pcf
     ' Titanium oxide               ', ' Vanadium oxide               ', &
     ' H2-H2 CIA                    ', ' H2-He CIA                    ', &
     ' Carbonyl sulphide            ', ' Sodium                       ', &
-    ' Potassium                    ' /)
+    ' Potassium                    ', ' Iron hydride                 ', &
+    ' Chromium hydride             ', ' Lithium                      ', &
+    ' Rubidium                     ', ' Cesium                       ', &
+    ' Phosphine                    ', ' Acetylene                    ', &
+    ' Hydrogen cyanide             ' /)
 !   Long titles for gaseous data
 !
 !

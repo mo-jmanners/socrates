@@ -384,20 +384,22 @@ INTEGER, PARAMETER :: ip_scale_term = 2
 ! gas_overlap_pcf, gasovl3a
 ! ------------------------------------------------------------------
 ! Module to set treatments of overlapping gaseous absorption.
-INTEGER, PARAMETER :: ip_overlap_single     = 1
+INTEGER, PARAMETER :: ip_overlap_single              = 1
 !   One species only
-INTEGER, PARAMETER :: ip_overlap_random     = 2
+INTEGER, PARAMETER :: ip_overlap_random              = 2
 !   Random overlap
-INTEGER, PARAMETER :: ip_overlap_t_eqv      = 3
+INTEGER, PARAMETER :: ip_overlap_t_eqv               = 3
 !   Equivalent transmission
-INTEGER, PARAMETER :: ip_overlap_k_eqv_scl  = 4
+INTEGER, PARAMETER :: ip_overlap_k_eqv_scl           = 4
 !   Equivalent extinction using correct scaling
-INTEGER, PARAMETER :: ip_overlap_k_eqv      = 5
+INTEGER, PARAMETER :: ip_overlap_k_eqv               = 5
 !   Equivalent extinction
-INTEGER, PARAMETER :: ip_overlap_k_eqv_mod  = 6
+INTEGER, PARAMETER :: ip_overlap_k_eqv_mod           = 6
 !   Equivalent extinction using modulus of flux
-INTEGER, PARAMETER :: ip_overlap_mix_ses2   = 7
+INTEGER, PARAMETER :: ip_overlap_mix_ses2            = 7
 !   Mixed gases used in the SES2 scheme
+INTEGER, PARAMETER :: ip_overlap_random_resort_rebin = 8
+!   Random overlap with resorting and rebinning
 
 ! ------------------------------------------------------------------
 ! ice_cloud_param_pcf, iclprm3a

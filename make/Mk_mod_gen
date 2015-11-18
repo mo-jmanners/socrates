@@ -23,7 +23,6 @@ MODULES_GEN =	dimensions_cdl_ucf.f90 \
 		filenamelength_mod.f90 \
 		error_pcf.f90 \
 		gas_list_pcf.f90 \
-		gauss_grid_acf.f90 \
 		input_head_pcf.f90 \
 		interp_mode_pcf.f90 \
 		mcica_mod.f90 \

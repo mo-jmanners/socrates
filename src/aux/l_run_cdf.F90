@@ -539,6 +539,35 @@ PROGRAM l_run_cdf
         WRITE(iu_err, '(a)') 'Please reenter.'
         goto 4
       ENDIF
+    ELSE IF (control%i_gas_overlap ==                                   &
+      IP_overlap_random_resort_rebin) THEN
+      control%n_esft_red = -1
+      DO WHILE (control%n_esft_red < 0)
+        WRITE(iu_stdout, '(a)') 'Enter number of rebinned k-terms.'
+        READ(iu_stdin, *) control%n_esft_red
+        IF (control%n_esft_red < 0) THEN
+          WRITE(iu_err, '(/a)')                                         &
+            '+++ Number of rebinned k-coefficient cannot be ' //        &
+            'smaller than 1.'
+          WRITE(iu_err, '(a)') 'Please reenter.'
+        END IF
+      END DO
+      IF (control%n_esft_red /= 0) THEN
+        control%gpnt_split = -1.0_RealK
+        DO WHILE (control%gpnt_split < 0.0_RealK .OR.                   &
+                  control%gpnt_split > 1.0_RealK)
+          WRITE(iu_stdout, '(a)') 'Enter g-coordinate for ' //          &
+            'splitting (0 or 1 = no split).'
+          READ(iu_stdin, *) control%gpnt_split
+          IF (control%gpnt_split < 0 .OR.                               &
+                  control%gpnt_split > 1.0_RealK) THEN
+            WRITE(iu_err, '(/a)')                                       &
+              '+++ g-coordinate of split must be a number ' //          &
+              'between 0 and 1.'
+            WRITE(iu_err, '(a)') 'Please reenter.'
+          END IF
+        END DO
+      END IF
     ENDIF
 
 

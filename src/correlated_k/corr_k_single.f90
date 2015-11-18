@@ -2323,7 +2323,7 @@ CONTAINS
     Integer :: ncid                    ! netCDF file ID
     Integer :: dimid1, dimid2, dimid3  ! dimension ID
     Integer :: varid                   ! variable ID
-    
+
 !   Create the file and open for writing
     Call nf(nf90_create(Trim(file_k)//'.nc',NF90_NOCLOBBER,ncid))
 
@@ -2359,6 +2359,14 @@ CONTAINS
     Call nf(nf90_put_att(ncid, varid, 'units', 'K' ))
     Call nf(nf90_enddef(ncid))
     Call nf(nf90_put_var(ncid, varid, t_calc(1:n_pt_pair) ))
+    Call nf(nf90_redef(ncid))
+   
+    Call nf(nf90_def_var(ncid, 'w_k', NF90_FLOAT, &
+      (/dimid1,dimid3/), varid))
+    Call nf(nf90_put_att(ncid, varid, 'title', 'weights' ))
+    Call nf(nf90_put_att(ncid, varid, 'long_name', 'weights' ))
+    Call nf(nf90_enddef(ncid))
+    Call nf(nf90_put_var(ncid, varid, w_k(:,list_band(1:n_selected_band)) ))
     Call nf(nf90_redef(ncid))
 
     Call nf(nf90_def_var(ncid, 'kopt', NF90_FLOAT, &
