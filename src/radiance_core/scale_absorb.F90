@@ -28,8 +28,7 @@ SUBROUTINE scale_absorb(ierr, n_profile, n_layer                        &
   USE realtype_rd, ONLY: RealK
   USE rad_pcf
   USE vectlib_mod, ONLY : rtor_v
-  USE scale_wenyi, ONLY: jp, jp1, jt, jt1, cgp, gkpb, gkpc,             &
-                         plg, ttb, tto, gk250b, gk4, gk6
+  USE scale_wenyi, ONLY: plg, ttb, tto, gk250b, gk4, gk6
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
   USE ereport_mod, ONLY: ereport
@@ -90,15 +89,14 @@ SUBROUTINE scale_absorb(ierr, n_profile, n_layer                        &
 !       Mass fraction of gas
 
 ! Local variables.
-  INTEGER                                                               &
-      l                                                                 &
-!       Loop variable
-    , i
-!       Loop variable
+  INTEGER ::                                                            &
+      l, i, jp, jp1, jt, jt1
+!       Loop variables
   REAL (RealK) ::                                                       &
       pressure_offset
 !       Offset to pressure
 
+  REAL (RealK) :: cgp, gkpb, gkpc
   REAL (RealK) :: pwk_in(n_profile,n_layer-i_top+1)  ! Workspace
   REAL (RealK) :: pwk(n_profile,n_layer-i_top+1)  ! Workspace
   REAL (RealK) :: twk_in(n_profile,n_layer-i_top+1)  ! Workspace

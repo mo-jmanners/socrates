@@ -16,11 +16,6 @@ MODULE scale_wenyi
 
   IMPLICIT NONE
 
-! Loop variables
-  INTEGER :: jp, jp1, jt, jt1
-
-  REAL (RealK) :: cgp, gkpb, gkpc
-
 ! Log of pressure in look-up table
   REAL (RealK), PARAMETER :: plg(26) = (/                               &
     -5.5,-5.0,-4.5,-4.0,-3.5,-3.0,-2.5,-2.0,-1.5,-1.0,-0.5, 0.0, 0.5,   &
