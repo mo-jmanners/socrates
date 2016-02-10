@@ -536,6 +536,8 @@ SUBROUTINE corr_k_single &
     ALLOCATE(u_l_ref(2*nd_k_term+1))
     ln_p_calc=LOG(p_calc(1:n_pt_pair))
   ENDIF
+  w_k=0.0_RealK
+  k_opt_tmp=0.0_RealK
   kopt_all=0.0_RealK
 
   IF ( l_fit_self_continuum .OR. l_fit_frn_continuum ) THEN

@@ -38,8 +38,10 @@ SUBROUTINE out_spectrum(file_spectral, Spectrum, ierr)
 !   I/O error flag
   CHARACTER (LEN=256) :: spectral_k
 !   Name of extended spectral file
-  INTEGER :: iu_spc, iu_spc1
-!   Unit number for output of the spectral data
+  CHARACTER (LEN=256) :: spectral_var
+!   Name of spectral variability file
+  INTEGER :: iu_spc, iu_spc1, iu_spc2
+!   Unit numbers for output of the spectral data
   INTEGER :: i, ip, it
 !   Loop variable
   LOGICAL :: l_exist_k
@@ -126,6 +128,8 @@ SUBROUTINE out_spectrum(file_spectral, Spectrum, ierr)
         CALL write_block_15_int(i, Spectrum%Basic, Spectrum%Aerosol)
     ENDDO
   ENDIF
+  IF (Spectrum%Basic%l_present(17)) &
+    CALL write_block_17(Spectrum%Basic, Spectrum%Var)
 
 ! Close the file.
   CLOSE(iu_spc)
@@ -274,7 +278,7 @@ CONTAINS
     WRITE(iu_spc, '(a19, a16, a16)') &
       '*BLOCK: TYPE =    3', ': SUBTYPE =    0', ': VERSION =    0'
     WRITE(iu_spc, '(a)') &
-      'Rayleigh mass scatering coefficients at STP: unit m**2/kg'
+      'Rayleigh mass scattering coefficients at STP: unit m**2/kg'
     WRITE(iu_spc, '(a4, 8x, a20)') 'Band', 'Rayleigh coefficient'
     WRITE(iu_spc, '(17x, a5)') 'm2/kg'
 !
@@ -938,6 +942,71 @@ CONTAINS
 
 
   END SUBROUTINE write_block_15_int
+
+
+
+  SUBROUTINE write_block_17(SpBasic, SpVar)
+
+    IMPLICIT NONE
+
+    TYPE (StrSpecBasic), INTENT(IN) :: SpBasic
+    TYPE (StrSpecVar),   INTENT(IN) :: SpVar
+
+    ! Write block 17 in standard spectral file
+    WRITE(iu_spc, '(a19, a16, a16)') &
+      '*BLOCK: TYPE =   17' , ': SUBTYPE =    0' , ': VERSION =    0'
+    WRITE(iu_spc, '(a)') &
+      'Specification of sub-bands for spectral variability data.'
+    IF (SpVar%n_sub_band > SpBasic%n_band) WRITE(iu_spc, '(a)') &
+      'Wavelength limits (m) and Rayleigh coefficients at STP (m2/kg).'
+    WRITE(iu_spc, '(a, i0)') &
+      'Number of spectral sub-bands = ', SpVar%n_sub_band
+    IF (SpVar%n_sub_band > SpBasic%n_band) THEN
+      WRITE(iu_spc, '(a)') &
+        'Sub-band Band  k-term     Lower limit         Upper limit' // &
+        '       Rayleigh coeff'
+      DO i=1, SpVar%n_sub_band
+        WRITE(iu_spc, '(3(i5, 2x), 2x, 1pe16.9, 2(4x, 1pe16.9))') &
+          i, SpVar%index_sub_band(1:2,i), SpVar%wavelength_sub_band(1:2,i), &
+          SpVar%rayleigh_coeff(i, 0)
+      END DO
+    END IF
+    WRITE(iu_spc, '(a4)') '*END'
+
+    IF (SpVar%n_times > 0) THEN
+      ! Write spectral variability file
+      i=INDEX(file_spectral, ' ') - 1
+      spectral_var = file_spectral(1:i) // '_var'
+      CALL get_free_unit(ierr, iu_spc2)
+      IF (ierr /= i_normal) RETURN
+      OPEN(UNIT=iu_spc2, FILE=spectral_var, IOSTAT=ios, STATUS='UNKNOWN')
+      WRITE(iu_spc2, '(a, i0)') &
+        'Number of times in look-up table = ', SpVar%n_times
+      IF (SpVar%n_repeat_times > 0) WRITE(iu_spc2, '(a, i0)') &
+        'Number of times for periodic repetition = ', SpVar%n_repeat_times
+      IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(a, i0)') &
+        'Number of Rayleigh coefficients given = ', SpVar%n_rayleigh_coeff
+      WRITE(iu_spc2, '(a)') &
+        'Year  Month  Day(of month)  Seconds(since midnight)  TSI(Wm-2 at 1 AU)'
+      WRITE(iu_spc2, '(a)') &
+        'Fraction of solar flux in each sub-band.'
+      IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(a,i0,a)') &
+        'Rayleigh coefficient in the first ', SpVar%n_rayleigh_coeff, &
+        ' sub-bands.'
+      WRITE(iu_spc2, '(a)') '*BEGIN: spectral variability data'
+      DO i=1, SpVar%n_times
+        WRITE(iu_spc2, '(4(i6),4x,1pe16.9)') &
+          SpVar%time(1:4, i), SpVar%total_solar_flux(i)
+        WRITE(iu_spc2, '(5(1pe16.9))') &
+          SpVar%solar_flux_sub_band(1:SpVar%n_sub_band, i)
+        IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(5(1pe16.9))') &
+          SpVar%rayleigh_coeff(1:SpVar%n_rayleigh_coeff, i)
+      END DO
+      CLOSE(iu_spc2)
+    END IF
+
+  END SUBROUTINE write_block_17
+
 
 
 END SUBROUTINE out_spectrum

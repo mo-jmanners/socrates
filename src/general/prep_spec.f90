@@ -21,6 +21,7 @@ PROGRAM prep_spec
 
   USE realtype_rd
   USE def_spectrum
+  USE def_solarspec
   USE rad_pcf
   USE gas_list_pcf
   USE dimensions_pp_ucf
@@ -47,18 +48,10 @@ PROGRAM prep_spec
                                 (/ (-1, i = 1, npd_gases) /)
 !   The spectral indices of each gas in the file
 
-  LOGICAL :: l_solar_spectrum
-!   Flag for solar spectrum
-  INTEGER :: n_solar_points
-!   Points in solar spectrum
-  REAL (RealK) :: solar_wavelength(npd_solar_points)
-!   Solar wavelengths
-  REAL (RealK) :: solar_irrad(npd_solar_points)
-!   Solar irradiance
-
   TYPE(StrSpecData) :: Spectrum
 !   The spectral configuration to be defined
-
+  TYPE(StrSolarSpec) :: SolarSpec
+!   The solar spectral irradiance data
 
 ! Functions called:
   LOGICAL, EXTERNAL :: set_interactive
@@ -116,8 +109,7 @@ PROGRAM prep_spec
 
   ELSE
 
-    CALL read_spectrum(file_spectral, Spectrum, ierr)
-    IF (ierr /= i_normal) STOP
+    CALL read_spectrum(file_spectral, Spectrum)
     WRITE(*, '(a)') 'Type "a" to append data to the existing file;'
     WRITE(*, '(a)') '  or "n" to create a new file.'
     READ(*, '(a)') char_in
@@ -142,7 +134,7 @@ PROGRAM prep_spec
 
   DO
 !   Now decide which blocks are to be written.
-    WRITE(*, '(/a/,10(6x, a/),/)')                                      &
+    WRITE(*, '(/a/,11(6x, a/),/)')                                      &
       'Select from the following types of data:',                       &
       '2.   Block 2: Solar spectrum in each band.',                     &
       '3.   Block 3: Rayleigh scattering in each band.',                &
@@ -152,6 +144,7 @@ PROGRAM prep_spec
       '10.  Block 10: Droplet parameters in each band.',                &
       '11.  Block 11: Aerosol parameters in each band.',                &
       '12.  Block 12: Ice crystal parameters in each band.',            &
+      '17.  Block 17: Spectral variability data in sub-bands.',         &
       '-1.  To write spectral file and exit.',                          &
       '-2.  To quit without writing spectral file.'
     READ(*, *) i_block
@@ -177,11 +170,9 @@ PROGRAM prep_spec
       CALL out_spectrum(file_spectral, Spectrum, ierr)
       EXIT
     CASE(2)
-      CALL make_block_2(Spectrum, l_solar_spectrum, n_solar_points,  &
-        solar_wavelength, solar_irrad, ierr)
+      CALL make_block_2(Spectrum, SolarSpec, ierr)
     CASE(3)
-      CALL make_block_3(Spectrum, l_solar_spectrum, n_solar_points,  &
-        solar_wavelength, solar_irrad, ierr)
+      CALL make_block_3(Spectrum, SolarSpec, ierr)
     CASE(5)
       CALL make_block_5(Spectrum, ierr)
     CASE(6)
@@ -194,6 +185,8 @@ PROGRAM prep_spec
       CALL make_block_11(Spectrum, ierr)
     CASE(12)
       CALL make_block_12(Spectrum, ierr)
+    CASE(17)
+      CALL make_block_17(Spectrum, SolarSpec, ierr)
     CASE DEFAULT
       WRITE(*, '(a)') '+++ Invalid block number.'
     END SELECT

@@ -62,6 +62,8 @@ TYPE StrCtrl
 !   Flag for adding solar tail flux to LW ragion
   LOGICAL :: l_orog                                               = .FALSE.
 !   Correct the direct solar flux at the surface for sloping terrain
+  LOGICAL :: l_solvar                                             = .FALSE.
+!   Time variation of the solar spectrum
 
 ! Gaseous absorption:
   INTEGER :: i_gas_overlap                                        = imdi

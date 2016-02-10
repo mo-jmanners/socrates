@@ -26,8 +26,7 @@
       SUBROUTINE make_block_2_2(ierr
      &  , n_band, wave_length_short, wave_length_long
      &  , l_exclude, n_band_exclude, index_exclude
-     &  , l_solar_spectrum, n_solar_points
-     &  , solar_wavelength, solar_irrad
+     &  , Sol, l_enhance
      &  , solar_flux_band, l_present_2
      &  )
 
@@ -37,23 +36,22 @@
       USE dimensions_pp_ucf
       USE def_std_io_icf
       USE def_inst_flt
+      USE def_solarspec, ONLY: StrSolarSpec
 
       IMPLICIT NONE
 
 
 !     Dummy arguments
+      TYPE (StrSolarSpec), INTENT(IN) :: Sol
+!           Solar spectrum
+      LOGICAL, INTENT(IN) :: l_enhance
+!           Enhance outer bands
       INTEGER, Intent(INOUT) ::
      &    ierr
 !           Error flag
       INTEGER, Intent(IN) ::
      &    n_band
 !           Number of bands
-      INTEGER, Intent(INOUT) ::
-     &    n_solar_points
-!           Number of points in spectrum
-      LOGICAL, Intent(INOUT) ::
-     &    l_solar_spectrum
-!           Solar spectral flag
       LOGICAL, Intent(IN) ::
      &    l_exclude
 !           Flag for exclusion of bands
@@ -73,11 +71,6 @@
 !           Bottom of each band
      &  , wave_length_long(npd_band)
 !           Top of each band
-      REAL  (RealK), Intent(INOUT) ::
-     &    solar_wavelength(npd_solar_points)
-!           Wavelengths of solar spectrum
-     &  , solar_irrad(npd_solar_points)
-!           Solar irradiance at toa
 !
 !     Local variables
 !
@@ -88,9 +81,6 @@
      &  , L_EXIST
 !           Check whether file exists
 !
-      CHARACTER
-     &    char_yn
-!           Character response variable
       INTEGER
      &    I_SHORT
 !           Beginning of band
@@ -104,9 +94,6 @@
 !           Index of last band
      &  , N_SOLAR_INTERPOLATED
 !            Number of points the solar spectrum is interpolated onto.     
-      LOGICAL
-     &    l_enhance
-!           Enhance outer bands
       REAL  (RealK) ::
      &     LAMBDA_MIN
 !           Smallest Wavelength
@@ -128,16 +115,12 @@
 !           Irradiance in tail
      &  , C1
 !           Dummy Variable     
-      REAL  (RealK) ::
-     &    solar_intensity
-!           Solar intensity at given w.leng.
-     &  , trapezoid
-!           Integrating function
-     &  , rayleigh_jeans_tail
+      REAL  (RealK), EXTERNAL ::
+     &    rayleigh_jeans_tail
 !           Tail of rayleigh jeans function
      
-       TYPE  (StrFiltResp) :: filter
-!   Instrumental response function
+       TYPE (StrFiltResp) :: filter
+!           Instrumental response function
 
       REAL (KIND=KIND(1.0D0)), ALLOCATABLE ::
      &    WEIGHTS(:)
@@ -149,36 +132,8 @@
      &  , LAMBDA_INTERPOL(:)
 !            and the corresponding wavelength     
 
-!     Subroutines called:
-      EXTERNAL
-     &    read_solar_spectrum, inner_bracket
-     &  , solar_intensity, trapezoid, rayleigh_jeans_tail
-!
-!     Obtain the solar spectrum if data are not already present.
-      IF (l_solar_spectrum) THEN
-        WRITE(iu_stdout, '(/a/)')
-     &    'Previous solar spectrum will be used.'
-      ELSE
-        CALL read_solar_spectrum(ierr, l_solar_spectrum
-     &    , n_solar_points, solar_wavelength, solar_irrad)
-        IF (ierr /= i_normal) RETURN
-      ENDIF
-!
-!     The radiance outside the nominal limits of the spectrum can be
-!     assigned to the edging bands.
-      WRITE(iu_stdout, '(/a)') 'Assign solar flux outside given bands '
-     &  //'to outside bands? (y/n)'
-2     READ(iu_stdin, '(a)') char_yn
-      IF ( (char_yn == 'Y').OR.(char_yn == 'y') ) THEN
-        l_enhance=.true.
-      ELSE IF ( (char_yn == 'N').OR.(char_yn == 'n') ) THEN
-        l_enhance=.false.
-      ELSE
-        WRITE(iu_err, '(a)') '+++ Unrecognised response: '
-        WRITE(iu_stdout, '(a)') 'Please re-type.'
-        goto 2
-      ENDIF
-      
+
+
       DO I=1,N_BAND
      
 ! Read in filter function from file
@@ -249,8 +204,8 @@
 ! Interpolate the solar spectrum onto a regular grid with the same d_lambda
 ! as the phase function
 
-         SOLAR_LAMBDA_MIN=SOLAR_WAVELENGTH(1)
-         SOLAR_LAMBDA_MAX=SOLAR_WAVELENGTH(N_SOLAR_POINTS)
+         SOLAR_LAMBDA_MIN=SOL%WAVELENGTH(1)
+         SOLAR_LAMBDA_MAX=SOL%WAVELENGTH(SOL%N_POINTS)
       
          N_SOLAR_INTERPOLATED=(SOLAR_LAMBDA_MAX-
      &             SOLAR_LAMBDA_MIN)/D_LAMBDA
@@ -260,9 +215,9 @@
       
          DO J=0,N_SOLAR_INTERPOLATED
             LAMBDA_INTERPOL(J)=SOLAR_LAMBDA_MIN+J*D_LAMBDA
-            CALL LINEAR_INTERPOLATION(SOLAR_WAVELENGTH
-     &          , SOLAR_IRRAD
-     &          , N_SOLAR_POINTS
+            CALL LINEAR_INTERPOLATION(SOL%WAVELENGTH
+     &          , SOL%IRRAD
+     &          , SOL%N_POINTS
      &          , LAMBDA_INTERPOL(J)
      &          , IRRAD_INTERPOL(J))
 !            WRITE(21,*) J, LAMBDA_INTERPOL(J),IRRAD_INTERPOL(J)
@@ -277,8 +232,8 @@
  
 ! Add on the tail of the distribution using a rayleigh-jeans law
        
-         IRRADIANCE_TAIL=RAYLEIGH_JEANS_TAIL(
-     &                    SOLAR_WAVELENGTH(N_SOLAR_POINTS))
+         IRRADIANCE_TAIL=RAYLEIGH_JEANS_TAIL(Sol,
+     &                    SOL%WAVELENGTH(SOL%N_POINTS))
      
          TOTAL_SOLAR_IRRADIANCE=TOTAL_SOLAR_IRRADIANCE
      &                         +IRRADIANCE_TAIL

@@ -13,6 +13,7 @@ MODULES_GEN =	dimensions_cdl_ucf.f90 \
 		def_dimen.f90 \
 		def_inst_flt.f90 \
 		def_out.f90 \
+		def_refract.f90 \
 		def_solarspec.f90 \
 		def_spectrum.f90 \
 		def_std_io_icf.f90 \

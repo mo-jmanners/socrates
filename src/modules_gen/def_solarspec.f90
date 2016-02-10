@@ -8,19 +8,24 @@
 
 MODULE def_solarspec
 
-  USE realtype_rd
+  USE realtype_rd, ONLY: RealK
+  USE rad_ccf, ONLY: solar_t_effective, solar_radius
 
   IMPLICIT NONE
 
 
   TYPE StrSolarSpec
 
-    INTEGER :: n_points
+    INTEGER :: n_points = 0
 !     Number of points in the spectrum
-    REAL  (RealK), Pointer :: wavelength(:)
-!     Wavelengthe at which the spectral irradiance is specified
-    REAL  (RealK), Pointer :: irrad(:)
+    REAL (RealK), POINTER :: wavelength(:)
+!     Wavelength at which the spectral irradiance is specified
+    REAL (RealK), POINTER :: irrad(:)
 !     Solar spectral irradiance in units of Wm-2.m-1
+    REAL (RealK) :: t_effective = solar_t_effective
+!     Effective solar temperature
+    REAL (RealK) :: radius = solar_radius
+!     Radius at the photosphere
 
   END TYPE StrSolarSpec
 

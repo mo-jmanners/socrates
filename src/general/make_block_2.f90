@@ -19,27 +19,21 @@
 !	the fluxes in the outside bands to include the full flux.
 !
 !- ---------------------------------------------------------------------
-SUBROUTINE make_block_2(Spectrum, l_solar_spectrum, n_solar_points,  &
-  solar_wavelength, solar_irrad, ierr)
+SUBROUTINE make_block_2(Spectrum, SolarSpec, ierr)
 
   USE realtype_rd
   USE def_spectrum
+  USE def_solarspec
   USE rad_pcf
   USE dimensions_pp_ucf
 
   IMPLICIT NONE
 
-  TYPE (StrSpecData), Intent(INOUT), TARGET :: Spectrum
+  TYPE (StrSpecData), INTENT(INOUT), TARGET :: Spectrum
 !   Spectral file to be assigned
-  LOGICAL, Intent(INOUT) :: l_solar_spectrum
-!   Solar spectral flag
-  INTEGER, Intent(INOUT) :: n_solar_points
-!   Number of points in spectrum
-  REAL (RealK), Intent(INOUT) :: solar_wavelength(npd_solar_points)
-!   Wavelengths of solar spectrum
-  REAL (RealK), Intent(INOUT) :: solar_irrad(npd_solar_points)
-!   Solar irradiance at toa
-  INTEGER, Intent(INOUT) :: ierr
+  TYPE (StrSolarSpec), INTENT(INOUT) :: SolarSpec
+!   Solar spectrum
+  INTEGER, INTENT(INOUT) :: ierr
 !   Error flag
 
 ! Local Variables
@@ -47,7 +41,10 @@ SUBROUTINE make_block_2(Spectrum, l_solar_spectrum, n_solar_points,  &
 !   IO status
   CHARACTER (LEN=1) :: l_filter
 !   Character flag for filter function
-
+  CHARACTER (LEN=1) :: char_yn
+!   Character response variable
+  LOGICAL :: l_enhance
+!   Enhance outer bands
 
   IF (ALLOCATED(Spectrum%Solar%solar_flux_band)) &
       DEALLOCATE(Spectrum%Solar%solar_flux_band)
@@ -64,6 +61,32 @@ SUBROUTINE make_block_2(Spectrum, l_solar_spectrum, n_solar_points,  &
     END IF
   END DO
 
+! Obtain the solar spectrum if data are not already present.
+  IF (SolarSpec%n_points > 0) THEN
+    WRITE(*, '(/a/)')'Previous solar spectrum will be used.'
+  ELSE
+    CALL read_solar_spectrum(SolarSpec, ierr)
+    IF (ierr /= i_normal) RETURN
+  END IF
+
+! The radiance outside the nominal limits of the spectrum can be
+! assigned to the edging bands.
+  WRITE(*, '(/a)') 'Assign solar flux outside given bands ' &
+    //'to outside bands? (y/n)'
+  DO
+    READ(*, '(a)') char_yn
+    IF ( (char_yn == 'Y').OR.(char_yn == 'y') ) THEN
+      l_enhance=.TRUE.
+      EXIT
+    ELSE IF ( (char_yn == 'N').OR.(char_yn == 'n') ) THEN
+      l_enhance=.FALSE.
+      EXIT
+    ELSE
+      WRITE(*, '(a)') '+++ Unrecognised response: '
+      WRITE(*, '(a)') 'Please re-type.'
+    END IF
+  END DO
+
   IF ((l_filter == 'Y').OR.(l_filter == 'y')) THEN
     CALL make_block_2_2(ierr, &
       Spectrum%Basic%n_band, &
@@ -72,22 +95,11 @@ SUBROUTINE make_block_2(Spectrum, l_solar_spectrum, n_solar_points,  &
       Spectrum%Basic%l_present(14), &
       Spectrum%Basic%n_band_exclude, &
       Spectrum%Basic%index_exclude, &
-      l_solar_spectrum, n_solar_points, &
-      solar_wavelength, solar_irrad, &
+      SolarSpec, l_enhance, &
       Spectrum%Solar%solar_flux_band, &
       Spectrum%Basic%l_present(2) )
   ELSE
-    CALL make_block_2_1(ierr, &
-      Spectrum%Basic%n_band, &
-      Spectrum%Basic%wavelength_short, &
-      Spectrum%Basic%wavelength_long, &
-      Spectrum%Basic%l_present(14), &
-      Spectrum%Basic%n_band_exclude, &
-      Spectrum%Basic%index_exclude, &
-      l_solar_spectrum, n_solar_points, &
-      solar_wavelength, solar_irrad, &
-      Spectrum%Solar%solar_flux_band, &
-      Spectrum%Basic%l_present(2) )
+    CALL make_block_2_1(Spectrum, SolarSpec, l_enhance, .TRUE., ierr)
   END IF
 
 END SUBROUTINE make_block_2

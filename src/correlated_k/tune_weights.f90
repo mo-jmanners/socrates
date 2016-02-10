@@ -199,48 +199,22 @@ CONTAINS
 !
 !
   SUBROUTINE get_spectra
-!
+
 !   Local variables
     CHARACTER (LEN=80) :: file_spectral_ref
 !     Name of the spectral file
-!
-!
+
 !   Read in the reference spectral file.
     WRITE(*, "(a)") "Enter the name of the reference spectral file."
-    DO
-      READ(*, "(a)") file_spectral_ref
-      CALL read_spectrum(file_spectral_ref, RefSpectrum, ierr)
-      IF (ierr == i_normal) THEN
-        EXIT
-      ELSE IF (ierr == i_err_fatal) THEN
-        STOP
-      ELSE IF (l_interactive) THEN
-        WRITE(*, "(a)") "Please re-specify"
-        ierr=i_normal
-      ELSE
-        STOP
-      ENDIF
-    ENDDO
-!
-!
+    READ(*, "(a)") file_spectral_ref
+    CALL read_spectrum(file_spectral_ref, RefSpectrum)
+
 !   Read in the spectral file to be tuned.
     WRITE(*, "(a)") &
       "Enter the name of the spectral file to be tuned."
-    DO
-      READ(*, "(a)") file_spectral_tune
-      CALL read_spectrum(file_spectral_tune, TuneSpectrum, ierr)
-      IF (ierr == i_normal) THEN
-        EXIT
-      ELSE IF (ierr == i_err_fatal) THEN
-        STOP
-      ELSE IF (l_interactive) THEN
-        WRITE(*, "(a)") "Please re-specify"
-        ierr=i_normal
-      ELSE
-        STOP
-      ENDIF
-    ENDDO
-!
+    READ(*, "(a)") file_spectral_tune
+    CALL read_spectrum(file_spectral_tune, TuneSpectrum)
+
   END SUBROUTINE get_spectra
 !
 !

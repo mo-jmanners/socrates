@@ -13,14 +13,11 @@
 !   an appropriate subroutine depending on the type, sub-type
 !   and version of the block.
 !
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiance Core
-!
 !------------------------------------------------------------------------------
-SUBROUTINE read_spectrum(file_spectral, Sp, ierr)
+SUBROUTINE read_spectrum(file_spectral, Sp)
 
-USE realtype_rd
-USE def_spectrum
+USE realtype_rd, ONLY: RealK
+USE def_spectrum, ONLY: StrSpecData, allocate_spectrum
 USE rad_pcf
 USE dimensions_spec_ucf
 USE gas_list_pcf
@@ -34,8 +31,6 @@ IMPLICIT NONE
 ! Dummy variables.
 CHARACTER (LEN=*), INTENT(IN) :: file_spectral
 !   Name of spectral file
-INTEGER, INTENT(INOUT) :: ierr
-!   Error flag
 TYPE (StrSpecData) :: Sp
 !   Spectral data
 
@@ -47,12 +42,16 @@ CHARACTER (LEN=80) :: char_dum
 !   Dummy charcater variable
 CHARACTER (LEN=256) :: spectral_k
 !   Name of extended spectral file
+CHARACTER (LEN=256) :: spectral_var
+!   Name of spectral variability file
 CHARACTER (LEN=errormessagelength) :: iomessage
 !   I/O error message
 INTEGER :: ios
 !   I/O error status
-INTEGER :: iu_spc, iu_spc1
-!   Unit number for I/O of the spectral file
+INTEGER :: ierr = i_normal
+!   Error flag
+INTEGER :: iu_spc, iu_spc1, iu_spc2
+!   Unit numbers for I/O of the spectral file
 INTEGER :: i_type
 !   Type of block read in
 INTEGER :: i_subtype
@@ -101,9 +100,13 @@ INTEGER :: nd_mix
 !   Number of eta for mixture absorbing species
 INTEGER :: nd_band_mix_gas
 !   Number of bands where mixed species exist
+INTEGER :: nd_sub_band
+!   Size allocated for spectral sub-bands (for spectral variability)
+INTEGER :: nd_times
+!   Size allocated for times (for spectral variability)
 
-CHARACTER (LEN=errormessagelength)           :: cmessage
-CHARACTER (LEN=*), PARAMETER  :: RoutineName = 'read_spectrum'
+CHARACTER (LEN=errormessagelength) :: cmessage
+CHARACTER (LEN=*), PARAMETER       :: RoutineName = 'READ_SPECTRUM'
 
 
 ! Initialise array sizes. Some cannot at present conveniently be inferred
@@ -121,12 +124,14 @@ nd_aerosol_species = 1
 nd_thermal_coeff = 1
 nd_cloud_parameter  = npd_cloud_parameter
 nd_humidity  = npd_humidities
-nd_aod_wavel = 1
+nd_aod_wavel = 0
 nd_phase_term = npd_phase_term
-nd_tmp = 1
-nd_pre = 1
-nd_mix = 1
-nd_band_mix_gas = 1
+nd_tmp = 0
+nd_pre = 0
+nd_mix = 0
+nd_band_mix_gas = 0
+nd_sub_band = 0
+nd_times = 0
 
 Sp%Dim%nd_type = npd_type
 
@@ -233,27 +238,6 @@ IF (l_exist_k) THEN
   CALL release_file_unit(iu_spc1, handler="fortran")
 END IF
 
-! Set logicals to false for missing blocks.
-IF (.NOT. ALLOCATED(Sp%Gas%l_doppler)) THEN
-  ALLOCATE(Sp%Gas%l_doppler(nd_species))
-  Sp%Gas%l_doppler=.FALSE.
-END IF
-IF (.NOT. ALLOCATED(Sp%Drop%l_drop_type)) THEN
-  ALLOCATE(Sp%Drop%l_drop_type(nd_drop_type))
-  Sp%Drop%l_drop_type=.FALSE.
-END IF
-IF (.NOT. ALLOCATED(Sp%Ice%l_ice_type)) THEN
-  ALLOCATE(Sp%Ice%l_ice_type(nd_ice_type))
-  Sp%Ice%l_ice_type=.FALSE.
-END IF
-IF (.NOT. ALLOCATED(Sp%Aerosol%l_aero_spec)) THEN
-  ALLOCATE(Sp%Aerosol%l_aero_spec(nd_aerosol_species))
-  Sp%Aerosol%l_aero_spec=.FALSE.
-END IF
-
-! Allocate spectrum arrays that remain unallocated
-CALL allocate_null_spectrum
-
 ! Initialise number of aerosol mixing ratios to aerosols present
 Sp%Dim%nd_aerosol_mr = nd_aerosol_species
 Sp%Aerosol%n_aerosol_mr = Sp%Aerosol%n_aerosol
@@ -282,7 +266,11 @@ Sp%Dim%nd_tmp = nd_tmp
 Sp%Dim%nd_pre = nd_pre
 Sp%Dim%nd_mix = nd_mix
 Sp%Dim%nd_band_mix_gas = nd_band_mix_gas
+Sp%Dim%nd_sub_band = nd_sub_band
+Sp%Dim%nd_times = nd_times
 
+! Allocate spectrum arrays that remain unallocated
+CALL allocate_spectrum(Sp)
 
 
 CONTAINS
@@ -305,8 +293,7 @@ CHARACTER (LEN=80) :: line_temp
 ! use the flag to check for errors.
 l_block_read= .FALSE.
 
-! Depending on the value of I_TYPE, the appropriate subroutine
-! is called.
+! Depending on the value of I_TYPE, the appropriate subroutine is called.
 IF (i_type == 0) THEN
   IF (i_subtype == 0) THEN
     IF (i_version == 1) THEN
@@ -473,6 +460,13 @@ ELSE IF (i_type == 16) THEN
   IF (i_subtype == 0) THEN
     IF (i_version == 0) THEN
       CALL read_block_16_0_0_int
+      l_block_read= .TRUE.
+    END IF
+  END IF
+ELSE IF (i_type == 17) THEN
+  IF (i_subtype == 0) THEN
+    IF (i_version == 0) THEN
+      CALL read_block_17_0_0
       l_block_read= .TRUE.
     END IF
   END IF
@@ -2838,240 +2832,149 @@ END DO
 END SUBROUTINE read_block_16_0_0_int
 
 
-
-SUBROUTINE allocate_null_spectrum
-
-USE missing_data_mod, ONLY: rmdi
+! Spectral variability
+SUBROUTINE read_block_17_0_0
 
 IMPLICIT NONE
 
-! Basic
-IF (.NOT. ALLOCATED(Sp%Basic%wavelength_long)) &
-  ALLOCATE(Sp%Basic%wavelength_long( 1 ))
+! Local variables.
+INTEGER :: desc_end
+!   Position of equals sign to delimit end of item description
+INTEGER :: idum
+!   Dummy integer
+LOGICAL :: l_exist_var
+!   True if spectral variability file exists and is readable
+REAL (RealK), ALLOCATABLE :: rayleigh_coeff(:)
+
+DO
+  READ(iu_spc, '(a80)', IOSTAT=ios) line
+  IF (line(1:4) == '*END') THEN
+    BACKSPACE(iu_spc)
+    EXIT
+  END IF
+
+  desc_end=SCAN(line,'=',.TRUE.)
+  IF (desc_end==0) desc_end=LEN_TRIM(line)+1
+
+  SELECT CASE (line(1:desc_end-1))
+  CASE ('Number of spectral sub-bands','nd_sub_band')
+
+    ! Read number of sub-bands
+    READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) Sp%Var%n_sub_band
+    nd_sub_band=Sp%Var%n_sub_band
+
+    ALLOCATE(Sp%Var%index_sub_band(2, nd_sub_band))
+    ALLOCATE(Sp%Var%wavelength_sub_band(2, nd_sub_band))
+    ALLOCATE(rayleigh_coeff(nd_sub_band))
+
+    IF (Sp%Var%n_sub_band > Sp%Basic%n_band) THEN
+      ! Skip header line
+      READ(iu_spc, '(a80)', IOSTAT=ios, IOMSG=iomessage) line
+
+      ! Read sub-band information
+      DO i=1, Sp%Var%n_sub_band
+        READ(iu_spc, '(3(i5, 2x), 2x, 1pe16.9, 2(4x, 1pe16.9))', &
+          IOSTAT=ios, IOMSG=iomessage) &
+          idum, Sp%Var%index_sub_band(:,i), Sp%Var%wavelength_sub_band(:,i), &
+          rayleigh_coeff(i)
+      END DO
+    ELSE IF (Sp%Var%n_sub_band == Sp%Basic%n_band) THEN
+      ! Sub-bands are equal to full-bands
+      DO i=1, Sp%Var%n_sub_band
+        Sp%Var%index_sub_band(1,i) = i
+        Sp%Var%index_sub_band(2,i) = 0
+        Sp%Var%wavelength_sub_band(1,i) = Sp%Basic%wavelength_short(i)
+        Sp%Var%wavelength_sub_band(2,i) = Sp%Basic%wavelength_long(i)
+        rayleigh_coeff(i) = Sp%Rayleigh%rayleigh_coeff(i)
+      END DO
+    ELSE
+      cmessage = 'Not enough sub-bands in block 17 (should be >= n_band).'
+      ierr=i_err_fatal
+      RETURN
+    END IF
+
+    i=INDEX(file_spectral, ' ') - 1
+    spectral_var = file_spectral(1:i) // '_var'
+
+    ! Get a unit to read the spectral variability file.
+    CALL assign_file_unit(spectral_var, iu_spc2, handler="fortran")
+
+    ! Open the file for reading
+    OPEN(UNIT=iu_spc2, FILE=spectral_var, IOSTAT=ios, STATUS='OLD', &
+         ACTION='READ', IOMSG=iomessage)
+    IF (ios == 0) THEN
+      l_exist_var = .TRUE.
+    ELSE
+      l_exist_var = .FALSE.
+      ios = 0
+    END IF
+
+    Sp%Var%n_times          = 0
+    nd_times                = 0
+    Sp%Var%n_repeat_times   = 0
+    Sp%Var%n_rayleigh_coeff = 0
+    IF (l_exist_var) THEN
+      ! Read number of times / dates and skip over header
+      DO
+        READ(iu_spc2, '(a80)', IOSTAT=ios, IOMSG=iomessage) line
+        IF (ios /= 0) THEN
+           cmessage = 'Error reading spectral variability file: ' // &
+             TRIM(iomessage)
+           ierr=i_err_fatal
+           RETURN
+        END IF
+        desc_end=SCAN(line,'=',.TRUE.)
+        IF ( line(1:desc_end-1) == 'Number of times in look-up table' .OR. &
+             line(1:desc_end-1) == 'nd_times' ) THEN
+          READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) Sp%Var%n_times
+          nd_times=Sp%Var%n_times
+        END IF
+        IF ( line(1:desc_end-1) == 'Number of times for periodic repetition' ) &
+          READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) &
+            Sp%Var%n_repeat_times
+        IF ( line(1:desc_end-1) == 'Number of Rayleigh coefficients given' ) &
+          READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) &
+            Sp%Var%n_rayleigh_coeff
+        IF ( line(1:6) == '*BEGIN' ) EXIT
+      END DO
+      
+      ! Read look-up table of spectral variability data
+      ALLOCATE(Sp%Var%time(4, nd_times))
+      ALLOCATE(Sp%Var%total_solar_flux(nd_times))
+      ALLOCATE(Sp%Var%solar_flux_sub_band(nd_sub_band, nd_times))
+      ALLOCATE(Sp%Var%rayleigh_coeff(nd_sub_band, 0:nd_times))
+      DO i=1, Sp%Var%n_times
+        READ(iu_spc2, '(4(i6),4x,1pe16.9)') &
+          Sp%Var%time(:, i), Sp%Var%total_solar_flux(i)
+        READ(iu_spc2, '(5(1pe16.9))') Sp%Var%solar_flux_sub_band(:, i)
+        IF (Sp%Var%n_rayleigh_coeff > 0) READ(iu_spc2, '(5(1pe16.9))') &
+          Sp%Var%rayleigh_coeff(1:Sp%Var%n_rayleigh_coeff, i)
+      END DO
+      
+      CLOSE(iu_spc2)
+    ELSE
+      ALLOCATE(Sp%Var%rayleigh_coeff(nd_sub_band, 0:nd_times))
+    END IF
+
+    Sp%Var%rayleigh_coeff(:,0) = rayleigh_coeff
+    DO i=1, Sp%Var%n_times
+      Sp%Var%rayleigh_coeff(Sp%Var%n_rayleigh_coeff+1:,i) = &
+             rayleigh_coeff(Sp%Var%n_rayleigh_coeff+1:)
+    END DO
+    DEALLOCATE(rayleigh_coeff)
+
+    CALL release_file_unit(iu_spc2, handler="fortran")
+  END SELECT
+
+  IF (ios /= 0) THEN
+    cmessage = 'Error in subroutine read_block_17_0_0: ' // &
+               TRIM(iomessage)
+    ierr=i_err_fatal
+    RETURN
+  END IF
+END DO
+
+END SUBROUTINE read_block_17_0_0
 
-IF (.NOT. ALLOCATED(Sp%Basic%wavelength_short)) &
-  ALLOCATE(Sp%Basic%wavelength_short( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Basic%n_band_exclude)) &
-  ALLOCATE(Sp%Basic%n_band_exclude( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Basic%index_exclude)) &
-  ALLOCATE(Sp%Basic%index_exclude( 1, 1 ))
-
-! Solar
-IF (.NOT. ALLOCATED(Sp%Solar%solar_flux_band)) &
-  ALLOCATE(Sp%Solar%solar_flux_band( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Solar%solar_flux_band_ses)) &
-  ALLOCATE(Sp%Solar%solar_flux_band_ses( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Solar%weight_blue)) THEN
-  ALLOCATE(Sp%Solar%weight_blue( nd_band ))
-  Sp%Solar%weight_blue=rmdi
-END IF
-
-! Rayleigh
-IF (.NOT. ALLOCATED(Sp%Rayleigh%rayleigh_coeff)) &
-  ALLOCATE(Sp%Rayleigh%rayleigh_coeff( nd_band ))
-
-! Gas
-IF (.NOT. ALLOCATED(Sp%Gas%n_band_absorb)) &
-  ALLOCATE(Sp%Gas%n_band_absorb( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%index_absorb)) &
-  ALLOCATE(Sp%Gas%index_absorb( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%type_absorb)) &
-  ALLOCATE(Sp%Gas%type_absorb( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%n_mix_gas)) &
-  ALLOCATE(Sp%Gas%n_mix_gas( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%index_mix_gas)) &
-  ALLOCATE(Sp%Gas%index_mix_gas( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%num_mix)) &
-  ALLOCATE(Sp%Gas%num_mix( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%mix_gas_band)) &
-  ALLOCATE(Sp%Gas%mix_gas_band( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%num_ref_p)) &
-  ALLOCATE(Sp%Gas%num_ref_p( 1,  1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%num_ref_t)) &
-  ALLOCATE(Sp%Gas%num_ref_t( 1,  1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%i_band_k)) THEN
-  ALLOCATE(Sp%Gas%i_band_k( 1,  1 ))
-  Sp%Gas%i_band_k=0
-END IF
-
-IF (.NOT. ALLOCATED(Sp%Gas%i_band_k_ses)) THEN
-  ALLOCATE(Sp%Gas%i_band_k_ses( 1 ))
-  Sp%Gas%i_band_k_ses=0
-END IF
-
-IF (.NOT. ALLOCATED(Sp%Gas%i_scale_k)) &
-  ALLOCATE(Sp%Gas%i_scale_k( 1,  1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%i_scale_fnc)) &
-  ALLOCATE(Sp%Gas%i_scale_fnc( 1,  1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%i_scat)) &
-  ALLOCATE(Sp%Gas%i_scat( 1 , 1,  1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%k)) &
-  ALLOCATE(Sp%Gas%k( 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%w)) &
-  ALLOCATE(Sp%Gas%w( 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%scale)) &
-  ALLOCATE(Sp%Gas%scale( 1 , 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%p_ref)) &
-  ALLOCATE(Sp%Gas%p_ref( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%t_ref)) &
-  ALLOCATE(Sp%Gas%t_ref( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%p_lookup)) &
-  ALLOCATE(Sp%Gas%p_lookup( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%t_lookup)) &
-  ALLOCATE(Sp%Gas%t_lookup( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%k_lookup)) &
-  ALLOCATE(Sp%Gas%k_lookup( 1 , 1 , 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%w_ses)) &
-  ALLOCATE(Sp%Gas%w_ses( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%k_mix_gas)) &
-  ALLOCATE(Sp%Gas%k_mix_gas( 1 , 1 , 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%f_mix)) &
-  ALLOCATE(Sp%Gas%f_mix( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%l_doppler)) &
-  ALLOCATE(Sp%Gas%l_doppler( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Gas%doppler_cor)) &
-  ALLOCATE(Sp%Gas%doppler_cor( nd_species ))
-
-! Planck
-IF (.NOT. ALLOCATED(Sp%Planck%thermal_coeff)) &
-  ALLOCATE(Sp%Planck%thermal_coeff( 1 , 1 ))
-IF (.NOT. ALLOCATED(Sp%Planck%theta_planck_tbl)) &
-  ALLOCATE(Sp%Planck%theta_planck_tbl( 1 ))
-
-! Cont
-IF (.NOT. ALLOCATED(Sp%Cont%n_band_continuum)) &
-  ALLOCATE(Sp%Cont%n_band_continuum( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%index_continuum)) &
-  ALLOCATE(Sp%Cont%index_continuum( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%i_scale_fnc_cont)) &
-  ALLOCATE(Sp%Cont%i_scale_fnc_cont( 1,  1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%k_cont)) &
-  ALLOCATE(Sp%Cont%k_cont( 1,  1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%scale_cont)) &
-  ALLOCATE(Sp%Cont%scale_cont( 1,  1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%p_ref_cont)) &
-  ALLOCATE(Sp%Cont%p_ref_cont( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%t_ref_cont)) &
-  ALLOCATE(Sp%Cont%t_ref_cont( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%k_cont_ses)) &
-  ALLOCATE(Sp%Cont%k_cont_ses( 1 , 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Cont%k_h2oc)) &
-  ALLOCATE(Sp%Cont%k_h2oc( 1 , 1 , 1 , 1 ))
-
-! Drop
-IF (.NOT. ALLOCATED(Sp%Drop%l_drop_type)) &
-    ALLOCATE(Sp%Drop%l_drop_type( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Drop%i_drop_parm)) &
-    ALLOCATE(Sp%Drop%i_drop_parm( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Drop%n_phf)) &
-    ALLOCATE(Sp%Drop%n_phf( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Drop%parm_list)) &
-    ALLOCATE(Sp%Drop%parm_list( 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Drop%parm_min_dim)) &
-    ALLOCATE(Sp%Drop%parm_min_dim( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Drop%parm_max_dim)) &
-    ALLOCATE(Sp%Drop%parm_max_dim( 1 ))
-
-! Aerosol
-IF (.NOT. ALLOCATED(Sp%Aerosol%l_aero_spec)) &
-    ALLOCATE(Sp%Aerosol%l_aero_spec( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%type_aerosol)) &
-  ALLOCATE(Sp%Aerosol%type_aerosol( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%i_aerosol_parm)) &
-    ALLOCATE(Sp%Aerosol%i_aerosol_parm( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%n_aerosol_phf_term)) &
-    ALLOCATE(Sp%Aerosol%n_aerosol_phf_term( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%nhumidity)) &
-    ALLOCATE(Sp%Aerosol%nhumidity( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%abs)) &
-    ALLOCATE(Sp%Aerosol%abs( 1 , 1 , nd_band ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%scat)) &
-    ALLOCATE(Sp%Aerosol%scat( 1 , 1 , nd_band ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%phf_fnc)) &
-    ALLOCATE(Sp%Aerosol%phf_fnc( 1 , 1 , 1 , nd_band ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%humidities)) &
-    ALLOCATE(Sp%Aerosol%humidities( 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%i_aod_type)) &
-    ALLOCATE(Sp%Aerosol%i_aod_type( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%aod_wavel)) &
-    ALLOCATE(Sp%Aerosol%aod_wavel( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%aod_abs)) &
-    ALLOCATE(Sp%Aerosol%aod_abs( 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Aerosol%aod_scat)) &
-    ALLOCATE(Sp%Aerosol%aod_scat( 1 , 1 , 1 ))
-
-! Ice
-IF (.NOT. ALLOCATED(Sp%Ice%l_ice_type)) &
-    ALLOCATE(Sp%Ice%l_ice_type( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Ice%i_ice_parm)) &
-    ALLOCATE(Sp%Ice%i_ice_parm( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Ice%n_phf)) &
-    ALLOCATE(Sp%Ice%n_phf( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Ice%parm_list)) &
-    ALLOCATE(Sp%Ice%parm_list( 1 , 1 , 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Ice%parm_min_dim)) &
-    ALLOCATE(Sp%Ice%parm_min_dim( 1 ))
-
-IF (.NOT. ALLOCATED(Sp%Ice%parm_max_dim)) &
-    ALLOCATE(Sp%Ice%parm_max_dim( 1 ))
-
-END SUBROUTINE allocate_null_spectrum
 
 END SUBROUTINE read_spectrum

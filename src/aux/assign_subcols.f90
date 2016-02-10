@@ -121,19 +121,8 @@ LOGICAL :: l_interactive
 ! ------------------------------------------------------------------
 ! Read in the SW spectral file.
   WRITE(*, "(a)") "Enter the name of the SW spectral file."
-  DO
-    READ(*, "(a)") file_spectral_sw
-
-    CALL read_spectrum(file_spectral_sw, Spectrum_sw, ierr)
-    IF (ierr == i_normal) THEN
-      EXIT
-    ELSE IF (l_interactive) THEN
-      WRITE(*, "(a)") "Please re-specify"
-      ierr=i_normal
-    ELSE
-      STOP
-    ENDIF
-  ENDDO
+  READ(*, "(a)") file_spectral_sw
+  CALL read_spectrum(file_spectral_sw, Spectrum_sw)
   WRITE(*, "(a)") &
     "Number of extra sub-columns in the SW for optimal sampling:"
   READ(*, *) n_add_sw
@@ -169,19 +158,8 @@ LOGICAL :: l_interactive
 
 ! Read LW spectral file
   WRITE(*, "(a)") "Enter the name of the LW spectral file."
-  DO
-    READ(*, "(a)") file_spectral_lw
-
-    CALL read_spectrum(file_spectral_lw, Spectrum_lw, ierr)
-    IF (ierr == i_normal) THEN
-      EXIT
-    ELSE IF (l_interactive) THEN
-      WRITE(*, "(a)") "Please re-specify"
-      ierr = i_normal
-    ELSE
-      STOP
-    ENDIF
-  ENDDO
+  READ(*, "(a)") file_spectral_lw
+  CALL read_spectrum(file_spectral_lw, Spectrum_lw)
   WRITE(*, "(a)") &
     "Number of extra sub-columns in the LW for optimal sampling:"
   READ(*, *) n_add_lw

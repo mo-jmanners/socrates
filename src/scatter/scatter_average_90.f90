@@ -184,18 +184,8 @@ PROGRAM scatter_average_90
 !
 ! Read in the spectral file.
   WRITE(*, "(a)") "Enter the name of the spectral file."
-  DO
-    READ(*, "(a)") file_spectral
-    CALL read_spectrum(file_spectral, Spectrum, ierr)
-    IF (ierr == i_normal) THEN
-      EXIT
-    ELSE IF (l_interactive) THEN
-      WRITE(*, "(a)") "Please re-specify"
-      ierr=i_normal
-    ELSE
-      STOP
-    ENDIF
-  ENDDO
+  READ(*, "(a)") file_spectral
+  CALL read_spectrum(file_spectral, Spectrum)
 
 ! Find limits of wavenumbers required by spectral file
   nu_min=MINVAL(1.0_RealK/Spectrum%Basic%wavelength_long( &

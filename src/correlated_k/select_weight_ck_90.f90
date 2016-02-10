@@ -45,11 +45,6 @@ SUBROUTINE select_weight_ck_90 &
   INTEGER :: ios
 !   I/O error flag
 !
-! Subroutines called:
-  external &
-      read_solar_spectrum_90
-!
-!
 !
 ! Display menu of weightings.
   WRITE(iu_stdout, '(/a)') &
@@ -85,7 +80,7 @@ SUBROUTINE select_weight_ck_90 &
 !
 ! If solar weighting is used read the data in.
   if (i_weight == ip_weight_solar) then
-    CALL read_solar_spectrum_90(SolarSpec, ierr)
+    CALL read_solar_spectrum(SolarSpec, ierr)
     if (ierr /= i_normal) RETURN
   endif
 !

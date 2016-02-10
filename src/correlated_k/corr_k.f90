@@ -322,23 +322,13 @@ PROGRAM corr_k
     ENDIF
 !
   ENDDO
-!
+
 ! Read in the spectral file.
   WRITE(*, "(/ a)") "Enter the name of the spectral file."
-  DO
-    READ(*, "(a)") file_spectral
-    CALL read_spectrum(file_spectral, Spectrum, ierr)
-    IF (ierr == i_normal) THEN
-      EXIT
-    ELSE IF (l_interactive) THEN
-      WRITE(*, "(a)") "Please re-specify"
-      ierr=i_normal
-    ELSE
-      STOP
-    ENDIF
-  ENDDO
-!
-!
+  READ(*, "(a)") file_spectral
+  CALL read_spectrum(file_spectral, Spectrum)
+
+
 ! Read in instrument response if required
 !
   WRITE(iu_stdout, "(/A)") &

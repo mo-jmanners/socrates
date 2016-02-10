@@ -184,24 +184,14 @@ PROGRAM l_run_cdf
 ! ------------------------------------------------------------------
 ! Read in the spectral file.
   WRITE(*, "(a)") "Enter the name of the spectral file."
-  DO
-    READ(*, "(a)") control%spectral_file
+  READ(*, "(a)") control%spectral_file
 ! Derive path for McICA data file
-    path_end=SCAN(control%spectral_file,'/',.TRUE.)
-    mcica_data(:PATH_END)=control%spectral_file(:PATH_END)
-    mcica_data(PATH_END+1:)='mcica_data'
+  path_end=SCAN(control%spectral_file,'/',.TRUE.)
+  mcica_data(:PATH_END)=control%spectral_file(:PATH_END)
+  mcica_data(PATH_END+1:)='mcica_data'
 
 ! Read spectral file
-    CALL read_spectrum(control%spectral_file, Spectrum, ierr)
-    IF (ierr == i_normal) THEN
-      EXIT
-    ELSE IF (l_interactive) THEN
-      WRITE(*, "(a)") "Please re-specify"
-      ierr=i_normal
-    ELSE
-      STOP
-    ENDIF
-  ENDDO
+  CALL read_spectrum(control%spectral_file, Spectrum)
 
 
 ! ------------------------------------------------------------------

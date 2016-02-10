@@ -6,7 +6,9 @@ SOURCE90_GEN =	d_planck_90.f90 \
 		make_block_0.f90 \
 		make_block_1.f90 \
 		make_block_2.f90 \
+		make_block_2_1.f90 \
 		make_block_3.f90 \
+		make_block_3_1.f90 \
 		make_block_4.f90 \
 		make_block_5.f90 \
 		make_block_6.f90 \
@@ -16,19 +18,22 @@ SOURCE90_GEN =	d_planck_90.f90 \
 		make_block_11.f90 \
 		make_block_12.f90 \
 		make_block_14.f90 \
+		make_block_17.f90 \
 		map_heap_func.f90 \
 		open_file_out_90.f90 \
 		out_spectrum.f90 \
 		planck_90.f90 \
 		rad_weight_90.f90 \
+		rayleigh_jeans_tail.f90 \
 		read_instrument_response_90.f90 \
-		read_solar_spectrum_90.f90 \
+		read_solar_spectrum.f90 \
 		remove_negative_gas_90.f90 \
 		remove_negative_cont_90.f90 \
 		set_interactive.f90 \
 		set_n_cloud_parameter.f90 \
-		solar_intensity_90.f90 \
-		spline_evaluate.f90 \
+		solar_intensity.f90 \
+                solar_intensity_90.f90 \
+ 		spline_evaluate.f90 \
 		spline_fit.f90 \
 		sum_unity.f90 \
 		trapezoid_90.f90 \
@@ -40,7 +45,6 @@ SOURCE77_GEN = 	back_substitute.f \
 		inner_bracket.f \
 		integrate_spline.f \
 		lock_code.f \
-		make_block_2_1.f \
 		make_block_2_2.f \
 		make_block_6_1.f \
 		make_block_6_2.f \
@@ -49,12 +53,9 @@ SOURCE77_GEN = 	back_substitute.f \
 		open_file_out.f \
 		planck.f \
 		point_bracket.f \
-		rayleigh_jeans_tail.f \
 		rayleigh_scatter_air.f \
 		read_line.f \
 		read_word.f \
-		read_solar_spectrum.f \
-		solar_intensity.f \
 		svd_decompose.f \
 		remove_blank.f \
 		simpsons_rule.f \

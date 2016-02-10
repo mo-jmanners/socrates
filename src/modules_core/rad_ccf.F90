@@ -14,23 +14,16 @@ MODULE rad_ccf
 !   configuration files. The original file names are indicated at the
 !   head of each section.
 
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiation Control
-
-! Code Description:
-!   Language: Fortran 95
-!   This code is written to UMDP3 v8.3 programming standards.
-
   USE realtype_rd
 
 ! astron_constants_ccf
 ! ------------------------------------------------------------------
 ! Module to set values of astronomical constants.
-  REAL (RealK), PARAMETER :: t_effective_solar = 5.785E+03_RealK
+  REAL (RealK), PARAMETER :: astronomical_unit = 149597870700.0_RealK
+!   Standard Astronomical Unit (mean Earth-Sun distance)
+  REAL (RealK), PARAMETER :: solar_t_effective = 5.785E+03_RealK
 !   Effective solar temperature
-  REAL (RealK), PARAMETER :: d_earth_sun       = 1.50E+11_RealK
-!   Mean earth-sun distance
-  REAL (RealK), PARAMETER :: sun_radius        = 6.96E+08_RealK
+  REAL (RealK), PARAMETER :: solar_radius      = 6.96E+08_RealK
 !   Radius of the Sun
   REAL (RealK), PARAMETER :: earth_radius      = 6.37E+06_RealK
 !   Radius of the Earth

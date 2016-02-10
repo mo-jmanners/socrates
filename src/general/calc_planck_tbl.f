@@ -170,6 +170,9 @@
       REAL(RealK) :: D_U=1e-4_RealK
 !           Step in integration over U parameter. The default value of
 !           1e-4 should be small enough for all situations.
+      REAL(RealK) :: D_U_USE
+!           The actual integration step used to ensure an integer number
+!           of steps in the interval.
       REAL(RealK), ALLOCATABLE :: DUMMY(:)
 !           Dummy variable
 !
@@ -184,21 +187,20 @@
 !       Find minimum and maximum values for U at given THETA
         U_MIN=1.0E+00_RealK/(ALPHA*THETA_PLANCK_TBL(J)*WAVELENGTH_LONG)
         U_MAX=1.0E+00_RealK/(ALPHA*THETA_PLANCK_TBL(J)*WAVELENGTH_SHORT)
-        
         N_POINT = NINT((U_MAX - U_MIN)/D_U) + 1
-        D_U = (U_MAX - U_MIN)/(N_POINT-1)
+        D_U_USE = (U_MAX - U_MIN)/(N_POINT-1)
         
 !       Calculate integrand
-        ALLOCATE(DUMMY(0:N_POINT))
+        ALLOCATE(DUMMY(0:N_POINT-1))
         DO I=0,N_POINT-1
-          U = U_MIN + D_U*I
+          U = U_MIN + D_U_USE*I
           DUMMY(I)=U**3*EXP(-U)/(1 - EXP(-U))
         ENDDO
         
 !       Integration over the transformed variable
 !           U=(H_PLANCK*NU)/(K_BLOTZMANN*T_REF_THERMAL*THETA)
 !       using Simpson's rule.
-        CALL SIMPSONS_RULE(N_POINT-1,D_U,DUMMY,PLANCK_TBL(J))
+        CALL SIMPSONS_RULE(N_POINT-1,D_U_USE,DUMMY,PLANCK_TBL(J))
         DEALLOCATE(DUMMY)
       ENDDO
       PLANCK_TBL = PLANCK_TBL*Q*THETA_PLANCK_TBL**4

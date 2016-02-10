@@ -56,7 +56,7 @@ IMPLICIT NONE
 INTEGER,      INTENT(IN) :: iunit
 CHARACTER(*), INTENT(IN) :: handler
 
-CLOSE(iunit)
+! Dummy routine
 
 END SUBROUTINE release_file_unit
 

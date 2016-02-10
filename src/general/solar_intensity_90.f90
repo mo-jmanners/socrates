@@ -6,9 +6,7 @@
 !
 !+ Subroutine to calculate the solar irradiance at given wavenumbers.
 !
-SUBROUTINE solar_intensity_90 &
-!
-(nu, SolarSpec, solar_intensity)
+SUBROUTINE solar_intensity_90(nu, SolarSpec, solar_intensity)
 !
 !
 ! Description:
@@ -19,19 +17,16 @@ SUBROUTINE solar_intensity_90 &
 !   The wavelength is bracketed between two points of the solar
 !   spectrum and linear interpolation is used in the interval.
 !   At long wavelngths a Rayleigh-Jeans tail is used.
-!
-!
-!
-! Modules used
+
+
   USE realtype_rd
   USE def_solarspec
   USE dimensions_pp_ucf
-  USE rad_ccf, ONLY: t_effective_solar, d_earth_sun, sun_radius
-!
-!
+  USE rad_ccf, ONLY: astronomical_unit
+
   IMPLICIT NONE
-!
-!
+
+  
 ! Dummy arguments
   REAL  (RealK), Intent(IN) :: nu(:)
 !   Wavenumbers supplied to the routine
@@ -39,7 +34,7 @@ SUBROUTINE solar_intensity_90 &
 !   Spectral solar irradiance at the top of the atmosphere
   REAL  (RealK), Intent(OUT) :: solar_intensity(:)
 !   Returned intensity
-!
+
 ! Local variables.
   INTEGER :: n
 !   Size of supplied array of wavenumbers
@@ -55,11 +50,8 @@ SUBROUTINE solar_intensity_90 &
 !   Array used for conformance in the function call
   REAL  (RealK) :: fraction
 !   Fraction of interval covered
-!
-! External subroutines:
-  EXTERNAL &
-    point_bracket
-!
+
+
 ! Subroutines called:
   INTERFACE
 !
@@ -76,12 +68,11 @@ SUBROUTINE solar_intensity_90 &
     END SUBROUTINE planck_90
 !
   END INTERFACE
-!
-!
-!
+
+
 ! Solar spectra are defined by wavelength.
   n=SIZE(nu)
-!
+
   DO i=1, n
 !
     lambda=1.0_RealK/nu(i)
@@ -98,8 +89,8 @@ SUBROUTINE solar_intensity_90 &
     ELSE IF (i_long >  SolarSpec%n_points) THEN
 !
 !     Use a black body fit at the effective temperature.
-      CALL planck_90( (/ nu(i) /), t_effective_solar, s)
-      solar_intensity(i) = s(1) * (sun_radius / d_earth_sun)**2
+      CALL planck_90( (/ nu(i) /), SolarSpec%t_effective, s)
+      solar_intensity(i) = s(1) * (SolarSpec%radius / astronomical_unit)**2
 !
     ELSE
 !
@@ -107,7 +98,7 @@ SUBROUTINE solar_intensity_90 &
       fraction = (lambda - SolarSpec%wavelength(i_short)) / &
                  (SolarSpec%wavelength(i_long) - &
                   SolarSpec%wavelength(i_short))
-     s = (fraction * SolarSpec%irrad(i_long) + &
+      s = (fraction * SolarSpec%irrad(i_long) + &
         (1.0_RealK - fraction) * SolarSpec%irrad(i_short) ) * &
         lambda**2
       solar_intensity(i) = s(1)
@@ -115,7 +106,5 @@ SUBROUTINE solar_intensity_90 &
     ENDIF
 !
   ENDDO
-!
-!
-!
+
 END SUBROUTINE solar_intensity_90

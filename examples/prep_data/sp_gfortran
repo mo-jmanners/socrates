@@ -467,7 +467,7 @@ Band        Normalized flux
   220        2.025207068E-04
 *END
 *BLOCK: TYPE =    3: SUBTYPE =    0: VERSION =    0
-Rayleigh mass scatering coefficients at STP: unit m**2/kg
+Rayleigh mass scattering coefficients at STP: unit m**2/kg
 Band        Rayleigh coefficient
                  m2/kg
     1        5.740161287E-04

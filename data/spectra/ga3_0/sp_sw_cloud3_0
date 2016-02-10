@@ -1,7 +1,8 @@
-*BLOCK: TYPE =    0: SUBTYPE =    0: VERSION =    1
+*BLOCK: TYPE =    0: SUBTYPE =    0: VERSION =    2
 Summary of spectral data.
 Number of spectral bands =     2
 Total number of gaseous absorbers =     3
+Maximum number of k-terms in a band =     1
 Total number of aerosols =     0
 List of indexing numbers and absorbers.
 Index       Absorber(identifier and name)
@@ -125,4 +126,17 @@ Band =     2     Fitting parameters:
      3.63301E+00    -1.32671E-03     9.79519E-01     1.03452E+00
     -9.42754E-04    -1.11852E-02     7.86232E-01     3.94775E-04
      5.43689E-03
+*END
+*BLOCK: TYPE =   12: SUBTYPE =    0: VERSION =    2
+Parametrized scattering data for ice crystals.
+ Type number of ice crystals =    11
+Index of parametrization scheme =    19:   number of parameters =     5
+Number of moments of the phase function =     1
+Range of validity of parametrization =  0.00000E+00 --  0.00000E+00
+Band =     1     Fitting parameters:
+     1.65000E+11     1.00000E+00     6.54900E-15     7.82600E-01
+     4.19900E-02
+Band =     2     Fitting parameters:
+     1.65000E+11     9.81660E-01    -4.21749E-01     8.20800E-01
+     1.35140E-01
 *END

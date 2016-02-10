@@ -238,10 +238,22 @@ SUBROUTINE make_block_11(Spectrum, ierr)
           '+++ Warning: Data for (moist) aerosol component ', &
           i_component, '(', name_aerosol_component(i_component), &
           ')', 'are not in ascending order of ', &
-          'humidity, or moist aerosol was being overwritten with dry.'
-        WRITE(iu_err, '(/a)') 'Program terminating.'
-        ierr=i_err_fatal
-        RETURN
+          'humidity, or moist aerosol is being overwritten.'
+        WRITE(iu_stdout, '(a)') 'Do you wish to overwrite? (y/n)'
+        DO
+          READ(iu_stdin, '(a)') char_yn
+          IF ( (char_yn == 'N').OR.(char_yn == 'n') ) THEN
+            WRITE(iu_err, '(/a)') 'Program terminating.'
+            ierr=i_err_fatal
+            RETURN
+          ELSE IF ( (char_yn == 'Y').OR.(char_yn == 'y') ) THEN
+            Spectrum%Aerosol%nhumidity(i_species) = 0
+            EXIT
+          ELSE
+            WRITE(iu_stdout, '(a)') '+++ Illegal response: ' &
+              //'Please re-enter.'
+          END IF
+        END DO
       ENDIF
     ENDIF
   ENDIF

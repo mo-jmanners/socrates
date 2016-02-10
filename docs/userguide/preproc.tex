@@ -31,7 +31,7 @@ a file or fitted using a recognized parametrization.
 A man page for Cscatter\_average is provided.
 
 \item[{\tt prep\_spec}]
-This program is used to interactively contruct a spectral file,
+This program is used to interactively construct a spectral file,
 either entirely from scratch or based on an existing file.
 For a new file the user is asked to supply the limits on the
 spectral bands and the gases and aerosols present. Alternatively,
@@ -54,10 +54,13 @@ Block 11: Aerosol parameters in each band.
 
 Block 12: Ice crystal parameters in each band.
 
+Block 17: Spectral variability data in sub-bands.
+
 Blocks 5 \& 9 require output from the {\tt corr\_k} program.
 Blocks 10, 11 \& 12 use output from {\tt scatter\_average}. Block 2 
-requires a solar spectrum (examples are in \$RAD\_DATA/solar/). The other
-blocks are compiled within the prep\_spec routine.
+requires a solar spectrum (examples are in \$RAD\_DATA/solar/).
+Block 17 requires high-resolution solar spectral variability data files. Formats accepted are currently: CMIP5 (available from http://solarisheppa.geomar.de/cmip5).
+The other blocks are compiled within the prep\_spec routine.
 
 This routine is only available in interactive form. There are no command
 line options and currently no man page.

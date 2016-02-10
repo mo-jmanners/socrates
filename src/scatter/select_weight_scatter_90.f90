@@ -60,10 +60,6 @@ SUBROUTINE select_weight_scatter_90(i_weight, SolarSpec, t_weight, &
   LOGICAL :: l_solar_spectrum
 !       Logical for reading of spectrum
 !
-! Subroutines called:
-  EXTERNAL &
-    READ_solar_spectrum_90
-!
 !
 !
 ! Display menu of weighting functions.
@@ -119,7 +115,7 @@ SUBROUTINE select_weight_scatter_90(i_weight, SolarSpec, t_weight, &
 !
 ! If solar weighting is used read the data in.
   IF (i_weight == ip_weight_solar) THEN
-    CALL read_solar_spectrum_90(SolarSpec, ierr)
+    CALL read_solar_spectrum(SolarSpec, ierr)
     IF (ierr /= i_normal) return
   ENDIF
 !

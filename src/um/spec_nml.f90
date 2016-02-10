@@ -13,7 +13,7 @@ PROGRAM spec_nml
 !   use in the Unified Model.
 !
 ! Method:
-!   A spectral file is read using the tsandard format and 
+!   A spectral file is read using the standard format and 
 !   simply written out.
 !
 ! Code Description:
@@ -45,44 +45,26 @@ PROGRAM spec_nml
 !   Character response flag
 !
 ! External functions:
-  LOGICAL :: set_interactive
+  LOGICAL, EXTERNAL :: set_interactive
 !   Function to set the flag for interactive operation
-  EXTERNAL &
-    set_interactive
 !
 !- End of header
-!
-!
-!
+
+
 ! Set the flag for interactive operation
   l_interactive=set_interactive()
-!
-!
+
 ! Read in the spectral file.
   WRITE(iu_stdout, '(/a)') &
      'Enter name of file to be converted to namelist.'
-  DO
-    READ(iu_stdin, '(a)') file_spectral
-    CALL read_spectrum(file_spectral, Spectrum, ierr)
-    IF (ierr == i_normal) THEN
-      EXIT
-    ELSE IF (l_interactive) THEN
-      WRITE(*, "(a)") "Please re-specify"
-      ierr=i_normal
-    ELSE
-      STOP
-    ENDIF
-  ENDDO
-!
+  READ(iu_stdin, '(a)') file_spectral
+  CALL read_spectrum(file_spectral, Spectrum)
+
   WRITE(iu_stdout, '(/a)') &
     'Enter "T" to write asymmetries to the output file'
   READ(iu_stdin, '(a)') char_tf
   l_asymmetry = ( (char_tf == 'T') .OR. (char_tf == 't') )
-!
-!
+
   CALL out_nml(Spectrum, l_asymmetry, l_interactive, ierr)
-!
-!
-!
-  STOP
+
 END PROGRAM spec_nml

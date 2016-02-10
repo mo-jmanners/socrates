@@ -34,7 +34,7 @@ sub MakeDependsf90 {
          }
       ($objfile = $file) =~ s/\.f.*$/.o/;
       print MAKEFILE "$objfile: $file ";
-      if (defined @incs || defined @modules) {
+      if (@incs || @modules) {
          undef @dependencies;
          foreach $module (@modules) {
             push(@dependencies, $filename{$module});
