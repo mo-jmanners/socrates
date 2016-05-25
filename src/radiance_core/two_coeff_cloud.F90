@@ -278,8 +278,6 @@ SUBROUTINE two_coeff_cloud(ierr, control                                &
             ll=l_list(l)
             trans_0_cloud(ll, i)=trans_0_cloud(ll, i)                   &
                +frac_cloud(ll, i, k)*trans_0_temp(l, 1)
-            trans_0_cloud_noscal(ll, i)=trans_0_cloud_noscal(ll, i)     &
-               +frac_cloud(ll, i, k)*trans_0_temp_noscal(l, 1)
           END DO
 
           IF (control%l_noscal_tau) THEN
