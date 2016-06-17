@@ -17,8 +17,9 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
   USE def_spectrum, ONLY: StrSpecData, StrSpecVar
   USE def_solarspec, ONLY: StrSolarSpec
   USE def_refract, ONLY: StrRefract
+  USE def_inst_flt, ONLY: StrFiltResp
 
-  IMPLICIT none
+  IMPLICIT NONE
 
   TYPE(StrSpecData), Intent(INOUT) :: Sp
 !   Spectral file data
@@ -35,6 +36,8 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
 !   Varying Solar spectrum
   TYPE (StrRefract) :: Refract
 !   Refractive index of atmosphere
+  TYPE (StrFiltResp) :: filter
+!   Instrumental response function
 
   INTEGER :: ios
 !   Reading error flag
@@ -317,7 +320,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
         VSol%irrad = VSol%irrad * scale_irr
       
         ! Calculate the normalised solar flux in each sub-band
-        CALL make_block_2_1(SubSp, VSol, .TRUE., .FALSE., ierr)
+        CALL make_block_2_1(SubSp, VSol, filter,.FALSE.,.TRUE.,.FALSE.,ierr)
         Sp%Var%solar_flux_sub_band(:,i) = SubSp%Solar%solar_flux_band
       
         ! Calculate Rayleigh scattering coefficients in each sub-band

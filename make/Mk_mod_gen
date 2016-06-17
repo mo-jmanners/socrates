@@ -1,6 +1,5 @@
 MODULES_GEN =	dimensions_cdl_ucf.f90 \
 		dimensions_fixed_pcf.f90 \
-		dimensions_obs_ucf.f90 \
 		dimensions_pp_ucf.f90 \
 		dimensions_spec_ucf.f90 \
 		realtype_rd.f90 \

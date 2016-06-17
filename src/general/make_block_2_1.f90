@@ -19,12 +19,13 @@
 !	the fluxes in the outside bands to include the full flux.
 !
 !- ---------------------------------------------------------------------
-SUBROUTINE make_block_2_1(Sp, Sol, l_enhance, l_verbose, ierr)
+SUBROUTINE make_block_2_1(Sp, Sol, filter, l_filter, l_enhance, l_verbose, ierr)
 
   USE realtype_rd, ONLY: RealK
-  USE rad_pcf, ONLY: i_normal
+  USE rad_pcf, ONLY: i_normal, i_err_range
   USE def_spectrum, ONLY: StrSpecData
   USE def_solarspec, ONLY: StrSolarSpec
+  USE def_inst_flt, ONLY: StrFiltResp
 
   IMPLICIT NONE
 
@@ -34,6 +35,10 @@ SUBROUTINE make_block_2_1(Sp, Sol, l_enhance, l_verbose, ierr)
 !   Spectral file to be assigned
   TYPE (StrSolarSpec), INTENT(IN) :: Sol
 !   Solar spectrum
+  TYPE (StrFiltResp), INTENT(IN) :: filter
+!   Instrumental response function
+  LOGICAL, INTENT(IN) :: l_filter
+!   Weight with a filter function
   LOGICAL, INTENT(IN) :: l_enhance
 !   Enhance outer bands
   LOGICAL, INTENT(IN) :: l_verbose
@@ -68,7 +73,8 @@ SUBROUTINE make_block_2_1(Sp, Sol, l_enhance, l_verbose, ierr)
 !       Beginning of range
   REAL (RealK) :: wave_length_end
 !       End of range
-
+  REAL (RealK) :: response_0
+!       Value of instrument response at given wavenumber
 
 ! Functions called:
   REAL (RealK), EXTERNAL :: trapezoid
@@ -154,6 +160,27 @@ SUBROUTINE make_block_2_1(Sp, Sol, l_enhance, l_verbose, ierr)
         x(j-i_short+2)=Sol%wavelength(j)
         y(j-i_short+2)=Sol%irrad(j)
       ENDDO
+
+!     Weight the irradiance values with the filter function
+      IF (l_filter) THEN
+        DO j=1, n_points_band
+          CALL spline_evaluate(ierr, filter%n_pts, &
+            filter%wavenumber, filter%response, filter%d2_response, &
+            1.0_RealK/x(j), response_0)
+          IF (ierr == i_err_range) THEN
+!           The filter function is taken to be 0 outside 
+!           the explicit range. We therefore zero the response and
+!           recover from the error.
+            response_0 = 0.0_RealK
+            ierr = i_normal
+          ENDIF
+          IF (ierr /= i_normal) THEN
+            IF (l_verbose) WRITE(*, '(a)') 'Error in call to spline_evaluate'
+            RETURN
+          END IF
+          y(j) = y(j) * response_0
+        ENDDO
+      ENDIF
 
 !     Integrate across the band and normalize by the total irradiance.
       Sp%Solar%solar_flux_band(i)=(trapezoid(n_points_band, x, y) &

@@ -1,5 +1,6 @@
 SOURCE90_AUX =	aerosol_profile_pcf.f90 \
 		aerosol_representation_pcf.f90 \
+		filter_function.f90 \
 		method_merge_pcf.f90 \
 		qsat_wat.f90 \
 		qsat_alg_pcf.f90 \
@@ -22,7 +23,6 @@ SOURCE77_AUX =	angular_control.f \
 		extinction_profile.f \
 		find_dimen_cdl.f \
 		find_var_cdl.f \
-		filter_function.f \
 		fnc_density.f \
 		input_aerosol_cdl.f \
 		input_cloud_cdl.f \
@@ -46,7 +46,6 @@ SOURCE77_AUX =	angular_control.f \
 		qsat_gg_ice.f \
 		read_averaged_scatter.f \
 		read_cdl.f \
-		read_filter.f \
 		read_raw_profile.f \
 		read_samson_p_field.f \
 		read_genln2_flux.f \

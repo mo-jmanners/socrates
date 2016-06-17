@@ -28,7 +28,6 @@ PROGRAM l_run_cdl
   USE def_out,     ONLY: StrOut,                       deallocate_out
   USE dimensions_field_ucf
   USE dimensions_cdl_ucf
-  USE dimensions_obs_ucf
   USE dimensions_fixed_pcf
   USE def_std_io_icf
   USE rad_pcf
@@ -241,7 +240,7 @@ PROGRAM l_run_cdl
   dimen%nd_column                 = npd_column
   dimen%nd_max_order              = npd_max_order
   dimen%nd_direction              = npd_direction
-  dimen%nd_viewing_level          = npd_layer+1
+  dimen%nd_viewing_level          = npd_layer
   dimen%nd_brdf_basis_fnc         = npd_brdf_basis_fnc
   dimen%nd_brdf_trunc             = npd_brdf_trunc
   dimen%nd_profile_aerosol_prsc   = npd_profile_aerosol_prsc
@@ -422,7 +421,7 @@ PROGRAM l_run_cdl
       Spectrum%Basic%wavelength_short,                                  &
       Spectrum%Basic%wavelength_long,                                   &
       control%weight_band,                                              &
-      Spectrum%Dim%nd_band, npd_filter )
+      Spectrum%Dim%nd_band)
     IF (ierr /= i_normal) STOP
   ENDIF
 
@@ -625,13 +624,13 @@ PROGRAM l_run_cdl
       dimen%nd_profile_aerosol_prsc = dimen%nd_profile
     ELSE
       l_opt_overlay=.false.
-      dimen%nd_profile_aerosol_prsc   = 0
-      dimen%nd_opt_level_aerosol_prsc = 0
+      dimen%nd_profile_aerosol_prsc   = 1
+      dimen%nd_opt_level_aerosol_prsc = 1
     ENDIF
     aer%mr_source = ip_aersrc_classic_ron
   ELSE
-    dimen%nd_profile_aerosol_prsc   = 0
-    dimen%nd_opt_level_aerosol_prsc = 0
+    dimen%nd_profile_aerosol_prsc   = 1
+    dimen%nd_opt_level_aerosol_prsc = 1
     aer%mr_source = ip_aersrc_classic_roff
   ENDIF
 
@@ -681,8 +680,8 @@ PROGRAM l_run_cdl
       exist=l_exist)
   ENDIF
   IF (.NOT.l_exist) THEN
-    dimen%nd_profile_cloud_prsc   = 0
-    dimen%nd_opt_level_cloud_prsc = 0
+    dimen%nd_profile_cloud_prsc   = 1
+    dimen%nd_opt_level_cloud_prsc = 1
   ENDIF
 
   CALL allocate_cld_prsc(cld, dimen, spectrum)
@@ -740,9 +739,6 @@ PROGRAM l_run_cdl
     READ(iu_stdin, *) rad_mcica_sampling
     WRITE (iu_stdout,'(/a)') 'Reading McICA data file: ',mcica_data
     CALL read_mcica_data(mcica_data)
-    dimen%nd_subcol_gen = tot_subcol_gen
-    dimen%nd_subcol_req = subcol_need
-    CALL allocate_cld_mcica(cld, dimen, spectrum)
   ENDIF
 
 ! ------------------------------------------------------------------
@@ -970,6 +966,10 @@ PROGRAM l_run_cdl
       rad_mcica_sampling, rad_mcica_sigma,                              &
 !               Error information
       ierr)
+
+    dimen%nd_subcol_gen = tot_subcol_gen
+    dimen%nd_subcol_req = subcol_need
+    CALL allocate_cld_mcica(cld, dimen, spectrum)
 
 !   Fill MCICA variables in the cld input structure
     IF (control%isolir == IP_solar) THEN

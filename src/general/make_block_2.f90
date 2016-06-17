@@ -26,6 +26,7 @@ SUBROUTINE make_block_2(Spectrum, SolarSpec, ierr)
   USE def_solarspec
   USE rad_pcf
   USE dimensions_pp_ucf
+  USE def_inst_flt, ONLY: StrFiltResp
 
   IMPLICIT NONE
 
@@ -39,12 +40,14 @@ SUBROUTINE make_block_2(Spectrum, SolarSpec, ierr)
 ! Local Variables
   INTEGER :: ios
 !   IO status
-  CHARACTER (LEN=1) :: l_filter
-!   Character flag for filter function
   CHARACTER (LEN=1) :: char_yn
 !   Character response variable
   LOGICAL :: l_enhance
 !   Enhance outer bands
+  LOGICAL :: l_filter
+!   Flag for filter function
+  TYPE (StrFiltResp) :: filter
+!   Instrumental response function
 
   IF (ALLOCATED(Spectrum%Solar%solar_flux_band)) &
       DEALLOCATE(Spectrum%Solar%solar_flux_band)
@@ -52,12 +55,17 @@ SUBROUTINE make_block_2(Spectrum, SolarSpec, ierr)
 
   WRITE(*, '(/A)') 'Is a filter function required (Y/N)?'
   DO
-    READ(*, *, IOSTAT=ios) l_filter
-    IF (ios /= 0) THEN
-      WRITE(*, '(A)') '***error: unrecognized response'
-      WRITE(*, '(A)') 'Please re-enter.'
-    ELSE
+    READ(*, '(a)') char_yn
+    IF ( (char_yn == 'Y').OR.(char_yn == 'y') ) THEN
+      CALL read_instrument_response_90(filter, ierr)
+      l_filter=.TRUE.
       EXIT
+    ELSE IF ( (char_yn == 'N').OR.(char_yn == 'n') ) THEN
+      l_filter=.FALSE.
+      EXIT
+    ELSE
+      WRITE(*, '(a)') '+++ Unrecognised response: '
+      WRITE(*, '(a)') 'Please re-type.'
     END IF
   END DO
 
@@ -87,19 +95,7 @@ SUBROUTINE make_block_2(Spectrum, SolarSpec, ierr)
     END IF
   END DO
 
-  IF ((l_filter == 'Y').OR.(l_filter == 'y')) THEN
-    CALL make_block_2_2(ierr, &
-      Spectrum%Basic%n_band, &
-      Spectrum%Basic%wavelength_short, &
-      Spectrum%Basic%wavelength_long, &
-      Spectrum%Basic%l_present(14), &
-      Spectrum%Basic%n_band_exclude, &
-      Spectrum%Basic%index_exclude, &
-      SolarSpec, l_enhance, &
-      Spectrum%Solar%solar_flux_band, &
-      Spectrum%Basic%l_present(2) )
-  ELSE
-    CALL make_block_2_1(Spectrum, SolarSpec, l_enhance, .TRUE., ierr)
-  END IF
+  CALL make_block_2_1(Spectrum, SolarSpec, filter, &
+    l_filter, l_enhance, .TRUE., ierr)
 
 END SUBROUTINE make_block_2

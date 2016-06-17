@@ -17,7 +17,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    if (len(sys.argv) > 1):
+    if (len(sys.argv) > 2):
+        filename = sys.argv[1]
+        filename2 = sys.argv[2]
+        dgs2 = Dataset(filename2)
+    elif (len(sys.argv) > 1):
         filename = sys.argv[1]
     else:
         raise RuntimeError('please enter a file name')
@@ -34,6 +38,9 @@ n_lat = len(lat)
 layers= len(p)
 
 var = dgs.variables[name][:]
+if (len(sys.argv) > 2):
+    var2 = dgs2.variables[name][:]
+    var = var - var2
 
 try:
     width     = dgs.variables['bandwidth'][:]
@@ -59,18 +66,20 @@ else:
     ax1.set_title('Average profile')
     ax1.set_xlabel(name)
     ax1.set_ylabel('Approx height (km)')
-    wn = 0.5e-2/wl_short + 0.5e-2/wl_long 
+    wn = 0.5e-2/wl_short + 0.5e-2/wl_long
+    wl = 0.5e6*(wl_short + wl_long)
     toa_spec = np.zeros(n_channel)
     surf_spec = np.zeros(n_channel)
     for ch in range(0, n_channel):
-        toa_spec[ch]  = np.sum(var[ch,0,       :,:])/(width[ch]*1e9*n_lon*n_lat)
-        surf_spec[ch] = np.sum(var[ch,layers-1,:,:])/(width[ch]*1e9*n_lon*n_lat)
+        toa_spec[ch]  = np.sum(var[ch,0,       :,:])/(width[ch]*n_lon*n_lat)
+        surf_spec[ch] = np.sum(var[ch,layers-1,:,:])/(width[ch]*n_lon*n_lat)
     ax2 = fig.add_subplot(122)
-    ax2.plot(wn, toa_spec, color='blue', label='TOA')
-    ax2.plot(wn, surf_spec, color='green', label='Surface')
+    ax2.plot(wl, toa_spec, color='blue', label='TOA')
+    ax2.plot(wl, surf_spec, color='green', label='Surface')
+    ax2.set_xscale('log')
     ax2.set_title('TOA & surface spectrum')
-    ax2.set_xlabel('Wavenumber (cm-1)')
-    ax2.set_ylabel('Flux (Wm-2nm-1)')
+    ax2.set_xlabel('Wavelength (micron)')
+    ax2.set_ylabel('Flux (Wm-2m-1)')
     plt.legend()
 
 plt.tight_layout()

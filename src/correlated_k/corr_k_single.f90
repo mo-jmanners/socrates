@@ -258,7 +258,7 @@ SUBROUTINE corr_k_single &
   INTEGER, Allocatable :: map(:), gmap(:), pmap(:)
 !   Mapping array in frequency space used to order the absorption
 !   coefficients
-  REAL  (RealK), Allocatable :: wgt(:), wgt_sum(:)
+  REAL  (RealK), Allocatable :: wgt(:), wgt_sum(:), wgt_ref(:)
 !   Weightings at different frequencies
   REAL  (RealK), Allocatable :: wgt_k(:)
 !   Product of weighting and absorption coefficients
@@ -355,8 +355,9 @@ SUBROUTINE corr_k_single &
   REAL  (RealK) :: rms_residual
 !   R.m.s. residual error in transmission
 
-  LOGICAL :: debug = .FALSE.
-!  LOGICAL :: debug = .TRUE.
+  LOGICAL :: l_debug = .FALSE.
+!  LOGICAL :: l_debug = .TRUE.
+  LOGICAL :: l_output_reference_weight = .FALSE.
 
 !
 ! Functions called:
@@ -953,6 +954,9 @@ SUBROUTINE corr_k_single &
           CALL apply_response_int
 
           kabs=kabs_all(1:n_nu,ipt)
+          IF (ipt == ipt_ref) THEN
+            wgt_ref(1:n_nu) = nu_inc * wgt(1:n_nu)
+          END IF
 
 !         Perform the appropriate fits.
           IF (l_fit_self_continuum) THEN
@@ -1058,6 +1062,7 @@ SUBROUTINE corr_k_single &
     ENDIF
     
     IF (.NOT.l_lbl_exist) CALL output_lbl_band_cdf
+    DEALLOCATE(wgt_ref)
     DEALLOCATE(nu_wgt)
     DEALLOCATE(kabs_all)
 !
@@ -1330,6 +1335,7 @@ CONTAINS
       ENDIF
     ENDDO
     ALLOCATE(kabs_all(n_nu,n_pt_pair))
+    ALLOCATE(wgt_ref(n_nu))
     ALLOCATE(wgt(n_nu))
     ALLOCATE(kabs(n_nu))
     ALLOCATE(map(n_nu))
@@ -1975,7 +1981,7 @@ CONTAINS
       DO i=2,n_p-1
         index_k_ref=index_pt_ref(i)
 
-        IF (debug) &
+        IF (l_debug) &
           print*,'Fitting 2 scaling functions split at pressure: ', &
           p_calc(index_k_ref)
         
@@ -2290,6 +2296,12 @@ CONTAINS
     CALL nf(nf90_put_att(ncidout_lbl, varid, 'units', 'm-1'))
     CALL nf(nf90_put_att(ncidout_lbl, varid, 'step', nu_inc_0))
 
+    IF (l_output_reference_weight) THEN
+      CALL nf(nf90_def_var(ncidout_lbl, 'wgt', NF90_FLOAT, dimid1, varid))
+      CALL nf(nf90_put_att(ncidout_lbl, varid, 'title', 'weight'))
+      CALL nf(nf90_put_att(ncidout_lbl, varid, 'long_name', 'reference weight'))
+    END IF
+
     CALL nf(nf90_def_var(ncidout_lbl, 'kabs', NF90_FLOAT, &
       (/dimid1,dimid2/), varid))
     CALL nf(nf90_put_att(ncidout_lbl, varid, 'title', 'absorption' ))
@@ -2313,6 +2325,11 @@ CONTAINS
     CALL nf(nf90_inq_varid(ncidout_lbl,'nu',varid))
     CALL nf(nf90_put_var(ncidout_lbl,varid,nu_wgt, &
       start=(/n_nu_written+1/), count=(/n_nu/)))
+    IF (l_output_reference_weight) THEN
+      CALL nf(nf90_inq_varid(ncidout_lbl,'wgt',varid))
+      CALL nf(nf90_put_var(ncidout_lbl,varid,wgt_ref, &
+        start=(/n_nu_written+1/), count=(/n_nu/)))
+    END IF
     CALL nf(nf90_inq_varid(ncidout_lbl,'kabs',varid))
     CALL nf(nf90_put_var(ncidout_lbl,varid,kabs_all, &
       start=(/n_nu_written+1, 1/), count=(/n_nu,n_pt_pair/)))

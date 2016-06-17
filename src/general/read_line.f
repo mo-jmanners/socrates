@@ -94,7 +94,13 @@
           goto 2
         ENDIF
       ENDIF
-!
+
+      IF (line(1:2).eq.'0*') THEN
+        n_abs_band=0
+        READ(line(3:), fmt='(i5)', iostat=ios) i_abs_band(1)
+        RETURN
+      END IF
+
 !     Check whether concatenation is required.
       END=80
 3     if (line(end:end).eq.' ') then
@@ -150,7 +156,7 @@
                 WRITE(iu_err, '(/a)')
      &            '+++ erroneous input: a number is too large: '
                 IF (lock_code(.true.)) THEN
-          ierr=i_err_fatal
+                  ierr=i_err_fatal
                   RETURN
                 ELSE
                   WRITE(iu_err, '(a/)')
@@ -172,7 +178,7 @@
                 WRITE(iu_err, '(/a)')
      &            '+++ erroneous input:'
                 IF (lock_code(.true.)) THEN
-          ierr=i_err_fatal
+                  ierr=i_err_fatal
                   RETURN
                 ELSE
                   WRITE(iu_err, '(a/)')

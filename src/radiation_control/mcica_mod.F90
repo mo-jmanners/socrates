@@ -21,9 +21,6 @@ MODULE mcica_mod
 
 ! Variables Required for using MCICA scheme.
 
-  INTEGER :: index_subcol
-!     The index of the current subcolumn
-
   INTEGER :: ipph
 !     Plane-parallel homogeneous flag
 
@@ -39,26 +36,8 @@ MODULE mcica_mod
   INTEGER,  ALLOCATABLE :: lw_subcol_k(:,:)
 !     Number of subcolumns for each k_term in each band.
 
-  INTEGER,  ALLOCATABLE :: subcol_k(:,:)
-!     Number of subcolumns for each k_term in each band.
-
-  INTEGER, ALLOCATABLE :: first_subcol_k(:,:)
-!     The first subcolumn each k-term sees,  required to prevent each
-!     band seeing only the same first few columns.
-
-  INTEGER, ALLOCATABLE :: subcol_band(:)
-!     Number of subcolumns for each band (i.e. the sum of the number of 
-!     subcolumns for each k-term in that band)
-
-  INTEGER, ALLOCATABLE :: first_subcol_band(:)
-!     The first subcolumn each band sees,  required to prevent each
-!     band seeing only the same first few columns.
-
   REAL, ALLOCATABLE  ::  frac_cloudy_full(:)
 !     fraction of the profile which is cloudy, full array
-
-  REAL, ALLOCATABLE  ::  frac_cloudy(:)
-!     fraction of the profile which is cloudy
 
   INTEGER, ALLOCATABLE  ::  ncldy(:)
 !     number of cloudy sub-columns in each profile
@@ -69,9 +48,6 @@ MODULE mcica_mod
   REAL, ALLOCATABLE  ::  cic_sub_full(:,:,:)
 !     Value of cloud ice water content for each sub-column
 
-  REAL, ALLOCATABLE  ::  c_sub(:,:,:,:)
-!     Value of condensate content for each sub-column
-
   INTEGER ::  subcol_need=59
 !     Number of cloudy sub-columns required (i.e. MAX of SW and LW)
   INTEGER ::  subcol_need_single
@@ -79,10 +55,11 @@ MODULE mcica_mod
   INTEGER ::  subcol_need_optimal
 !     Number of cloudy sub-columns required for optimal sampling
 
+! Order of sub-columns points to either SW or LW. (Sub-columns are 
+! rearranged so that each sub-column is equivalently as important  
+! in the LW as in the SW.)
   INTEGER, ALLOCATABLE ::  sw_subcol_reorder(:)
-!     Order of sub-columns points to either SW or LW. (Sub-columns are 
-!     rearranged so that each sub-column is equivalently as important  
-!     in the LW as in the SW
+!     SW order of sub-columns
 
   INTEGER, ALLOCATABLE ::  lw_subcol_reorder(:)
 !     LW order of sub-columns
@@ -92,9 +69,6 @@ MODULE mcica_mod
 
   INTEGER, ALLOCATABLE ::  lw_subcol_reorder_optimal(:)
 !     LW order of sub-columns (for optimal sampling)
-
-  INTEGER, ALLOCATABLE ::  subcol_reorder(:)
-!     SW order of sub-columns
 
   INTEGER, PARAMETER :: ip_mcica_full_sampling = 0
 !     Each k-term "sees" every sub-column
@@ -123,11 +97,6 @@ MODULE mcica_mod
 !     Distribution of normalised condensate amount as a function of
 !     cumulative probability and relative standard deviation.
 
-  LOGICAL :: l_avg_phase_fnc = .FALSE.
-
-!$OMP THREADPRIVATE (subcol_k, subcol_reorder, c_sub,                   &
-!$OMP&               frac_cloudy, subcol_band,                          &
-!$OMP&               first_subcol_band, first_subcol_k,index_subcol)
 
   CHARACTER(LEN=*), PARAMETER, PRIVATE :: ModuleName='MCICA_MOD'
 

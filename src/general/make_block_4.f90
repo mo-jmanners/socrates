@@ -6,31 +6,21 @@
 !
 !+ Subroutine to make spectral blocks of type 4.
 !
-SUBROUTINE make_block_4 &
-!
-(Spectrum, type_index, l_interactive, ierr)
-!
 ! Description:
 !   This routine assigns gaseous absorbers to specific bands.
 !
-! Method:
-!   Straightforward.
-!
-!- End of header
-!
-!
-! Modules to set types of variables:
+!- ----------------------------------------------------------------------------
+SUBROUTINE make_block_4(Spectrum, type_index, l_interactive, ierr)
+
   USE realtype_rd
   USE def_spectrum
   USE def_std_io_icf
   USE gas_list_pcf, ONLY : npd_gases
   USE error_pcf
-!
-!
+
   IMPLICIT NONE
-!
-!
-!
+
+
 ! Dummy arguments
   INTEGER, Intent(IN) :: type_index(npd_gases)
 !   Indices of each gas type
@@ -40,11 +30,8 @@ SUBROUTINE make_block_4 &
 !   Spectral data
   INTEGER, Intent(INOUT) :: ierr
 !   Error flag
-!
-!
+
 ! Local variables
-!
-!
   CHARACTER (LEN=35), Parameter :: prompt = &
     'identifiers of absorbers in band '
 !   Prompt for input
@@ -61,15 +48,14 @@ SUBROUTINE make_block_4 &
 !   Pointer to basic components of the spectrum
   TYPE (StrSpecGas), Pointer :: SpGas
 !   Pointer to gaseous within the spectrum
-!
-!
-!
+
+
   SpDim   => Spectrum%Dim
   ALLOCATE(Spectrum%Gas%n_band_absorb(SpDim%nd_band))
   ALLOCATE(Spectrum%Gas%index_absorb(SpDim%nd_species, SpDim%nd_band))
   SpBasic => Spectrum%Basic
   SpGas   => Spectrum%Gas
-!
+
 ! Obtain the input data.
   WRITE(iu_stdout, '(//A, /A)') &
     'For each band specify the type numbers of the absorbers', &
@@ -77,14 +63,20 @@ SUBROUTINE make_block_4 &
   WRITE(iu_stdout, '(A, /A/)') &
     'To continue input on the next line terminate the line with an &.', &
     'enter ''0'' if there is no gaseous absorption in the band.'
-!
-  DO i=1, SpBasic%n_band
-!
+
+  i = 0
+  DO
+    i = i + 1
     DO
       CALL read_line(ierr, i, prompt, SpDim%nd_species, &
         SpGas%n_band_absorb(i), i_list)
       IF (ierr /= i_normal) RETURN
-!
+      IF ((SpGas%n_band_absorb(i) == 0).AND.(i_list(1) > 0)) THEN
+        SpGas%n_band_absorb(i+1:i+i_list(1)-1) = 0
+        i = i + i_list(1) - 1
+        EXIT
+      END IF
+
       j=1
       DO
         IF (j > SpGas%n_band_absorb(i)) EXIT
@@ -103,13 +95,10 @@ SUBROUTINE make_block_4 &
         ENDIF
         j = j + 1
       ENDDO
-!
+
       IF (j > SpGas%n_band_absorb(i)) EXIT
     ENDDO
-!
+    IF (i >= SpBasic%n_band) EXIT
   ENDDO
-!
-!
-!
-  RETURN
+
 END SUBROUTINE make_block_4

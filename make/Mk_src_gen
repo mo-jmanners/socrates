@@ -45,7 +45,6 @@ SOURCE77_GEN = 	back_substitute.f \
 		inner_bracket.f \
 		integrate_spline.f \
 		lock_code.f \
-		make_block_2_2.f \
 		make_block_6_1.f \
 		make_block_6_2.f \
 		non_blank.f \
