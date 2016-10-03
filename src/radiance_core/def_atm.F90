@@ -46,6 +46,8 @@ TYPE StrAtm
 ! Thermodynamic Fields:
   REAL (RealK), ALLOCATABLE :: mass(:, :)
 !   Column masses in each layer
+  REAL (RealK), ALLOCATABLE :: density(:, :)
+!   Representative density in each layer
   REAL (RealK), ALLOCATABLE :: p(:, :)
 !   Pressures at the centres of layers
   REAL (RealK), ALLOCATABLE :: p_level(:, :)
@@ -93,6 +95,10 @@ IF (.NOT. ALLOCATED(atm%mass))                                                 &
   ALLOCATE(atm%mass          ( dimen%nd_profile,                               &
                                dimen%nd_layer                                ))
 
+IF (.NOT. ALLOCATED(atm%density))                                              &
+  ALLOCATE(atm%density       ( dimen%nd_profile,                               &
+                               dimen%nd_layer                                ))
+
 IF (.NOT. ALLOCATED(atm%p))                                                    &
   ALLOCATE(atm%p             ( dimen%nd_profile,                               &
                                dimen%nd_layer                                ))
@@ -127,6 +133,7 @@ IF (ALLOCATED(atm%t_level))       DEALLOCATE(atm%t_level)
 IF (ALLOCATED(atm%p_level))       DEALLOCATE(atm%p_level)
 IF (ALLOCATED(atm%t))             DEALLOCATE(atm%t)
 IF (ALLOCATED(atm%p))             DEALLOCATE(atm%p)
+IF (ALLOCATED(atm%density))       DEALLOCATE(atm%density)
 IF (ALLOCATED(atm%mass))          DEALLOCATE(atm%mass)
 IF (ALLOCATED(atm%viewing_level)) DEALLOCATE(atm%viewing_level)
 IF (ALLOCATED(atm%direction))     DEALLOCATE(atm%direction)

@@ -11,14 +11,9 @@
 !   suitable "amount" of continuum incorporating a broadening
 !   density.
 !
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiance Core
-!
 !- ---------------------------------------------------------------------
-SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
-     , p, t, i_top                                                      &
-     , density, molar_density_water, molar_density_frn                  &
-     , water_frac                                                       &
+SUBROUTINE rescale_continuum(control, n_profile, n_layer, i_continuum   &
+     , p, t, density, water_frac                                        &
      , amount_continuum                                                 &
      , i_fnc                                                            &
      , p_reference, t_reference, scale_parameter                        &
@@ -29,13 +24,17 @@ SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
 
   USE realtype_rd, ONLY: RealK
   USE rad_pcf
-  USE rad_ccf, ONLY: n2_mass_frac
+  USE rad_ccf, ONLY: n2_mass_frac, mol_weight_air, repsilon
+  USE def_control, ONLY: StrCtrl
   USE vectlib_mod, ONLY : rtor_v
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
 
   IMPLICIT NONE
 
+
+! Control options:
+  TYPE(StrCtrl), INTENT(IN)  :: control
 
 ! Sizes of dummy arrays.
   INTEGER, INTENT(IN) ::                                                &
@@ -55,10 +54,8 @@ SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
 !       Number of layers
     , i_continuum                                                       &
 !       Continuum type
-    , i_fnc                                                             &
+    , i_fnc
 !       Scaling function
-    , i_top
-!       Top `index' of arrays
   REAL (RealK), INTENT(IN) ::                                           &
       water_frac(nd_profile, nd_layer)                                  &
 !       Mass fraction of water
@@ -68,10 +65,6 @@ SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
 !       Temperature
     , density(nd_profile, nd_layer)                                     &
 !       Overall density
-    , molar_density_water(nd_profile, nd_layer)                         &
-!       Molar density of water vapour
-    , molar_density_frn(nd_profile, nd_layer)                           &
-!       Molar density of foreign species
     , p_reference                                                       &
 !       Reference pressure
     , t_reference                                                       &
@@ -83,18 +76,19 @@ SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
 !       Amount of continuum
 
 ! Local variables.
-  INTEGER ::                                                            &
-      l                                                                 &
-!       Loop variable
-    , i
-!       Loop variable
-  REAL (RealK) :: pwk_in(n_profile,n_layer-i_top+1)  ! Workspace
-  REAL (RealK) :: pwk(n_profile,n_layer-i_top+1)  ! Workspace
-  REAL (RealK) :: twk_in(n_profile,n_layer-i_top+1)  ! Workspace
-  REAL (RealK) :: twk(n_profile,n_layer-i_top+1)  ! Workspace
-  REAL (RealK) :: sp1(n_profile,n_layer-i_top+1)  ! Workspace
-  REAL (RealK) :: sp2(n_profile,n_layer-i_top+1)  ! Workspace
-  INTEGER :: n_input      ! No. of inputs for rtor_v function
+  INTEGER :: l, i
+!       Loop variables
+  REAL (RealK) :: molar_density_water(nd_profile, nd_layer)
+!       Molar density of water vapour
+  REAL (RealK) :: pwk_in(n_profile,n_layer)
+  REAL (RealK) :: pwk(n_profile,n_layer)
+  REAL (RealK) :: twk_in(n_profile,n_layer)
+  REAL (RealK) :: twk(n_profile,n_layer)
+  REAL (RealK) :: sp1(n_profile,n_layer)
+  REAL (RealK) :: sp2(n_profile,n_layer)
+!       Workspace
+  INTEGER :: n_input
+!       No. of inputs for rtor_v function
 
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
@@ -105,16 +99,16 @@ SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
 
   IF (lhook) CALL dr_hook(RoutineName,zhook_in,zhook_handle)
 
-  DO i=1, n_layer-i_top+1
+  DO i=1, n_layer
     DO l=1, n_profile
       sp1(l,i)=scale_parameter(1)
       sp2(l,i)=scale_parameter(2)
     END DO
   END DO
-  n_input=(n_layer-i_top+1)*n_profile
-  DO i=   1, n_layer-i_top+1
+  n_input=(n_layer)*n_profile
+  DO i=   1, n_layer
     DO l=1, n_profile
-      pwk_in(l,i)=p(l, i_top+i-1)/p_reference
+      pwk_in(l,i)=p(l, i)/p_reference
     END DO
   END DO
 
@@ -122,26 +116,26 @@ SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
 
   IF (i_fnc == ip_scale_power_law) THEN
 
-    DO i=   1, n_layer-i_top+1
+    DO i=   1, n_layer
       DO l=1, n_profile
-        twk_in(l,i)=t(l, i_top+i-1)/t_reference
+        twk_in(l,i)=t(l, i)/t_reference
       END DO
     END DO
 
     CALL rtor_v(n_input,twk_in,sp2,twk)
 
-    DO i=i_top, n_layer
+    DO i=1, n_layer
       DO l=1, n_profile
-        amount_continuum(l, i)=pwk(l,i-i_top+1)*twk(l,i-i_top+1)
+        amount_continuum(l, i)=pwk(l,i)*twk(l,i)
       END DO
     END DO
 
   ELSE IF(i_fnc == ip_scale_power_quad) THEN
 
-    DO i=i_top, n_layer
+    DO i=1, n_layer
       DO l=1, n_profile
         amount_continuum(l, i)                                          &
-           =pwk(l,i-i_top+1)                                            &
+           =pwk(l,i)                                                    &
            *(1.0e+00+scale_parameter(2)*(t(l, i)                        &
            /t_reference-1.0e+00)                                        &
            +scale_parameter(3)*(t(l, i)                                 &
@@ -153,17 +147,30 @@ SUBROUTINE rescale_continuum(n_profile, n_layer, i_continuum            &
   IF (i_continuum == ip_self_continuum) THEN
     DO i=1, n_layer
       DO l=1, n_profile
+        molar_density_water(l, i)=density(l, i)                         &
+          *water_frac(l, i)/(repsilon*mol_weight_air)
         amount_continuum(l, i)=amount_continuum(l, i)                   &
           *molar_density_water(l, i)*water_frac(l, i)
       END DO
     END DO
   ELSE IF (i_continuum == ip_frn_continuum) THEN
-    DO i=1, n_layer
-      DO l=1, n_profile
-        amount_continuum(l, i)=amount_continuum(l, i)                   &
-          *molar_density_frn(l, i)*water_frac(l, i)
+    IF (control%l_mixing_ratio) THEN
+      ! In this case density and mass are for the dry component
+      DO i=1, n_layer
+        DO l=1, n_profile
+          amount_continuum(l, i)=amount_continuum(l, i)                 &
+            *density(l, i)*water_frac(l, i)/mol_weight_air
+        END DO
       END DO
-    END DO
+    ELSE
+      DO i=1, n_layer
+        DO l=1, n_profile
+          amount_continuum(l, i)=amount_continuum(l, i)                 &
+            *density(l, i)*water_frac(l, i)*(1.0_RealK-water_frac(l, i))&
+            /mol_weight_air
+        END DO
+      END DO
+    END IF
   ELSE IF (i_continuum == ip_n2_continuum) THEN
     DO i=1, n_layer
       DO l=1, n_profile

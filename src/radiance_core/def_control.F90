@@ -243,6 +243,8 @@ TYPE StrCtrl
   LOGICAL :: l_subsample                                          = .FALSE.
 !   Flag to apply spatial subsampling (for satellite footprints)
 !   in radiation.
+  LOGICAL :: l_mixing_ratio                                       = .FALSE.
+!   True if mixing ratios are with respect to dry mass
 
 
 ! Band-by-band control options

@@ -150,8 +150,6 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 !       Flag to `include' gaseous absorption in a particular band
     , l_moist_aerosol                                                          &
 !       Flag for moist aerosol
-    , l_aerosol_density                                                        &
-!       Flag for calculation of atmospheric density for aerosols
     , l_clear_band
 !       Flag to calculate clear-sky fluxes for this band
 
@@ -200,15 +198,6 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
     , diffuse_alb_basis(dimen%nd_brdf_basis_fnc)
 !       The diffuse albedo of isotropic radiation for each
 !       basis function
-
-! Atmospheric densities:
-  REAL (RealK) ::                                                              &
-      density(dimen%nd_profile, dimen%nd_layer)                                &
-!       Overall density
-    , molar_density_water(dimen%nd_profile, dimen%nd_layer)                    &
-!       Molar density of water
-    , molar_density_frn(dimen%nd_profile, dimen%nd_layer)
-!       Molar density of foreign species
 
 ! Fields for moist aerosols:
   REAL (RealK) ::                                                              &
@@ -363,10 +352,6 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 !   Maximum number of ESFT terms needed in each band (for
 !   arrays when using random overlap with resorting and rebinning)
 
-! Functions called:
-  LOGICAL, EXTERNAL :: l_cloud_density
-!       Flag for calculation of atmospheric densities for clouds
-
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
   REAL(KIND=jprb)               :: zhook_handle
@@ -518,17 +503,6 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
   END IF
 
 
-! Check whether the densities will be needed for unparametrized aerosols.
-  l_aerosol_density=.FALSE.
-  IF (control%l_aerosol) THEN
-    DO j=1, spectrum%aerosol%n_aerosol
-      l_aerosol_density=l_aerosol_density                                      &
-        .OR. (spectrum%aerosol%i_aerosol_parm(j) == ip_aerosol_param_moist)    &
-        .OR. (spectrum%aerosol%i_aerosol_parm(j) == ip_aerosol_unparametrized)
-    END DO
-  END IF
-
-
 
 ! Initial calculations for clouds:
 
@@ -623,28 +597,6 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 
   END IF
 
-
-! Calculate the atmospheric densities:
-  IF ( control%l_continuum .OR. l_aerosol_density ) THEN
-! DEPENDS ON: calculate_density
-    CALL calculate_density(atm%n_profile, atm%n_layer, control%l_continuum     &
-      , atm%gas_mix_ratio(1, 1, i_pointer_water)                               &
-      , atm%p, atm%t, i_top                                                    &
-      , density, molar_density_water, molar_density_frn                        &
-      , dimen%nd_profile, dimen%nd_layer                                       &
-      )
-  ELSE IF ( control%l_cloud ) THEN
-! DEPENDS ON: l_cloud_density
-    IF (l_cloud_density(cld%n_condensed, i_phase_cmp, l_cloud_cmp              &
-                     , cld%i_condensed_param, dimen%nd_cloud_component ) ) THEN
-      CALL calculate_density(atm%n_profile, atm%n_layer                        &
-        , control%l_continuum, atm%gas_mix_ratio(1, 1, i_pointer_water)        &
-        , atm%p, atm%t, i_top                                                  &
-        , density, molar_density_water, molar_density_frn                      &
-        , dimen%nd_profile, dimen%nd_layer                                     &
-        )
-    END IF
-  END IF
 
 ! Calculate temperature and pressure interpolation factor for ESFT
   IF ( ANY(spectrum%gas%i_scale_fnc(                                           &
@@ -862,10 +814,9 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           k_continuum_mono(i_continuum) =                                      &
             spectrum%cont%k_cont(i_band, i_continuum)
 ! DEPENDS ON: rescale_continuum
-          CALL rescale_continuum(atm%n_profile, atm%n_layer, i_continuum       &
-            , atm%p, atm%t, i_top                                              &
-            , density, molar_density_water, molar_density_frn                  &
-            , atm%gas_mix_ratio(1, 1, i_pointer_water)                         &
+          CALL rescale_continuum(control, atm%n_profile, atm%n_layer           &
+            , i_continuum, atm%p, atm%t                                        &
+            , atm%density, atm%gas_mix_ratio(1, 1, i_pointer_water)            &
             , amount_continuum(1, 1, i_continuum)                              &
             , spectrum%cont%i_scale_fnc_cont(i_band, i_continuum)              &
             , spectrum%cont%p_ref_cont(i_continuum, i_band)                    &
@@ -960,7 +911,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 
 ! DEPENDS ON: grey_opt_prop
     CALL grey_opt_prop(ierr                                                    &
-      , control, atm%n_profile, atm%n_layer, atm%p, atm%t, density             &
+      , control, atm%n_profile, atm%n_layer, atm%p, atm%t, atm%density         &
       , n_order_phase, l_solar_phf, atm%n_direction, cos_sol_view              &
       , spectrum%rayleigh%rayleigh_coeff(i_band)                               &
       , l_grey_cont, n_continuum, i_continuum_pointer                          &

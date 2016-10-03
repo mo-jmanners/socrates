@@ -33,7 +33,7 @@ PROGRAM l_run_cdl
   USE rad_pcf
   USE gas_list_pcf
   USE input_head_pcf
-  USE rad_ccf, ONLY: seconds_per_day, grav_acc, cp_air_dry
+  USE rad_ccf, ONLY: seconds_per_day, grav_acc, cp_air_dry, r, c_virtual
   USE mcica_mod
 
   IMPLICIT NONE
@@ -937,7 +937,7 @@ PROGRAM l_run_cdl
 
 
 ! ------------------------------------------------------------------
-! Determination of the mass in each layer.
+! Determination of the mass and density in each layer.
 ! ------------------------------------------------------------------
   IF (l_vert_coord_level) THEN
     DO i=atm%n_layer, 1, -1
@@ -950,6 +950,20 @@ PROGRAM l_run_cdl
       '*** Error: No coordinates on the boundaries have been set.'
     STOP
   ENDIF
+  IF (Spectrum%Cont%index_water > 0) THEN
+    DO i=1, atm%n_layer
+      DO l=1, atm%n_profile
+        atm%density(l, i)=atm%p(l, i)/(r*atm%t(l, i)*(1.0e+00_RealK     &
+          + c_virtual*atm%gas_mix_ratio(l, i, Spectrum%Cont%index_water)))
+      END DO
+    END DO
+  ELSE
+    DO i=1, atm%n_layer
+      DO l=1, atm%n_profile
+        atm%density(l, i)=atm%p(l, i)/(r*atm%t(l, i))
+      END DO
+    END DO   
+  END IF
 
 
 ! ------------------------------------------------------------------
