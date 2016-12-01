@@ -22,10 +22,16 @@ MODULE def_solarspec
 !     Wavelength at which the spectral irradiance is specified
     REAL (RealK), POINTER :: irrad(:)
 !     Solar spectral irradiance in units of Wm-2.m-1
+    REAL (RealK), POINTER :: bandsize(:)
+!     Band size
+    REAL (RealK), POINTER :: bandbnds(:,:)
+!     Bounds of each band
     REAL (RealK) :: t_effective = solar_t_effective
 !     Effective solar temperature
     REAL (RealK) :: radius = solar_radius
 !     Radius at the photosphere
+    LOGICAL :: l_binned = .FALSE.
+!     Spectrum is either binned (.TRUE.) or point-values (.FALSE.)
 
   END TYPE StrSolarSpec
 

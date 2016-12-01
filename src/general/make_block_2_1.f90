@@ -65,6 +65,8 @@ SUBROUTINE make_block_2_1(Sp, Sol, filter, l_filter, l_enhance, l_verbose, ierr)
 !       Absicissae of wavelength
   REAL (RealK), ALLOCATABLE :: y(:)
 !       Ordinates of spectrum
+  REAL (RealK), ALLOCATABLE :: bw(:)
+!       Bandwidth of spectral bands
   REAL (RealK) :: irradiance_tail
 !       Irradiance in tail
   REAL (RealK) :: irradiance_tail_band
@@ -73,6 +75,11 @@ SUBROUTINE make_block_2_1(Sp, Sol, filter, l_filter, l_enhance, l_verbose, ierr)
 !       Beginning of range
   REAL (RealK) :: wave_length_end
 !       End of range
+  REAL (RealK) :: sol_wavelength_begin
+!       Beginning of solar spectrum
+  REAL (RealK) :: sol_wavelength_end
+!       End of solar spectrum
+
   REAL (RealK) :: response_0
 !       Value of instrument response at given wavenumber
 
@@ -85,16 +92,25 @@ SUBROUTINE make_block_2_1(Sp, Sol, filter, l_filter, l_enhance, l_verbose, ierr)
 !       Solar intensity at a given wavelength
 
 
-
 ! Calculate the total integrated irradiance of this spectrum.
-  total_solar_irradiance = &
-    trapezoid(Sol%n_points, Sol%wavelength, Sol%irrad)
+  SELECT CASE (Sol%l_binned)
+  CASE (.FALSE.)
+    total_solar_irradiance = &
+      trapezoid(Sol%n_points, Sol%wavelength, Sol%irrad)
+    sol_wavelength_begin = Sol%wavelength(1)
+    sol_wavelength_end   = Sol%wavelength(Sol%n_points)
+  CASE (.TRUE.)
+    total_solar_irradiance = SUM(Sol%bandsize * Sol%irrad)
+    sol_wavelength_begin = Sol%bandbnds(1,1)
+    sol_wavelength_end   = Sol%bandbnds(2,Sol%n_points)
+  END SELECT  
+  
   IF (l_verbose) WRITE(*, '(a,f16.9)') &
     'Total irradiance of solar spectrum = ', total_solar_irradiance
 
 ! Add on the tail of the distribution using a rayleigh-jeans law.
   irradiance_tail = &
-    rayleigh_jeans_tail(Sol, Sol%wavelength(Sol%n_points))
+    rayleigh_jeans_tail(Sol, sol_wavelength_end)
   total_solar_irradiance = total_solar_irradiance+irradiance_tail
   IF (l_verbose) WRITE(*, '(a,f16.9)') &
     'Total irradiance of Rayleigh-Jeans tail = ', irradiance_tail
@@ -118,48 +134,76 @@ SUBROUTINE make_block_2_1(Sp, Sol, filter, l_filter, l_enhance, l_verbose, ierr)
     wave_length_begin = Sp%Basic%wavelength_short(i)
     wave_length_end   = Sp%Basic%wavelength_long(i)
     IF (l_enhance .AND. i == i_first_band) THEN
-      wave_length_begin = min(Sol%wavelength(1), &
+      wave_length_begin = min(sol_wavelength_begin, &
                               wave_length_begin)
     END IF
     IF (l_enhance .AND. i == i_last_band) THEN
-      wave_length_end   = max(Sol%wavelength(Sol%n_points), &
+      wave_length_end   = max(sol_wavelength_end, &
                               wave_length_end)
     END IF
 
-    IF (wave_length_begin > Sol%wavelength(Sol%n_points)) THEN
+    IF (wave_length_begin > sol_wavelength_end) THEN
 !     The whole band is within the Rayleigh-Jeans tail so we set directly
       Sp%Solar%solar_flux_band(i)= &
         (rayleigh_jeans_tail(Sol, wave_length_begin) - &
          rayleigh_jeans_tail(Sol, wave_length_end)) &
         /total_solar_irradiance
     ELSE
-      IF (wave_length_end > Sol%wavelength(Sol%n_points)) THEN
+      IF (wave_length_end > sol_wavelength_end) THEN
 !       Part of the band is in the Rayleigh-Jeans tail
         irradiance_tail_band = &
           irradiance_tail - rayleigh_jeans_tail(Sol, wave_length_end)
-        wave_length_end = Sol%wavelength(Sol%n_points)
+        wave_length_end = sol_wavelength_end
       ELSE
         irradiance_tail_band = 0.0_RealK
       END IF
 
-      CALL inner_bracket(ierr, wave_length_begin, wave_length_end, &
-        Sol%n_points, Sol%wavelength, i_short, i_long)
-      IF (ierr /= i_normal) THEN
-        IF (l_verbose) WRITE(*, '(a)') 'Error in call to inner_bracket'
-        RETURN
-      END IF
 
-      n_points_band = 3+i_long-i_short
-      ALLOCATE(x(n_points_band))
-      ALLOCATE(y(n_points_band))
-      x(1) = wave_length_begin
-      y(1) = solar_intensity(x(1), Sol)
-      x(n_points_band) = wave_length_end
-      y(n_points_band) = solar_intensity(x(n_points_band), Sol)
-      DO j=i_short, i_long
-        x(j-i_short+2)=Sol%wavelength(j)
-        y(j-i_short+2)=Sol%irrad(j)
-      ENDDO
+      SELECT CASE (Sol%l_binned)
+      CASE (.FALSE.)
+        CALL inner_bracket(ierr, wave_length_begin, wave_length_end, &
+          Sol%n_points, Sol%wavelength, i_short, i_long)
+        IF (ierr /= i_normal) THEN
+          IF (l_verbose) WRITE(*, '(a)') 'Error in call to inner_bracket'
+          RETURN
+        END IF
+        n_points_band = 3+i_long-i_short
+        ALLOCATE(x(n_points_band))
+        ALLOCATE(y(n_points_band))
+        x(1) = wave_length_begin
+        y(1) = solar_intensity(x(1), Sol)
+        x(n_points_band) = wave_length_end
+        y(n_points_band) = solar_intensity(x(n_points_band), Sol)
+        DO j=i_short, i_long
+          x(j-i_short+2)=Sol%wavelength(j)
+          y(j-i_short+2)=Sol%irrad(j)
+        ENDDO
+        
+      CASE (.TRUE.)
+        DO i_short=1, Sol%n_points
+           IF (wave_length_begin <  Sol%bandbnds(2,i_short)) EXIT
+        END DO
+        DO i_long=Sol%n_points,1,-1
+           IF (wave_length_end   >  Sol%bandbnds(1,i_long)) EXIT
+        END DO
+        n_points_band = 1+i_long-i_short 
+        ALLOCATE(x(n_points_band))
+        ALLOCATE(y(n_points_band))
+        ALLOCATE(bw(n_points_band))
+        DO j=i_short, i_long
+          y(j-i_short+1)=Sol%irrad(j)
+          IF (j == i_short) THEN
+            bw(j-i_short+1) = Sol%bandbnds(2,j) - wave_length_begin
+            x(j-i_short+1)  = wave_length_begin + (bw(j-i_short+1)/2.0)
+          ELSE IF (j == i_long) THEN
+            bw(j-i_short+1) = wave_length_end - Sol%bandbnds(1,j)
+            x(j-i_short+1)  = wave_length_end - (bw(j-i_short+1)/2.0)
+          ELSE
+            bw(j-i_short+1)=Sol%bandsize(j)
+            x(j-i_short+1)=Sol%wavelength(j)
+          ENDIF
+        ENDDO
+      END SELECT
 
 !     Weight the irradiance values with the filter function
       IF (l_filter) THEN
@@ -182,10 +226,19 @@ SUBROUTINE make_block_2_1(Sp, Sol, filter, l_filter, l_enhance, l_verbose, ierr)
         ENDDO
       ENDIF
 
-!     Integrate across the band and normalize by the total irradiance.
-      Sp%Solar%solar_flux_band(i)=(trapezoid(n_points_band, x, y) &
-        +irradiance_tail_band)/total_solar_irradiance
-      DEALLOCATE(x,y)
+      SELECT CASE (Sol%l_binned)
+      CASE (.FALSE.)
+!       Integrate across the band and normalize by the total irradiance.
+        Sp%Solar%solar_flux_band(i)=(trapezoid(n_points_band, x, y) &
+          +irradiance_tail_band)/total_solar_irradiance
+        DEALLOCATE(x,y)
+      CASE (.TRUE.)
+!       Integrate across the band and normalize by the total irradiance.
+        Sp%Solar%solar_flux_band(i)=(SUM(bw * y) &
+          +irradiance_tail_band)/total_solar_irradiance
+        DEALLOCATE(x,y,bw)
+      END SELECT
+      
     ENDIF
   ENDDO
 

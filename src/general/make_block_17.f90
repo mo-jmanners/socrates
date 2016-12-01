@@ -63,7 +63,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
   INTEGER :: n_times, yearstart=0, monthstart, daystart
   INTEGER, ALLOCATABLE :: calyear(:), calmonth(:), calday(:)
   LOGICAL :: l_monthly
-  REAL (RealK), ALLOCATABLE :: tsi(:), ssi(:,:)
+  REAL (RealK), ALLOCATABLE :: tsi(:), ssi(:,:), wbinsize(:), wbinbnds(:,:)
   REAL (RealK) :: wavelength(2, Sp%Dim%nd_k_term, Sp%Dim%nd_band)
   REAL (RealK) :: wave_inc
 
@@ -334,6 +334,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
       CLOSE(iu_solar)
 
     CASE (6)
+      VSol%l_binned = .TRUE.
       ! Find the number of points in the spectrum.
       dim_name = 'wlen'
       CALL nf(nf90_inq_dimid(ncid, dim_name, dimid_wlen))
@@ -342,6 +343,8 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
 
       ALLOCATE(VSol%wavelength(VSol%n_points))
       ALLOCATE(VSol%irrad(     VSol%n_points))
+      ALLOCATE(VSol%bandsize(  VSol%n_points))
+      ALLOCATE(VSol%bandbnds(  2, VSol%n_points))
 
       scale_wv=1.0E-09_RealK ! nm to m
       scale_irr=1.0E+09_RealK ! Wm-2nm-1 to Wm-3
@@ -380,6 +383,19 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
       ALLOCATE(tsi(time_len))
       CALL nf(nf90_inq_varid(ncid, 'tsi', varid))
       CALL nf(nf90_get_var(ncid, varid, tsi))
+
+      ! Read the wbinsize
+      ALLOCATE(wbinsize(wlen_len))
+      CALL nf(nf90_inq_varid(ncid, 'wlenbinsize', varid))
+      CALL nf(nf90_get_var(ncid, varid, wbinsize))
+      VSol%bandsize = wbinsize * scale_wv
+
+      ! Read the wbinbnds
+      ALLOCATE(wbinbnds(2,wlen_len))
+      CALL nf(nf90_inq_varid(ncid, 'wlen_bnds', varid))
+      CALL nf(nf90_get_var(ncid, varid, wbinbnds))
+      VSol%bandbnds = wbinbnds * scale_wv
+      
 
       ! Find the ssi variable id
       ALLOCATE(ssi(1, wlen_len))
@@ -435,10 +451,14 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
       
       CALL nf(nf90_close(ncid))
       DEALLOCATE(ssi)
+      DEALLOCATE(wbinbnds)
+      DEALLOCATE(wbinsize)
       DEALLOCATE(tsi)
       DEALLOCATE(calday)
       DEALLOCATE(calmonth)
       DEALLOCATE(calyear)
+      DEALLOCATE(VSol%bandbnds)
+      DEALLOCATE(VSol%bandsize)
       DEALLOCATE(VSol%irrad)
       DEALLOCATE(VSol%wavelength)
 
