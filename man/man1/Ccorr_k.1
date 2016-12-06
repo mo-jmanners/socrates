@@ -10,7 +10,7 @@ Ccorr_k \fB\-D\fR \fIhitran\-par\-file\fR | \fB\-X\fR \fIhitran\-xsc\-file\fR
         [\fB\-k\fR] [\fB\-x\fR \fIfilename\fR] [\fB\-c\fR \fIwavenumber\fR] \fB\-i\fR \fIincrement\fR
         [\fB\-f\fR \fIfilename\fR] [\fB\-e\fR \fIname1\fR \fIname2\fR] [\fB\-C\fR \fIn1\fR \fIn2\fR \fIn3\fR] [\fB\-P\fR \fIn1\fR]
         \fB\+S\fR \fIfilename\fR \fB| \+p | \+d | \-u\fR
-        \fB\-o\fR \fIfilename\fR \fB\-m\fR \fIfilename\fR \fB\-L\fR \fIfilename\fR [\fB\-T\fR]
+        \fB\-o\fR \fIfilename\fR \fB\-m\fR \fIfilename\fR \fB\-L\fR \fIfilename\fR [\fB\-np\fR \fIomp_threads\fR] [\fB\-T\fR]
 
 .SH DESCRIPTION
 This program calculates correlated-k coefficients for prescribed
@@ -155,6 +155,10 @@ Pathname of monitoring file.
 .TP
 \fB\-L\fR \fIfilename\fR
 Pathname of LbL data file. This is a netCDF file containing the absorption coefficients at line-by-line resolution for each pressure/temperature pair. If the file does not exist it will be generated using data from the HITRAN database file. If the file alrady exists the data will be used directly for the correlated-k fits. Care should be taken to ensure that an existing file matches the wavenumber resolution and pressure/temperature pairs specified on the command line.
+
+.TP
+\fB\-np\fR \fIomp_threads\fR
+Number of OpenMP threads. Defaults to 1.
 
 .TP
 \fB\-T\fR

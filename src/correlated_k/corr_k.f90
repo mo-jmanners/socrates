@@ -42,6 +42,8 @@ PROGRAM corr_k
 !   Unit number for input of the LbL database in HITRAN format
   INTEGER :: ierr = i_normal
 !   Error flag
+  INTEGER :: ios
+!   I/O error status
   INTEGER :: n_pt_pair
 !   Number of pairs for pressure and temperature
   INTEGER :: n_p
@@ -59,6 +61,8 @@ PROGRAM corr_k
 !   Identifier of the type of residual to be minimized
   INTEGER :: i_scale_fnc
 !   Identifier of the scaling function used
+  INTEGER :: n_omp_threads
+!   Number of OpenMP threads to use
 !
   LOGICAL :: l_fit_line_data
 !   Flag requiring the fitting of line data
@@ -190,7 +194,8 @@ PROGRAM corr_k
        k_opt_self, k_opt_frn, &
        i_type_residual, i_scale_function, scale_vector, &
        scale_cont, &
-       iu_k_out, file_k, iu_monitor, file_monitor, file_lbl, ierr &
+       iu_k_out, file_k, iu_monitor, file_monitor, file_lbl, &
+       n_omp_threads, ierr &
       )
 !
       USE realtype_rd
@@ -235,6 +240,7 @@ PROGRAM corr_k
       INTEGER, Intent(IN) :: n_pp
       LOGICAL, Intent(IN) :: include_instrument_response
       TYPE  (StrFiltResp), Intent(IN) :: filter
+      INTEGER, Intent(IN) :: n_omp_threads
       INTEGER, Intent(INOUT) :: ierr
       INTEGER, Intent(IN) :: nd_k_term
       INTEGER, Intent(INOUT), Dimension(:) :: n_k
@@ -421,6 +427,26 @@ PROGRAM corr_k
   CLOSE(iu_k_out)
   CLOSE(iu_monitor)
 !
+! Aquire number of OpenMP threads to use
+  WRITE(iu_stdout, "(/A)") &
+    "Specify the number of OpenMP threads to use."
+  DO
+!
+    READ(iu_stdin, *, IOSTAT=ios) n_omp_threads
+!
+    IF ( ios == 0 .AND. n_omp_threads >= 1 ) THEN
+      EXIT
+    ELSE
+      WRITE(iu_err, '(/A)') '*** Error: Invalid input'
+      IF (l_interactive) THEN
+        WRITE(iu_stdout, '(/A)') 'Please re-enter.'
+      ELSE
+        STOP
+      ENDIF
+    ENDIF
+!
+  ENDDO
+!
 !
 !
   WRITE(*,"(a)")"==============================="
@@ -446,7 +472,8 @@ PROGRAM corr_k
     npd_k_term, n_k, w_k, k_ave, k_opt, &
     k_opt_self, k_opt_frn, &
     i_type_residual, i_scale_fnc, scale, scale_cont, &
-    iu_k_out, file_k, iu_monitor, file_monitor, file_lbl, ierr )
+    iu_k_out, file_k, iu_monitor, file_monitor, file_lbl, &
+    n_omp_threads, ierr )
 !
   IF (include_instrument_response) THEN
     DEALLOCATE(filter%wavenumber)

@@ -64,6 +64,7 @@ do case $1 in
       -q2) SCALE_FNC=$IP_SCALE_DBL_POW_QUAD ; shift ;;
       -d2) SCALE_FNC=$IP_SCALE_DBL_DOP_QUAD ; shift ;;
       -lk) SCALE_FNC=$IP_SCALE_LOOKUP ; shift ;;
+      -np) N_OMP_THREADS=$2 ; shift 2 ;;
       -*) echo "Error: invalid option" ; exit 1 ;;
       +*) echo "Error: invalid option" ; exit 1 ;;
    esac
@@ -184,6 +185,11 @@ then echo $SOLAR_FILE >> /tmp/ck.$$
 fi
 echo $OUT_FILE >> /tmp/ck.$$
 echo $MON_FILE >> /tmp/ck.$$
+if [ "$N_OMP_THREADS" ]
+  then echo $N_OMP_THREADS >> /tmp/ck.$$
+else
+  echo 1 >> /tmp/ck.$$
+fi
 if [ "$DRYRUN" ]
   then echo /tmp/ck.$$
 else

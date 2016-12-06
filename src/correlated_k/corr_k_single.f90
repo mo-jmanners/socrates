@@ -23,7 +23,8 @@ SUBROUTINE corr_k_single &
  nd_k_term, n_k, w_k, k_ave, k_opt, &
  k_opt_self, k_opt_frn, &
  i_type_residual, i_scale_function, scale_vector, scale_cont, &
- iu_k_out, file_k, iu_monitor, file_monitor, file_lbl, ierr &
+ iu_k_out, file_k, iu_monitor, file_monitor, file_lbl, &
+ n_omp_threads, ierr &
 )
 
 ! Modules used:
@@ -149,6 +150,8 @@ SUBROUTINE corr_k_single &
   TYPE  (StrFiltResp), Intent(IN) :: filter
 !   Instrumental response function
 !
+  INTEGER, Intent(IN) :: n_omp_threads
+!   Number of OpenMP threads to use
 !
   INTEGER, Intent(INOUT) :: ierr
 !   Error flag
@@ -225,8 +228,6 @@ SUBROUTINE corr_k_single &
 !   Pointer to position in weighting array
   INTEGER :: n_nu_k, n_nu_tmp
 !   Number of frequency points in the k-interval
-  INTEGER :: low_band_no
-!   The index of the band number just below the cut off
   INTEGER :: n_path
 !   Number of absorber paths
   INTEGER, Target :: ig(0: nd_k_term)
@@ -600,8 +601,7 @@ SUBROUTINE corr_k_single &
 ! Check that band limits agree with wavenumber grid in file. Note that the
 ! use of a tolerance of 1e-9 due to use of the format e16.9 for wavelengths
 ! in the spectral file
-  DO ibb=1,n_selected_band
-    ib = list_band(ibb)
+  DO ib=1,n_band
     IF (abs(band_min(ib)-(nint((band_min(ib)-nu_band_adjust)/nu_inc)*nu_inc + &
       nu_band_adjust)) >= 1e-9*band_min(ib) .OR. &
       abs(band_max(ib)-(nint((band_max(ib)-nu_band_adjust)/nu_inc)*nu_inc + &
@@ -1376,8 +1376,15 @@ CONTAINS
 !
   SUBROUTINE calc_line_abs_int
 !
+    IMPLICIT NONE
 !
-    IMPLICIT NONE 
+!   Local variables.
+    INTEGER :: jx
+!     Loop index for excluded bands
+    INTEGER :: j_nu_first, j_nu_last
+!     First and last nu index at which to include line.
+    INTEGER :: n_nu_excluded_upper, n_nu_excluded_lower
+!     Number of excluded wavenumbers left of upper and lower wavenumber
 !
 !   Calculate the monochromatic absorption coefficients at each
 !   wavenumber.
@@ -1389,39 +1396,70 @@ CONTAINS
       ' Pa and ', t_calc(ipt), ' K.'
     kabs(1:n_nu)=0.0_RealK
 !
-    low_band_no = 1
-    Nu: DO j = 1, n_nu
+    DO i = 1, num_lines_in_band
 !
-!     Find the lines which contribute at this wavenumber and add
-!     their contributions to the absorption.
-      upper_cutoff  = nu_wgt(j) + line_cutoff
-      lower_cutoff  = nu_wgt(j) - line_cutoff
-
-      DO i = low_band_no, num_lines_in_band
-
-        IF (adj_line_parm(i) % line_centre < lower_cutoff) THEN
-          low_band_no = i
-          CYCLE
-        ELSEIF (adj_line_parm(i) % line_centre > upper_cutoff) THEN
-          CYCLE Nu
-        ELSEIF (adj_line_parm(i) % line_centre >= lower_cutoff .AND. &
-                adj_line_parm(i) % line_centre <= upper_cutoff ) THEN
-          CALL voigt_profile ( &
-            nu_wgt(j), &
-            adj_line_parm(i) % line_centre,   &
-            adj_line_parm(i) % S_adj,         &
-            adj_line_parm(i) % alpha_lorentz, &
-            adj_line_parm(i) % alpha_doppler, &
-            kabs_line)
-!         If using the CKD continuum model, we reduce the line
-!         absorption by its value at the cut-off: we should never
-!         be in a situation where this is applied outside the cut-off.
-          IF (l_ckd_cutoff) kabs_line = kabs_line-k_cutoff(i)
-          kabs(j) = kabs(j) + kabs_line
-        ENDIF
-      ENDDO
-    ENDDO Nu
-
+!     Find the range of wavenumbers the current line contributes to.
+      upper_cutoff  = adj_line_parm(i) % line_centre + line_cutoff
+      lower_cutoff  = adj_line_parm(i) % line_centre - line_cutoff
+!
+!     Find the index of the first and last wavenumber at which to include line.
+!
+      n_nu_excluded_upper = 0
+      n_nu_excluded_lower = 0
+      DO jx = 1, n_band_exclude(ib)
+!
+        IF (upper_cutoff > band_min(index_exclude(jx, ib)) .AND. &
+            upper_cutoff < band_max(index_exclude(jx, ib))) THEN
+!         upper_cutoff is inside excluded band
+          n_nu_excluded_upper = n_nu_excluded_upper + &
+            NINT((upper_cutoff - band_min(index_exclude(jx, ib)))/nu_inc)
+        ELSE IF (upper_cutoff >= band_max(index_exclude(jx, ib))) THEN
+!         upper_cutoff is above maximum in wavenumber excluded band
+          n_nu_excluded_upper = n_nu_excluded_upper + &
+            NINT((band_max(index_exclude(jx, ib)) - &
+            band_min(index_exclude(jx, ib)))/nu_inc)
+        END IF
+!
+        IF (lower_cutoff > band_min(index_exclude(jx, ib)) .AND. &
+            lower_cutoff < band_max(index_exclude(jx, ib))) THEN
+!         lower_cutoff is inside excluded band
+          n_nu_excluded_lower = n_nu_excluded_lower + &
+            NINT((lower_cutoff - band_min(index_exclude(jx, ib)))/nu_inc)
+        ELSE IF (lower_cutoff >= band_max(index_exclude(jx, ib))) THEN
+!         lower_cutoff is above maximum in wavenumber excluded band
+          n_nu_excluded_lower = n_nu_excluded_lower + &
+            NINT((band_max(index_exclude(jx, ib)) - &
+            band_min(index_exclude(jx, ib)))/nu_inc)
+        END IF
+!
+      END DO
+!
+      j_nu_first = MAX(CEILING((lower_cutoff - nu_wgt(1))/ &
+        nu_inc + 1.0_RealK) - n_nu_excluded_lower, 1)
+      j_nu_last = MIN(FLOOR((upper_cutoff - nu_wgt(1))/ &
+        nu_inc + 1.0_RealK) - n_nu_excluded_upper, n_nu)
+!
+!$OMP PARALLEL DO PRIVATE(j, kabs_line) NUM_THREADS(n_omp_threads)
+      DO j = j_nu_first, j_nu_last
+!
+        CALL voigt_profile ( &
+          nu_wgt(j), &
+          adj_line_parm(i) % line_centre,   &
+          adj_line_parm(i) % S_adj,         &
+          adj_line_parm(i) % alpha_lorentz, &
+          adj_line_parm(i) % alpha_doppler, &
+          kabs_line)
+!       If using the CKD continuum model, we reduce the line
+!       absorption by its value at the cut-off: we should never
+!       be in a situation where this is applied outside the cut-off.
+        IF (l_ckd_cutoff) kabs_line = kabs_line-k_cutoff(i)
+        kabs(j) = kabs(j) + kabs_line
+!
+      END DO
+!$OMP END PARALLEL DO
+!
+    END DO
+!
 !   Add the foreign continuum to the line data if necessary.
     IF (include_h2o_foreign_continuum) THEN
       ALLOCATE(k_for(n_nu))
