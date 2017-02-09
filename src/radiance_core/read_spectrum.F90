@@ -332,6 +332,11 @@ ELSE IF (i_type == 3) THEN
       CALL read_block_3_0_0_int
       l_block_read= .TRUE.
     END IF
+  ELSE IF (i_subtype == 1) THEN
+    IF (i_version == 0) THEN
+      CALL read_block_3_1_0_int
+      l_block_read= .TRUE.
+    END IF
   END IF
 ELSE IF (i_type == 4) THEN
   IF (i_subtype == 0) THEN
@@ -789,6 +794,9 @@ INTEGER :: idum
 ! Skip over the headers.
 READ(iu_spc, '(//)')
 
+! Rayleigh scattering coefficients are for the total gas
+Sp%Rayleigh%i_rayleigh_scheme = ip_rayleigh_total
+
 ! Read in the limits on the intervals in the spectrum
 ALLOCATE(Sp%Rayleigh%rayleigh_coeff(nd_band))
 DO i=1, Sp%Basic%n_band
@@ -803,6 +811,53 @@ DO i=1, Sp%Basic%n_band
 END DO
 
 END SUBROUTINE read_block_3_0_0_int
+
+
+SUBROUTINE read_block_3_1_0_int
+
+IMPLICIT NONE
+
+
+! Skip over the headers.
+READ(iu_spc, *)
+
+! Rayleigh scattering coefficients are tabulated for each gas
+Sp%Rayleigh%i_rayleigh_scheme = ip_rayleigh_custom
+
+! Get number of gases for which Rayleigh scattering coefficients are tabulated
+READ(iu_spc, '(38X, I5)') Sp%Rayleigh%n_gas_rayleigh
+IF (ios /= 0) THEN
+  cmessage = '*** Error: rayleigh scattering data are not correct: ' // &
+             TRIM(iomessage)
+  ierr=i_err_fatal
+  RETURN
+END IF
+
+! Read indexing numbers of gases
+ALLOCATE(Sp%Rayleigh%index_rayleigh(nd_species))
+READ(iu_spc, FMT='(/, 15(2X, I3))', IOSTAT=ios, IOMSG=iomessage) &
+  Sp%Rayleigh%index_rayleigh(1:Sp%Rayleigh%n_gas_rayleigh)
+IF (ios /= 0) THEN
+  cmessage = '*** Error: rayleigh scattering data are not correct: ' // &
+             TRIM(iomessage)
+  ierr=i_err_fatal
+  RETURN
+END IF
+
+! Read in the limits on the intervals in the spectrum
+ALLOCATE(Sp%Rayleigh%rayleigh_coeff_gas(nd_species,nd_band))
+DO i=1, Sp%Basic%n_band
+  READ(iu_spc, FMT='(/, (4(3X, 1PE16.9)))', IOSTAT=ios, IOMSG=iomessage) &
+    Sp%Rayleigh%rayleigh_coeff_gas(1:Sp%Rayleigh%n_gas_rayleigh,i)
+  IF (ios /= 0) THEN
+    cmessage = '*** Error: rayleigh scattering data are not correct: ' // &
+               TRIM(iomessage)
+    ierr=i_err_fatal
+    RETURN
+  END IF
+END DO
+
+END SUBROUTINE read_block_3_1_0_int
 
 
 

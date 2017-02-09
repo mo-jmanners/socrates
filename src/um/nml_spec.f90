@@ -296,7 +296,7 @@ PROGRAM nml_spec
   IF (l_present(3)) THEN
 !   Rayleigh Scattering Properties:
     ALLOCATE(Spectrum%Rayleigh%rayleigh_coeff(npd_band))
-    Spectrum%Rayleigh%rayleigh_coeff     = rayleigh_coefficient
+    Spectrum%Rayleigh%rayleigh_coeff = rayleigh_coefficient
   ENDIF
 !
   IF (l_present(4)) THEN

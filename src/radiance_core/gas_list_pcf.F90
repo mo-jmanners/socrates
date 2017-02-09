@@ -21,7 +21,7 @@ USE realtype_rd
 
 IMPLICIT NONE
 
-INTEGER, PARAMETER :: npd_gases = 36
+INTEGER, PARAMETER :: npd_gases = 37
 !   Number of indexed gases
 
 INTEGER, PARAMETER :: IP_h2o = 1
@@ -96,6 +96,8 @@ INTEGER, PARAMETER :: IP_hcn = 35
 !   Identifier for hydrogen cyanide
 INTEGER, PARAMETER :: IP_h2s = 36
 !   Identifier for hydrogen sulphide
+INTEGER, PARAMETER :: IP_ar = 37
+!   Identifier for argon
 
 CHARACTER (LEN=20), PARAMETER :: name_absorb(npd_gases) = (/ &
                                    "Water Vapour        ", &
@@ -133,7 +135,8 @@ CHARACTER (LEN=20), PARAMETER :: name_absorb(npd_gases) = (/ &
                                    "Phosphine           ", &
                                    "Acetylene           ", &
                                    "Hydrogen cyanide    ", &
-                                   "Hydrogen sulphide   " /)
+                                   "Hydrogen sulphide   ", &
+                                   "Argon               " /)
 
 
 ! Molecular weights taken from "General Inorganic Chemistry"
@@ -174,7 +177,8 @@ REAL (RealK), PARAMETER :: molar_weight(npd_gases) = (/ &
   33.99758_RealK,    & ! PH3 (from NIST)
   26.0373_RealK,     & ! C2H2 (from NIST)
   27.0253_RealK,     & ! HCN (from NIST)
-  34.081_RealK      /) ! H2S (from NIST)
+  34.081_RealK,      & ! H2S (from NIST)
+  39.948_RealK      /) ! Ar (from NIST)
 
 
 ! Array of identifiers in HITRAN for each gas in the radiation code.
@@ -214,6 +218,47 @@ INTEGER, PARAMETER :: hitran_number(npd_gases) = (/ &
   28,  & ! PH3
   26,  & ! C2H2
   23,  & ! HCN
-  31  /) ! H2S
+  31,  & ! H2S
+  0   /) ! Ar
+
+! Depolarization factors used to compute the Rayleigh scattering coefficients
+REAL (RealK), PARAMETER :: depolarization_factor(npd_gases) = (/ &
+  0.0_RealK,     & ! H2O
+  0.0922_RealK,  & ! CO2 (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.0_RealK,     & ! O3
+  0.1197_RealK,  & ! N2O (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.08_RealK,    & ! CO (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.0_RealK,     & ! CH4
+  0.06_RealK,    & ! O2 (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.0218_RealK,  & ! NO (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.0_RealK,     & ! SO2
+  0.0_RealK,     & ! NO2
+  0.0_RealK,     & ! NH3
+  0.0_RealK,     & ! HNO3
+  0.0305_RealK,  & ! N2 (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.0_RealK,     & ! CFC11
+  0.0_RealK,     & ! CFC12
+  0.0_RealK,     & ! CFC113
+  0.0_RealK,     & ! HCFC22
+  0.0_RealK,     & ! HFC125
+  0.0_RealK,     & ! HFC134a
+  0.0_RealK,     & ! CFC114
+  0.0_RealK,     & ! TiO
+  0.0_RealK,     & ! VO
+  0.0221_RealK,  & ! H2 (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.025_RealK,   & ! He (Parthasarathy, Indian J. Phys. 25, 21 (1951))
+  0.0_RealK,     & ! OCS
+  0.0_RealK,     & ! Na
+  0.0_RealK,     & ! K
+  0.0_RealK,     & ! FeH
+  0.0_RealK,     & ! CrH
+  0.0_RealK,     & ! Li
+  0.0_RealK,     & ! Rb
+  0.0_RealK,     & ! Cs
+  0.0_RealK,     & ! PH3
+  0.0_RealK,     & ! C2H2
+  0.0_RealK,     & ! HCN
+  0.0_RealK,     & ! H2S
+  0.0006_RealK  /) ! Ar (Parthasarathy, Indian J. Phys. 25, 21 (1951))
 
 END MODULE gas_list_pcf

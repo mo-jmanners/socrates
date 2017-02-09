@@ -13,6 +13,7 @@ MODULES_GEN =	dimensions_cdl_ucf.f90 \
 		interp_mode_pcf.f90 \
 		mcica_mod.f90 \
 		rad_pcf.f90 \
+		refract_re_ccf.f90 \
 		scatter_pp_pcf.f90 \
 		weighting_pcf.f90 \
 		unit_list_pcf.f90 \

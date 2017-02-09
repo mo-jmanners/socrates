@@ -947,7 +947,11 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
     CALL grey_opt_prop(ierr, control, radout, i_band                           &
       , atm%n_profile, atm%n_layer, atm%p, atm%t, atm%density                  &
       , n_order_phase, l_solar_phf, atm%n_direction, cos_sol_view              &
+      , spectrum%rayleigh%i_rayleigh_scheme, spectrum%rayleigh%n_gas_rayleigh  &
+      , spectrum%rayleigh%index_rayleigh                                       &
       , spectrum%rayleigh%rayleigh_coeff(i_band)                               &
+      , spectrum%rayleigh%rayleigh_coeff_gas(1, i_band)                        &
+      , atm%gas_mix_ratio                                                      &
       , l_grey_cont, n_continuum, i_continuum_pointer                          &
       , k_continuum_mono, amount_continuum                                     &
       , spectrum%aerosol%n_aerosol                                             &
@@ -989,7 +993,8 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
       , cnv_cloud_extinction_band, cnv_cloud_absorptivity_band                 &
       , dimen%nd_profile, dimen%nd_radiance_profile, dimen%nd_layer            &
       , dimen%nd_layer_clr, dimen%id_cloud_top                                 &
-      , spectrum%dim%nd_continuum, spectrum%dim%nd_aerosol_species             &
+      , spectrum%dim%nd_continuum, spectrum%dim%nd_species                     &
+      , spectrum%dim%nd_aerosol_species                                        &
       , spectrum%dim%nd_aerosol_mr, spectrum%dim%nd_humidity                   &
       , spectrum%dim%nd_cloud_parameter, dimen%nd_cloud_component              &
       , dimen%nd_cloud_type, spectrum%dim%nd_phase_term, dimen%nd_max_order    &

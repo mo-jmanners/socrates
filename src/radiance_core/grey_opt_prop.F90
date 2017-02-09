@@ -22,7 +22,9 @@
 SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
     , n_profile, n_layer, p, t, density                                 &
     , n_order_phase, l_solar_phf, n_direction, cos_sol_view             &
-    , rayleigh_coeff                                                    &
+    , i_rayleigh_scheme, n_gas_rayleigh, index_rayleigh                 &
+    , rayleigh_coeff_tot, rayleigh_coeff_gas                            &
+    , gas_mix_ratio                                                     &
     , l_continuum, n_continuum, i_continuum_pointer, k_continuum        &
     , amount_continuum                                                  &
     , n_aerosol, n_aerosol_mr, aerosol_mix_ratio                        &
@@ -54,7 +56,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
     , cnv_cloud_extinction, cnv_cloud_absorptivity                      &
     , nd_profile, nd_radiance_profile, nd_layer                         &
     , nd_layer_clr, id_ct                                               &
-    , nd_continuum, nd_aerosol_species, nd_aerosol_mixratio             &
+    , nd_continuum, nd_species                                          &
+    , nd_aerosol_species, nd_aerosol_mixratio                           &
     , nd_humidities, nd_cloud_parameter, nd_cloud_component             &
     , nd_cloud_type, nd_phase_term, nd_max_order, nd_direction          &
     , nd_ukca_mode, nd_profile_aerosol_prsc, nd_profile_cloud_prsc      &
@@ -69,6 +72,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
   USE rad_pcf
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
+  USE ereport_mod, ONLY: ereport
+  USE errormessagelength_mod, ONLY: errormessagelength
 
   IMPLICIT NONE
 
@@ -94,6 +99,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !       Topmost declared cloudy layer
     , nd_direction                                                      &
 !       Size allocated for viewing directions
+    , nd_species                                                        &
+!       Size allocated for nd_species
     , nd_aerosol_species                                                &
 !       Size allocated for aerosols in spectral information
     , nd_aerosol_mixratio                                               &
@@ -172,10 +179,22 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 
 
 ! Rayleigh scattering:
+  INTEGER, INTENT(IN) ::                                                &
+      i_rayleigh_scheme                                                 &
+!       Rayleigh scattering scheme
+    , n_gas_rayleigh                                                    &
+!       Number of gases to include in calculation of Rayleigh scattering
+!       coefficient
+    , index_rayleigh(nd_species)
+!       Index of gases to include in calculation of Rayleigh scattering
+!       coefficient
   REAL (RealK), INTENT(IN) ::                                           &
-      rayleigh_coeff
-!       Rayleigh coefficient
-
+      rayleigh_coeff_tot                                                &
+!       Rayleigh scattering coefficient for total gas
+    , rayleigh_coeff_gas(nd_species)                                    &
+!       Rayleigh scattering coefficient for each gas
+    , gas_mix_ratio(nd_profile, nd_layer, nd_species)
+!       Gaseous mass mixing ratios
 
 ! Continuum processes:
   LOGICAL, INTENT(IN) ::                                                &
@@ -397,6 +416,9 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !       Number of indices satisfying the test
     , indx(nd_profile)
 !       Indices satifying the test
+  REAL (RealK) ::                                                       &
+      rayleigh_coeff(nd_profile, nd_layer)
+!       Calculated total Rayleigh coefficient
 
 ! Temporary variable for the divisions
   REAL (RealK) :: tmp_inv(nd_profile)
@@ -407,6 +429,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
   REAL(KIND=jprb)               :: zhook_handle
 
+  CHARACTER (LEN=errormessagelength)           :: cmessage
   CHARACTER(LEN=*), PARAMETER :: RoutineName='GREY_OPT_PROP'
 
 
@@ -445,6 +468,34 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 ! Rayleigh scattering:
 
   IF (control%l_rayleigh) THEN
+
+!   Calculate Rayleigh scattering coefficient for current band
+    SELECT CASE (i_rayleigh_scheme)
+
+    CASE (ip_rayleigh_total)
+!     Rayleigh scattering coefficients are tabulated for total gas
+      rayleigh_coeff(1:n_profile, 1:n_layer) = rayleigh_coeff_tot
+    
+    CASE (ip_rayleigh_custom)
+!     Compute Rayleigh scattering coefficient of total gas from individual
+!     coefficients for each gas ignoring non-ideal gas effects due to water
+!     vapour
+      DO l=1, n_profile
+        DO i=1, n_layer
+          rayleigh_coeff(l, i) &
+            =SUM(rayleigh_coeff_gas(1:n_gas_rayleigh) &
+            *gas_mix_ratio(l, i, index_rayleigh(1:n_gas_rayleigh)))
+        END DO
+      END DO
+
+    CASE DEFAULT
+      WRITE(cmessage, '(a)')                                            &
+        'i_rayleigh_scheme has been set to an illegal value.'
+      ierr=i_err_fatal
+      CALL ereport(RoutineName, ierr, cmessage)
+    
+    END SELECT
+
 !   Forward scattering is required only when delta-rescaling
 !   is performed.
     IF (control%l_rescale) THEN
@@ -452,7 +503,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !CDIR NODEP
         DO l=1, n_profile
           ss_prop%k_grey_tot_clr(l, i)=0.0_RealK
-          ss_prop%k_ext_scat_clr(l, i)=rayleigh_coeff
+          ss_prop%k_ext_scat_clr(l, i)=rayleigh_coeff(l, i)
           ss_prop%phase_fnc_clr(l, i, 1)=0.0_RealK
           ss_prop%forward_scatter_clr(l, i)=0.0_RealK
         END DO
@@ -461,7 +512,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !CDIR NODEP
         DO l=1, n_profile
           ss_prop%k_grey_tot(l, i, 0)=0.0_RealK
-          ss_prop%k_ext_scat(l, i, 0)=rayleigh_coeff
+          ss_prop%k_ext_scat(l, i, 0)=rayleigh_coeff(l, i)
           ss_prop%phase_fnc(l, i, 1, 0)=0.0_RealK
           ss_prop%forward_scatter(l, i, 0)=0.0_RealK
         END DO
@@ -471,7 +522,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !CDIR NODEP
         DO l=1, n_profile
           ss_prop%k_grey_tot_clr(l, i)=0.0_RealK
-          ss_prop%k_ext_scat_clr(l, i)=rayleigh_coeff
+          ss_prop%k_ext_scat_clr(l, i)=rayleigh_coeff(l, i)
           ss_prop%phase_fnc_clr(l, i, 1)=0.0_RealK
         END DO
       END DO
@@ -479,7 +530,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !CDIR NODEP
         DO l=1, n_profile
           ss_prop%k_grey_tot(l, i, 0)=0.0_RealK
-          ss_prop%k_ext_scat(l, i, 0)=rayleigh_coeff
+          ss_prop%k_ext_scat(l, i, 0)=rayleigh_coeff(l, i)
           ss_prop%phase_fnc(l, i, 1, 0)=0.0_RealK
         END DO
       END DO
@@ -489,12 +540,12 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
     IF (n_order_phase >= 2) THEN
       DO i=1, n_cloud_top-1
         DO l=1, n_profile
-          ss_prop%phase_fnc_clr(l, i, 2)=rayleigh_coeff*1.0e-01_RealK
+          ss_prop%phase_fnc_clr(l, i, 2)=rayleigh_coeff(l, i)*1.0e-01_RealK
         END DO
       END DO
       DO i=n_cloud_top, n_layer
         DO l=1, n_profile
-          ss_prop%phase_fnc(l, i, 2, 0)=rayleigh_coeff*1.0e-01_RealK
+          ss_prop%phase_fnc(l, i, 2, 0)=rayleigh_coeff(l, i)*1.0e-01_RealK
         END DO
       END DO
       DO ls=3, n_order_phase
@@ -521,7 +572,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
           DO l=1, n_profile
             ss_prop%phase_fnc_solar_clr(l, i, id)                       &
               =ss_prop%phase_fnc_solar_clr(l, i, id)                    &
-              +rayleigh_coeff                                           &
+              +rayleigh_coeff(l, i)                                     &
               *0.75_RealK*(1.0_RealK+cos_sol_view(l, id)**2)
           END DO
         END DO
@@ -529,7 +580,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
           DO l=1, n_profile
             ss_prop%phase_fnc_solar(l, i, id, 0)                        &
               =ss_prop%phase_fnc_solar(l, i, id, 0)                     &
-              +rayleigh_coeff                                           &
+              +rayleigh_coeff(l, i)                                     &
               *0.75_RealK*(1.0_RealK+cos_sol_view(l, id)**2)
           END DO
         END DO
@@ -714,7 +765,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
         DO l=1, n_profile
 !         Remove the Rayleigh scattering contribution
           radout%aerosol_scattering_band(l,i,i_band) =                  &
-            radout%aerosol_scattering_band(l,i,i_band) - rayleigh_coeff
+            radout%aerosol_scattering_band(l,i,i_band) -                &
+            rayleigh_coeff(l, i)
         END DO
       END DO
     END IF

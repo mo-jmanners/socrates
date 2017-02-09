@@ -275,17 +275,45 @@ CONTAINS
 !     Loop variable
 !
 !
-    WRITE(iu_spc, '(a19, a16, a16)') &
-      '*BLOCK: TYPE =    3', ': SUBTYPE =    0', ': VERSION =    0'
-    WRITE(iu_spc, '(a)') &
-      'Rayleigh mass scattering coefficients at STP: unit m**2/kg'
-    WRITE(iu_spc, '(a4, 8x, a20)') 'Band', 'Rayleigh coefficient'
-    WRITE(iu_spc, '(17x, a5)') 'm2/kg'
+    IF (SpRayleigh%i_rayleigh_scheme == ip_rayleigh_total) THEN
+      WRITE(iu_spc, '(a19, a16, a16)') &
+        '*BLOCK: TYPE =    3', ': SUBTYPE =    0', ': VERSION =    0'
+      WRITE(iu_spc, '(a)') &
+        'Rayleigh mass scattering coefficients at STP: unit m**2/kg'
+      WRITE(iu_spc, '(a4, 8x, a20)') 'Band', 'Rayleigh coefficient'
+      WRITE(iu_spc, '(17x, a5)') 'm2/kg'
 !
-    DO i=1, SpBasic%n_band
-      WRITE(iu_spc, '(i5, 7x, 1pe16.9)') &
-        i, SpRayleigh%rayleigh_coeff(i)
-    ENDDO
+      DO i=1, SpBasic%n_band
+        WRITE(iu_spc, '(i5, 7x, 1pe16.9)') &
+          i, SpRayleigh%rayleigh_coeff(i)
+      ENDDO
+!
+    ELSE IF (SpRayleigh%i_rayleigh_scheme == ip_rayleigh_custom) THEN
+      WRITE(iu_spc, '(a19, a16, a16)') &
+        '*BLOCK: TYPE =    3', ': SUBTYPE =    1', ': VERSION =    0'
+      WRITE(iu_spc, '(a)') &
+        'Rayleigh mass scattering coefficients at STP: unit m**2/kg'
+      WRITE(iu_spc, '(a37, 1x, i5)') &
+        'Number of Rayleigh scattering gases =', SpRayleigh%n_gas_rayleigh
+      WRITE(iu_spc, '(a)') &
+        'Indexing numbers of gases'
+      WRITE(iu_spc, '(15(2x, i3))') &
+        SpRayleigh%index_rayleigh(1:SpRayleigh%n_gas_rayleigh)
+!
+      DO i=1, SpBasic%n_band
+        WRITE(iu_spc, '(a7, i5, 5x, a45, /, (4(3x, 1pe16.9)))') &
+          'Band = ', i, 'Rayleigh scattering ' // &
+          'coefficient for each gas:', &
+          SpRayleigh%rayleigh_coeff_gas(1:SpRayleigh%n_gas_rayleigh,i)
+      ENDDO
+!
+    ELSE
+      WRITE(iu_err, '(/a)') &
+        '*** Error: Rayleigh scattering scheme not recognised.'
+      ierr=i_err_fatal
+      RETURN
+!
+    END IF
 !
     WRITE(iu_spc, '(a4)') '*END'
 !

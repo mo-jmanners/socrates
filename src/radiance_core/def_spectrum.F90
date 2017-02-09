@@ -99,8 +99,16 @@ END TYPE StrSpecSolar
 
 
 TYPE StrSpecRayleigh
+  INTEGER :: i_rayleigh_scheme
+!   Type of Rayleigh scattering
   REAL (RealK), ALLOCATABLE :: rayleigh_coeff(:)
-!   Rayleigh scattering coefficients in each band
+!   Rayleigh scattering coefficients in each band for total gas
+  INTEGER :: n_gas_rayleigh
+!   Total number of Rayleigh scattering gases
+  INTEGER, ALLOCATABLE      :: index_rayleigh(:)
+!   Index of gases for which Rayleigh scattering coefficients are tabulated
+  REAL (RealK), ALLOCATABLE :: rayleigh_coeff_gas(:,:)
+!   Rayleigh scattering coefficients for each gas in each band
 END TYPE StrSpecRayleigh
 
 
@@ -363,6 +371,10 @@ END IF
 ! Rayleigh
 IF (.NOT. ALLOCATED(Sp%Rayleigh%rayleigh_coeff)) &
   ALLOCATE(Sp%Rayleigh%rayleigh_coeff( Sp%Dim%nd_band ))
+IF (.NOT. ALLOCATED(Sp%Rayleigh%index_rayleigh)) &
+  ALLOCATE(Sp%Rayleigh%index_rayleigh( Sp%Dim%nd_species ))
+IF (.NOT. ALLOCATED(Sp%Rayleigh%rayleigh_coeff_gas)) &
+  ALLOCATE(Sp%Rayleigh%rayleigh_coeff_gas( Sp%Dim%nd_species, Sp%Dim%nd_band ))
 
 ! Gas
 IF (.NOT. ALLOCATED(Sp%Gas%n_band_absorb)) &
@@ -767,6 +779,10 @@ IF (ALLOCATED(Sp%Gas%n_band_absorb)) &
 ! Rayleigh
 IF (ALLOCATED(Sp%Rayleigh%rayleigh_coeff)) &
    DEALLOCATE(Sp%Rayleigh%rayleigh_coeff)
+IF (ALLOCATED(Sp%Rayleigh%index_rayleigh)) &
+   DEALLOCATE(Sp%Rayleigh%index_rayleigh)
+IF (ALLOCATED(Sp%Rayleigh%rayleigh_coeff_gas)) &
+   DEALLOCATE(Sp%Rayleigh%rayleigh_coeff_gas)
 
 ! Solar
 IF (ALLOCATED(Sp%Solar%weight_blue)) &

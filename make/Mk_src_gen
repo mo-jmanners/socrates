@@ -24,6 +24,8 @@ SOURCE90_GEN =	d_planck_90.f90 \
 		planck_90.f90 \
 		rad_weight_90.f90 \
 		rayleigh_jeans_tail.f90 \
+		rayleigh_scatter.f90 \
+		rayleigh_scatter_h2he.f90 \
 		read_instrument_response_90.f90 \
 		read_solar_spectrum.f90 \
 		remove_negative_gas_90.f90 \
@@ -32,8 +34,7 @@ SOURCE90_GEN =	d_planck_90.f90 \
 		solar_intensity.f90 \
                 solar_intensity_90.f90 \
 		sum_unity.f90 \
-		trapezoid_90.f90 \
-		rayleigh_scatter_h2he.f90
+		trapezoid_90.f90
 
 SOURCE77_GEN = 	back_substitute.f \
 		calc_thermal_coeff.f \

@@ -138,6 +138,10 @@ TYPE StrCtrl
 !   Flag for absorption by sulfur dioxide
   LOGICAL :: l_no2                                                = .FALSE.
 !   Flag for absorption by nitrogen dioxide
+  LOGICAL :: l_n2                                                 = .FALSE.
+!   Flag for absorption by nitrogen
+  LOGICAL :: l_ar                                                 = .FALSE.
+!   Flag for absorption by argon
 
 
 ! Properties of clouds:

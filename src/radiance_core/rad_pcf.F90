@@ -670,5 +670,15 @@ INTEGER, PARAMETER :: ip_pifm80           = 16
 !   (version of Zdunkowski et al. 1980)
 
 ! ------------------------------------------------------------------
+! Rayleigh scattering
+! ------------------------------------------------------------------
+! Module with pointers to Rayleigh scattering coefficient
+! calculation scheme.
+INTEGER, PARAMETER :: ip_rayleigh_total  = 1
+!   Rayleigh scattering coefficients tabulated for total gas
+INTEGER, PARAMETER :: ip_rayleigh_custom = 2
+!   Rayleigh scattering coefficients tabulated for gases separately
+
+! ------------------------------------------------------------------
 
 END MODULE rad_pcf
