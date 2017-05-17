@@ -688,12 +688,12 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
       , n_opt_level_aerosol_prsc, aerosol_pressure_prsc                 &
       , aerosol_absorption_prsc, aerosol_scattering_prsc                &
       , aerosol_phase_fnc_prsc                                          &
-      , ss_prop%k_grey_tot(1, id_ct, 0)                                 &
-      , ss_prop%k_ext_scat(1, id_ct, 0)                                 &
-      , ss_prop%phase_fnc(1, id_ct, 1, 0)                               &
-      , ss_prop%forward_scatter(1, id_ct, 0)                            &
-      , ss_prop%forward_solar(1, id_ct, 0)                              &
-      , ss_prop%phase_fnc_solar(1, id_ct, 1, 0)                         &
+      , ss_prop%k_grey_tot(:, :, 0)                                     &
+      , ss_prop%k_ext_scat(:, :, 0)                                     &
+      , ss_prop%phase_fnc(:, :, :, 0)                                   &
+      , ss_prop%forward_scatter(:, :, 0)                                &
+      , ss_prop%forward_solar(:, :, 0)                                  &
+      , ss_prop%phase_fnc_solar(:, :, :, 0)                             &
       , nd_profile, nd_radiance_profile, nd_layer                       &
       , id_ct, nd_layer                                                 &
       , nd_aerosol_species, nd_aerosol_mixratio, nd_humidities          &
@@ -722,10 +722,10 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
       , n_order_phase, control%l_rescale, control%n_order_forward       &
       , n_ukca_mode, ukca_modal_mixr                                    &
       , ukca_absorption, ukca_scattering, ukca_asymmetry                &
-      , ss_prop%k_grey_tot(1, id_ct, 0)                                 &
-      , ss_prop%k_ext_scat(1, id_ct, 0)                                 &
-      , ss_prop%phase_fnc(1, id_ct, 1, 0)                               &
-      , ss_prop%forward_scatter(1, id_ct, 0)                            &
+      , ss_prop%k_grey_tot(:, :, 0)                                     &
+      , ss_prop%k_ext_scat(:, :, 0)                                     &
+      , ss_prop%phase_fnc(:, :, :, 0)                                   &
+      , ss_prop%forward_scatter(:, :, 0)                                &
       , nd_profile, nd_layer, id_ct, nd_layer, nd_ukca_mode             &
       , nd_max_order                                                    &
       )
@@ -1079,19 +1079,19 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
           , control%l_lanczos                                           &
           , control%n_order_phase_solar, n_direction, cos_sol_view      &
           , i_condensed_param(k)                                        &
-          , condensed_param_list(1, k)                                  &
-          , condensed_mix_ratio(1, id_ct, k)                            &
-          , condensed_dim_char(1, id_ct, k)                             &
+          , condensed_param_list(:, k)                                  &
+          , condensed_mix_ratio(:, :, k)                                &
+          , condensed_dim_char(:, :, k)                                 &
           , p, density                                                  &
           , n_opt_level_drop_prsc, drop_pressure_prsc                   &
           , drop_absorption_prsc, drop_scattering_prsc                  &
           , drop_phase_fnc_prsc                                         &
-          , ss_prop%k_ext_tot_cloud_comp(1, id_ct, k)                   &
-          , ss_prop%k_ext_scat_cloud_comp(1, id_ct, k)                  &
-          , ss_prop%phase_fnc_cloud_comp(1, id_ct, 1, k)                &
-          , ss_prop%forward_scatter_cloud_comp(1, id_ct, k)             &
-          , ss_prop%forward_solar_cloud_comp(1, id_ct, k)               &
-          , ss_prop%phase_fnc_solar_cloud_comp(1, id_ct, 1, k)          &
+          , ss_prop%k_ext_tot_cloud_comp(:, :, k)                       &
+          , ss_prop%k_ext_scat_cloud_comp(:, :, k)                      &
+          , ss_prop%phase_fnc_cloud_comp(:, :, :, k)                    &
+          , ss_prop%forward_scatter_cloud_comp(:, :, k)                 &
+          , ss_prop%forward_solar_cloud_comp(:, :, k)                   &
+          , ss_prop%phase_fnc_solar_cloud_comp(:, :, :, k)              &
           , nd_profile, nd_radiance_profile, nd_layer, id_ct            &
           , nd_direction, nd_phase_term, nd_max_order                   &
           , nd_cloud_parameter                                          &
@@ -1111,19 +1111,19 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
           , control%l_lanczos                                           &
           , control%n_order_phase_solar, n_direction, cos_sol_view      &
           , i_condensed_param(k)                                        &
-          , condensed_param_list(1, k)                                  &
-          , condensed_mix_ratio(1, id_ct, k)                            &
-          , condensed_dim_char(1, id_ct, k)                             &
+          , condensed_param_list(:, k)                                  &
+          , condensed_mix_ratio(:, :, k)                                &
+          , condensed_dim_char(:, :, k)                                 &
           , p, t, density                                               &
           , n_opt_level_ice_prsc, ice_pressure_prsc                     &
           , ice_absorption_prsc, ice_scattering_prsc                    &
           , ice_phase_fnc_prsc                                          &
-          , ss_prop%k_ext_tot_cloud_comp(1, id_ct, k)                   &
-          , ss_prop%k_ext_scat_cloud_comp(1, id_ct, k)                  &
-          , ss_prop%phase_fnc_cloud_comp(1, id_ct, 1, k)                &
-          , ss_prop%forward_scatter_cloud_comp(1, id_ct, k)             &
-          , ss_prop%forward_solar_cloud_comp(1, id_ct, k)               &
-          , ss_prop%phase_fnc_solar_cloud_comp(1, id_ct, 1, k)          &
+          , ss_prop%k_ext_tot_cloud_comp(:, :, k)                       &
+          , ss_prop%k_ext_scat_cloud_comp(:, :, k)                      &
+          , ss_prop%phase_fnc_cloud_comp(:, :, :, k)                    &
+          , ss_prop%forward_scatter_cloud_comp(:, :, k)                 &
+          , ss_prop%forward_solar_cloud_comp(:, :, k)                   &
+          , ss_prop%phase_fnc_solar_cloud_comp(:, :, :, k)              &
           , nd_profile, nd_radiance_profile, nd_layer, id_ct            &
           , nd_direction                                                &
           , nd_phase_term, nd_max_order, nd_cloud_parameter             &
@@ -1140,11 +1140,11 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
             n_profile, n_layer, n_cloud_top                             &
           , n_cloud_profile, i_cloud_profile                            &
           , control%l_rescale, control%n_order_forward                  &
-          , condensed_rel_var_dens(1, id_ct, k)                         &
-          , ss_prop%k_ext_tot_cloud_comp(1, id_ct, k)                   &
-          , ss_prop%k_ext_scat_cloud_comp(1, id_ct, k)                  &
-          , ss_prop%phase_fnc_cloud_comp(1, id_ct, 1, k)                &
-          , ss_prop%forward_scatter_cloud_comp(1, id_ct, k)             &
+          , condensed_rel_var_dens(:, :, k)                             &
+          , ss_prop%k_ext_tot_cloud_comp(:, :, k)                       &
+          , ss_prop%k_ext_scat_cloud_comp(:, :, k)                      &
+          , ss_prop%phase_fnc_cloud_comp(:, :, :, k)                    &
+          , ss_prop%forward_scatter_cloud_comp(:, :, k)                 &
           , nd_profile, nd_layer, id_ct                                 &
           )
       END IF

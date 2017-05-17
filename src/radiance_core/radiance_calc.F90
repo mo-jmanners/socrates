@@ -1031,11 +1031,11 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
         CALL rescale_phase_fnc(atm%n_profile, n_cloud_top                      &
           , atm%n_layer, atm%n_direction, cos_sol_view                         &
           , n_order_phase                                                      &
-          , ss_prop%phase_fnc(1, dimen%id_cloud_top, 1, 0)                     &
-          , ss_prop%forward_scatter(1, dimen%id_cloud_top, 0)                  &
-          , ss_prop%forward_solar(1, dimen%id_cloud_top, 0)                    &
+          , ss_prop%phase_fnc(:, :, :, 0)                                      &
+          , ss_prop%forward_scatter(:, :, 0)                                   &
+          , ss_prop%forward_solar(:, :, 0)                                     &
           , l_rescale_solar_phf, control%n_order_phase_solar                   &
-          , ss_prop%phase_fnc_solar(1, dimen%id_cloud_top, 1, 0)               &
+          , ss_prop%phase_fnc_solar(:, :, :, 0)                                &
           , dimen%nd_profile, dimen%nd_radiance_profile, dimen%nd_layer        &
           , dimen%id_cloud_top, dimen%nd_direction, dimen%nd_max_order         &
           )
@@ -1048,11 +1048,11 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
             CALL rescale_phase_fnc(atm%n_profile, n_cloud_top                  &
               , atm%n_layer, atm%n_direction, cos_sol_view                     &
               , n_order_phase                                                  &
-              , ss_prop%phase_fnc(1, dimen%id_cloud_top, 1, k)                 &
-              , ss_prop%forward_scatter(1, dimen%id_cloud_top, k)              &
-              , ss_prop%forward_solar(1, dimen%id_cloud_top, k)                &
+              , ss_prop%phase_fnc(:, :, :, k)                                  &
+              , ss_prop%forward_scatter(:, :, k)                               &
+              , ss_prop%forward_solar(:, :, k)                                 &
               , l_rescale_solar_phf, control%n_order_phase_solar               &
-              , ss_prop%phase_fnc_solar(1, dimen%id_cloud_top, 1, k)           &
+              , ss_prop%phase_fnc_solar(:, :, :, k)                            &
               , dimen%nd_profile, dimen%nd_radiance_profile, dimen%nd_layer    &
               , dimen%id_cloud_top, dimen%nd_direction, dimen%nd_max_order     &
               )

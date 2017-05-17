@@ -13,9 +13,6 @@
 !   transmission and reflection coefficients are determined. For
 !   each case (cloudy and clear) a suitable solver is called.
 !
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiance Core
-!
 !- ---------------------------------------------------------------------
 SUBROUTINE mcica_column(ierr                                            &
   , control, cld, bound                                                 &
@@ -62,6 +59,8 @@ SUBROUTINE mcica_column(ierr                                            &
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
   USE ereport_mod, ONLY: ereport
+
+  USE set_n_source_coeff_mod, ONLY: set_n_source_coeff
 
   IMPLICIT NONE
 
@@ -236,10 +235,6 @@ SUBROUTINE mcica_column(ierr                                            &
 !       Working array for solver
 
 
-! Functions called:
-  INTEGER, EXTERNAL :: set_n_source_coeff
-!       Function to set number of source coefficients
-
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
   REAL(KIND=jprb)               :: zhook_handle
@@ -269,9 +264,9 @@ SUBROUTINE mcica_column(ierr                                            &
     CALL two_coeff(ierr, control                                        &
     , n_profile, n_cloud_top, n_layer                                   &
     , i_2stream, l_ir_source_quad                                       &
-    , ss_prop%phase_fnc(1, id_ct, 1, 0)                                 &
-    , ss_prop%omega(1, id_ct, 0)                                        &
-    , ss_prop%tau_noscal(1, id_ct, 0), ss_prop%tau(1, id_ct, 0)         &
+    , ss_prop%phase_fnc(:, :, :, 0)                                     &
+    , ss_prop%omega(:, :, 0)                                            &
+    , ss_prop%tau_noscal(:, :, 0), ss_prop%tau(:, :, 0)                 &
     , isolir, sec_0                                                     &
     , trans, reflect, trans_0_noscal, trans_0                           &
     , source_coeff                                                      &
@@ -285,7 +280,7 @@ SUBROUTINE mcica_column(ierr                                            &
       , trans, source_coeff                                             &
       , nd_profile, nd_layer, 1, nd_layer_clr, nd_source_coeff)
     CALL two_coeff_fast_lw(n_profile, n_cloud_top, n_layer              &
-      , l_ir_source_quad, ss_prop%tau(1, id_ct, 0)                      &
+      , l_ir_source_quad, ss_prop%tau(:, :, 0)                          &
       , trans, source_coeff                                             &
       , nd_profile, nd_layer, id_ct, nd_layer, nd_source_coeff)
     DO i=1, n_layer

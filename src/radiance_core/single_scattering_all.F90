@@ -110,10 +110,10 @@ SUBROUTINE single_scattering_all(i_scatter_method_band                  &
   CALL single_scattering(i_scatter_method_band                          &
     , n_profile, n_cloud_top, n_layer                                   &
     , d_mass                                                            &
-    , ss_prop%k_grey_tot(1, id_ct, 0)                                   &
-    , ss_prop%k_ext_scat(1, id_ct, 0)                                   &
+    , ss_prop%k_grey_tot(:, :, 0)                                       &
+    , ss_prop%k_ext_scat(:, :, 0)                                       &
     , k_gas_abs                                                         &
-    , ss_prop%tau(1, id_ct, 0), ss_prop%omega(1, id_ct, 0)              &
+    , ss_prop%tau(:, :, 0), ss_prop%omega(:, :, 0)                      &
     , nd_profile, nd_layer, id_ct, nd_layer                             &
     )
 
@@ -122,10 +122,10 @@ SUBROUTINE single_scattering_all(i_scatter_method_band                  &
       CALL single_scattering(i_scatter_method_band                      &
         , n_profile, n_cloud_top, n_layer                               &
         , d_mass                                                        &
-        , ss_prop%k_grey_tot(1, id_ct, k)                               &
-        , ss_prop%k_ext_scat(1, id_ct, k)                               &
+        , ss_prop%k_grey_tot(:, :, k)                                   &
+        , ss_prop%k_ext_scat(:, :, k)                                   &
         , k_gas_abs                                                     &
-        , ss_prop%tau(1, id_ct, k), ss_prop%omega(1, id_ct, k)          &
+        , ss_prop%tau(:, :, k), ss_prop%omega(:, :, k)                  &
         , nd_profile, nd_layer, id_ct, nd_layer                         &
         )
     END DO

@@ -439,17 +439,17 @@ SUBROUTINE monochromatic_radiance(ierr                                  &
         , nd_profile, nd_layer_clr, 1                                   &
         )
       CALL rescale_tau_omega(n_profile, n_cloud_top, n_layer            &
-        , ss_prop%tau, ss_prop%omega, ss_prop%forward_scatter           &
+        , ss_prop%tau(:, :, 0), ss_prop%omega(:, :, 0)                  &
+        , ss_prop%forward_scatter(:, :, 0)                              &
         , nd_profile, nd_layer, id_ct                                   &
         )
 
       IF (l_cloud) THEN
 
         DO k=1, cld%n_cloud_type
-          CALL rescale_tau_omega(n_profile, n_cloud_top                 &
-            , n_layer                                                   &
-            , ss_prop%tau(1, id_ct, k), ss_prop%omega(1, id_ct, k)      &
-            , ss_prop%forward_scatter(1, id_ct, k)                      &
+          CALL rescale_tau_omega(n_profile, n_cloud_top, n_layer        &
+            , ss_prop%tau(:, :, k), ss_prop%omega(:, :, k)              &
+            , ss_prop%forward_scatter(:, :, k)                          &
             , nd_profile, nd_layer, id_ct                               &
             )
         END DO

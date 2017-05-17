@@ -68,6 +68,8 @@ SUBROUTINE triple_column(ierr                                           &
   USE ereport_mod, ONLY: ereport
   USE errormessagelength_mod, ONLY: errormessagelength
 
+  USE set_n_source_coeff_mod, ONLY: set_n_source_coeff
+
   IMPLICIT NONE
 
 
@@ -231,11 +233,6 @@ SUBROUTINE triple_column(ierr                                           &
 !       Direct flux at ground in each region
 
 
-! Functions called:
-  INTEGER                                                               &
-      set_n_source_coeff
-!       Function to set number of source coefficients
-
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
   REAL(KIND=jprb)               :: zhook_handle
@@ -246,7 +243,6 @@ SUBROUTINE triple_column(ierr                                           &
   IF (lhook) CALL dr_hook(RoutineName,zhook_in,zhook_handle)
 
 ! Set the number of source coefficients for the approximation
-! DEPENDS ON: set_n_source_coeff
   n_source_coeff=set_n_source_coeff(isolir, l_ir_source_quad)
 
 

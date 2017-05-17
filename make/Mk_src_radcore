@@ -38,7 +38,6 @@ SOURCE_RADCORE=	adjust_ir_radiance.f90 \
 		inter_pt_lookup.f90 \
 		inter_t_lookup.f90 \
 		ir_source.f90 \
-		l_cloud_density.f90 \
 		layer_part_integ.f90 \
 		legendre_weight.f90 \
 		mcica_column.f90 \

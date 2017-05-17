@@ -68,6 +68,8 @@ SUBROUTINE mix_column(ierr                                              &
   USE ereport_mod, ONLY: ereport
   USE errormessagelength_mod, ONLY: errormessagelength
 
+  USE set_n_source_coeff_mod, ONLY: set_n_source_coeff
+
   IMPLICIT NONE
 
 
@@ -269,11 +271,6 @@ SUBROUTINE mix_column(ierr                                              &
     , flux_direct_ground_cloud(nd_profile)
 !       Direct flux at ground under cloudy skies
 
-! Functions called:
-  INTEGER                                                               &
-      set_n_source_coeff
-!       Function to set number of source coefficients
-
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
   REAL(KIND=jprb)               :: zhook_handle
@@ -297,7 +294,6 @@ SUBROUTINE mix_column(ierr                                              &
 ! source terms for the clear and cloudy parts of the column
 
 ! Set the number of source coefficients for the approximation
-! DEPENDS ON: set_n_source_coeff
   n_source_coeff=set_n_source_coeff(isolir, l_ir_source_quad)
 
 ! DEPENDS ON: two_coeff
@@ -314,9 +310,9 @@ SUBROUTINE mix_column(ierr                                              &
   CALL two_coeff(ierr, control                                          &
     , n_profile, n_cloud_top, n_layer                                   &
     , i_2stream, l_ir_source_quad                                       &
-    , ss_prop%phase_fnc(1, id_ct, 1, 0)                                 &
-    , ss_prop%omega(1, id_ct, 0)                                        &
-    , ss_prop%tau_noscal(1, id_ct, 0), ss_prop%tau(1, id_ct, 0)         &
+    , ss_prop%phase_fnc(:, :, :, 0)                                     &
+    , ss_prop%omega(:, :, 0)                                            &
+    , ss_prop%tau_noscal(:, :, 0), ss_prop%tau(:, :, 0)                 &
     , isolir, sec_0                                                     &
     , trans_free, reflect_free, trans_0_free_noscal, trans_0_free       &
     , source_coeff_free                                                 &
@@ -373,9 +369,9 @@ SUBROUTINE mix_column(ierr                                              &
     , n_profile, n_cloud_top, n_layer                                   &
     , i_2stream, l_ir_source_quad, n_source_coeff                       &
     , n_cloud_type, frac_cloud                                          &
-    , ss_prop%phase_fnc(1, id_ct, 1, 1)                                 &
-    , ss_prop%omega(1, id_ct, 1)                                        &
-    , ss_prop%tau_noscal(1, id_ct, 1), ss_prop%tau(1, id_ct, 1)         &
+    , ss_prop%phase_fnc(:, :, :, 1:)                                    &
+    , ss_prop%omega(:, :, 1:)                                           &
+    , ss_prop%tau_noscal(:, :, 1:), ss_prop%tau(:, :, 1:)               &
     , isolir, sec_0                                                     &
     , trans_cloud, reflect_cloud, trans_0_cloud_noscal, trans_0_cloud   &
     , source_coeff_cloud                                                &
