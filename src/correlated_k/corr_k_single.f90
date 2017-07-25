@@ -2007,6 +2007,8 @@ CONTAINS
 !     Temporary storage for interpolation of absorption coefficient
     REAL(RealK) :: wgt_t1, wgt_t2
 !     Temperature interpolation weights
+    INTEGER :: map_cia(num_cia_lines_in_band)
+!     Mapping of CIA data entries to strictly increasing tempeatures
 
 
 !   Calculate the monochromatic absorption coefficients at each
@@ -2037,21 +2039,27 @@ CONTAINS
 
       IF (n_t_cia > 0) THEN
 
+!       Sort the data so that the temperature is increasing
+        CALL map_heap_func(t_cia(1:n_t_cia), map_cia(1:n_t_cia))
+
 !       Perform interpolation in wavenumber and temperature
-        IF (t_calc(ipt) <= t_cia(1)) THEN
-          kabs(j) = interp1d(cia(1)%wavenumber, &
-            cia(1)%data, waveno, cia(1)%head%no_pts)
-        ELSE IF (t_calc(ipt) >= t_cia(n_t_cia)) THEN
-          kabs(j) = interp1d(cia(n_t_cia)%wavenumber, &
-            cia(n_t_cia)%data, waveno, cia(n_t_cia)%head%no_pts)
+        IF (t_calc(ipt) <= t_cia(map_cia(1))) THEN
+          kabs(j) = interp1d(cia(map_cia(1))%wavenumber, &
+            cia(map_cia(1))%data, waveno, cia(map_cia(1))%head%no_pts)
+        ELSE IF (t_calc(ipt) >= t_cia(map_cia(n_t_cia))) THEN
+          kabs(j) = interp1d(cia(map_cia(n_t_cia))%wavenumber, &
+            cia(map_cia(n_t_cia))%data, waveno, &
+            cia(map_cia(n_t_cia))%head%no_pts)
         ELSE
           DO i = 1, n_t_cia - 1
-            IF (t_calc(ipt) >= t_cia(i) .AND. t_calc(ipt) <= t_cia(i+1)) THEN
-              kabs_t1 = interp1d(cia(i)%wavenumber, &
-                cia(i)%data, waveno, cia(i)%head%no_pts)
-              kabs_t2 = interp1d(cia(i+1)%wavenumber, &
-                cia(i+1)%data, waveno, cia(i+1)%head%no_pts)
-              wgt_t1 = (t_cia(i+1) - t_calc(ipt))/(t_cia(i+1) - t_cia(i))
+            IF (t_calc(ipt) >= t_cia(map_cia(i)) .AND. &
+                t_calc(ipt) <= t_cia(map_cia(i+1))) THEN
+              kabs_t1 = interp1d(cia(map_cia(i))%wavenumber, &
+                cia(map_cia(i))%data, waveno, cia(map_cia(i))%head%no_pts)
+              kabs_t2 = interp1d(cia(map_cia(i+1))%wavenumber, &
+                cia(map_cia(i+1))%data, waveno, cia(map_cia(i+1))%head%no_pts)
+              wgt_t1 = (t_cia(map_cia(i+1)) - t_calc(ipt))/ &
+                (t_cia(map_cia(i+1)) - t_cia(map_cia(i)))
               wgt_t2 = 1.0_RealK - wgt_t1
               kabs(j) = wgt_t1*kabs_t1 + wgt_t2*kabs_t2
             END IF
