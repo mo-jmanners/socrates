@@ -114,8 +114,8 @@
 ! integral of the planckian times weights over wavelength 
 ! and an inner product over temperature      
  
-      D_LAMBDA=(LAMBDA_MAX-LAMBDA_MIN)/FLOAT(N_PTS-1)
-      D_THETA=(THETA_HIGH-THETA_LOW)/FLOAT(NPD_FIT_TEMP-1)
+      D_LAMBDA=(LAMBDA_MAX-LAMBDA_MIN)/REAL(N_PTS-1, RealK)
+      D_THETA=(THETA_HIGH-THETA_LOW)/REAL(NPD_FIT_TEMP-1, RealK)
       
 !      print*,'D_LAMBDA=',D_LAMBDA
       

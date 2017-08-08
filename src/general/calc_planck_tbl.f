@@ -79,7 +79,7 @@
 
 ! Step in wavelength
  
-      D_LAMBDA=(LAMBDA_MAX-LAMBDA_MIN)/FLOAT(N_PTS-1)
+      D_LAMBDA=(LAMBDA_MAX-LAMBDA_MIN)/REAL(N_PTS-1, RealK)
       
 !      print*,'D_LAMBDA=',D_LAMBDA
       
