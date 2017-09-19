@@ -39,10 +39,10 @@ def ncout_surf(file, lon, lat, basis, alb):
     nvals = np.size(alb)
 
     if (nvals == 1):
-        albs = np.zeros(n_lon*n_lat*levels).reshape(n_lon, n_lat, levels)
+        albs = np.zeros(n_lon*n_lat*levels)
         albs += np.sum(alb)
     elif (nvals == n_lon*n_lat*levels):
-        albs = alb.reshape(n_lon,n_lat,levels)
+        albs = alb
     else:
         raise RuntimeError(' Error in ncout_surf: arrays dont match', nvals
                             , n_lon * n_lat * levels)
@@ -75,11 +75,10 @@ def ncout_spectral_surf(file, lon, lat, bands, alb):
     nvals = np.size(alb)
 
     if (nvals == 1):
-        albs = np.zeros(n_lon * n_lat * np.sum(bands)).reshape(n_lon, n_lat, 1, 
-                                                          np.sum(bands))
+        albs = np.zeros(n_lon * n_lat * np.sum(bands))
         albs += alb
     elif (nvals == n_lon * n_lat * bands):
-        albs = alb.reshape(n_lon, n_lat, 1, np.sum(bands))
+        albs = alb
     else:
         raise RuntimeError(' Error in ncout_surf: arrays dont match', nvals
                            , n_lon * n_lat * bands)
@@ -113,10 +112,10 @@ def ncout2d(file, lon, lat, val, name = None, longname = None
     n_lat = np.size(lat)
     nvals = np.size(val)
     if (nvals == 1):
-        vals = np.zeros(n_lon*n_lat).reshape(n_lon, n_lat)
+        vals = np.zeros(n_lon*n_lat)
         vals += np.sum(val)
     elif (nvals == n_lon*n_lat):
-        vals = val.reshape(n_lon, n_lat)
+        vals = val
     else:
         raise RuntimeError(' Error in ncout2d: arrays dont match', nvals
                            , n_lon * n_lat)
@@ -131,14 +130,6 @@ def ncout2d(file, lon, lat, val, name = None, longname = None
     write_dim(ncdf_file, n_lon, lon, 'lon', 'f4', 'lon', 'degree', 'LONGITUDE')
     write_dim(ncdf_file, n_lat, lat, 'lat', 'f4', 'lat', 'degree', 'LATITUDE')
 
-    # units=None
-    # title=None
-    # if (type(units) is str):
-    #     units = unit
-    # if (type(longname) is str):
-    #     title = longname
-
-#    write_var(ncdf_file, vals, name, 'f4', ('lat', 'lon'), units, title)
     write_var(ncdf_file, vals, name, 'f4', ('lat', 'lon'), units, longname)
 
     ncdf_file.close()   
@@ -160,22 +151,23 @@ def ncout3d(file, lon, lat, p, val, name = None
     nvals = np.size(val)
 
     if (nvals == 1):
-        vals = np.zeros(n_lon * n_lat * levels).reshape(n_lon, n_lat, levels)
+        vals = np.zeros(n_lon * n_lat * levels).reshape(levels, n_lat, n_lon)
         vals += np.sum(val)
     elif (nvals == levels):
-        vals = np.zeros(n_lon * n_lat * levels).reshape(n_lon, n_lat, levels)
+        vals = np.zeros(n_lon * n_lat * levels).reshape(levels, n_lat, n_lon)
         for i in np.arange(levels):
-            vals[:, :, i] = val[i]
+            vals[i, :, :] = val[i]
     elif (nvals == n_lon * n_lat * levels):
-        vals = val.reshape(n_lon, n_lat, levels)
+        vals = val.reshape(levels, n_lat, n_lon)
     else:
         raise RuntimeError(' Error in ncout3d: arrays dont match', nvals
                            , n_lon * n_lat * levels)
 
-    order = np.argsort(p)
-    if (any (p[order] != p)):
-        p = p[order]
-        vals = vals[:,:,order]
+    if (p.size > 1):
+        order = np.argsort(p)
+        if (any (p[order] != p)):
+            p = p[order]
+            vals = vals[order,:,:]
     
     if (type(name) is not str):
         patterns = re.compile(r'\\|\.')
@@ -302,7 +294,7 @@ def ncout_view(file, lon, lat, direction, level, pol, azim, rlev):
     n_rlv  = np.size(rlev)
 
     if (n_pol == 1):
-        pols = np.zeros(n_lon * n_lat * n_dir).reshape(n_lon, n_lat, n_dir)
+        pols = np.zeros(n_lon * n_lat * n_dir).reshape(n_dir, n_lat, n_lon)
         pols += np.sum(pol)
     elif (n_pol == n_lon * n_lat * n_dir):
         pols = pol
@@ -311,7 +303,7 @@ def ncout_view(file, lon, lat, direction, level, pol, azim, rlev):
                            , n_pol, n_lon * n_lat * n_dir)
 
     if (n_azm == 1):
-        azims = np.zeros(n_lon*n_lat*n_dir).reshape(n_lon, n_lat, n_dir)
+        azims = np.zeros(n_lon*n_lat*n_dir).reshape(n_dir, n_lat, n_lon)
         azims += np.sum(azim)
     elif (n_azm == n_lon * n_lat * n_dir):
         azims = azim
