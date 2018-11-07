@@ -25,8 +25,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
     , i_rayleigh_scheme, n_gas_rayleigh, index_rayleigh                 &
     , rayleigh_coeff_tot, rayleigh_coeff_gas                            &
     , gas_mix_ratio                                                     &
-    , l_continuum, n_continuum, i_continuum_pointer, k_continuum        &
-    , amount_continuum                                                  &
+    , l_continuum, n_continuum, k_continuum, amount_continuum           &
     , n_aerosol, n_aerosol_mr, aerosol_mix_ratio                        &
     , aerosol_mr_source, aerosol_mr_type_index                          &
     , i_aerosol_parametrization                                         &
@@ -202,10 +201,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !       Continuum absorption activated
 
   INTEGER, INTENT(IN) ::                                                &
-      n_continuum                                                       &
+      n_continuum
 !       Number of continua
-    , i_continuum_pointer(nd_continuum)
-!       Pointers to active continua
 
   REAL (RealK), INTENT(IN) ::                                           &
       k_continuum(nd_continuum)                                         &
@@ -396,9 +393,7 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 
 ! Local variables.
   INTEGER ::                                                            &
-      i_continuum                                                       &
-!       Temporary continuum `index'
-    , l                                                                 &
+      l                                                                 &
 !       Loop variable
     , ll                                                                &
 !       Loop variable
@@ -795,19 +790,16 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
   IF (l_continuum) THEN
 !   Include continuum absorption.
     DO j=1, n_continuum
-      i_continuum=i_continuum_pointer(j)
       DO i=1, n_cloud_top-1
         DO l=1, n_profile
           ss_prop%k_grey_tot_clr(l, i)=ss_prop%k_grey_tot_clr(l, i)     &
-            +k_continuum(i_continuum)                                   &
-            *amount_continuum(l, i, i_continuum)
+            +k_continuum(j)*amount_continuum(l, i, j)
         END DO
       END DO
       DO i=n_cloud_top, n_layer
         DO l=1, n_profile
           ss_prop%k_grey_tot(l, i, 0)=ss_prop%k_grey_tot(l, i, 0)       &
-            +k_continuum(i_continuum)                                   &
-            *amount_continuum(l, i, i_continuum)
+            +k_continuum(j)*amount_continuum(l, i, j)
         END DO
       END DO
     END DO

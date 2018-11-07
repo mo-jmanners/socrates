@@ -109,7 +109,7 @@ SUBROUTINE solve_band_k_eqv(ierr                                        &
   USE def_ss_prop
   USE def_spherical_geometry, ONLY: StrSphGeo
   USE rad_pcf
-  USE rad_ccf, ONLY: diffusivity_factor_minor
+  USE diffusivity_factor, ONLY: diffusivity_factor_minor
   USE vectlib_mod, ONLY: exp_v
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim

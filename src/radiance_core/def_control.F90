@@ -10,9 +10,6 @@
 !   This module defines the elements of the structure defining
 !   algorithmic control of the radiation code.
 !
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiance Core
-!
 !------------------------------------------------------------------------------
 MODULE def_control
 

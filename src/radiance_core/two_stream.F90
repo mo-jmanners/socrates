@@ -4,7 +4,7 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-!  Subroutine to solve the two-stream equations in a column.
+! Subroutine to solve the two-stream equations in a column.
 !
 ! Method:
 !   The coefficients of the two-stream equations are calculated.
@@ -130,9 +130,6 @@ SUBROUTINE two_stream(ierr                                              &
 
 
 ! Local variables.
-  INTEGER                                                               &
-      n_equation
-!       Number of equations
   REAL (RealK) ::                                                       &
       trans(nd_profile, nd_layer)                                       &
 !       Transmission of layer
@@ -148,13 +145,6 @@ SUBROUTINE two_stream(ierr                                              &
 !       Downward source
     , s_up(nd_profile, nd_layer)
 !       Upward source
-  REAL (RealK) ::                                                       &
-      a5(nd_profile, 5, 2*nd_layer+2)                                   &
-!       Pentadigonal matrix
-    , b(nd_profile, 2*nd_layer+2)                                       &
-!       RHS of matrix equation
-    , work_1(nd_profile, 2*nd_layer+2)
-!       Working array for solver
 
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1

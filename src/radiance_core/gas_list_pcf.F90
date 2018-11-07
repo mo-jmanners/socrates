@@ -14,7 +14,7 @@
 !- ---------------------------------------------------------------------
 MODULE gas_list_pcf
 
-USE realtype_rd
+USE realtype_rd, ONLY: RealK
 
 IMPLICIT NONE
 

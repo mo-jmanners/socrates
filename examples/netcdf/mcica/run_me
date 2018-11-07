@@ -10,6 +10,7 @@ $RAD_DATA/spectra/ga3_0/sp_sw_ga3_0
 $RAD_DATA/spectra/ga3_0/sp_lw_ga3_0
 6
 $RAD_DATA/spectra/ga3_0/mcica_data
+64
 EOF
 
 diff -q -b mcica_data $RAD_DATA/spectra/ga3_0/mcica_data || ierr=1

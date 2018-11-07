@@ -35,21 +35,6 @@ MODULE rad_ccf
 !   Time of annual perihelion
 
 ! ------------------------------------------------------------------
-! diff_elsasser_ccf, elsass3a
-! ------------------------------------------------------------------
-! Module to set diffusivity for elsasser's scheme.
-  REAL (RealK), PARAMETER :: elsasser_factor = 1.66e+00_RealK
-!   Diffusivity factor for elsasser's scheme
-
-! ------------------------------------------------------------------
-! diff_keqv_ucf, diffke3a
-! ------------------------------------------------------------------
-! Module to set the diffusivity factor for use with equivalent
-! extinction
-  REAL (RealK), PARAMETER :: diffusivity_factor_minor = 1.66e+00_RealK
-!   Minor diffusivity factor
-
-! ------------------------------------------------------------------
 ! math_cnst_ccf
 ! ------------------------------------------------------------------
 ! Module to define mathematical constants.

@@ -635,6 +635,9 @@ INTEGER, PARAMETER :: ip_surf_alb_dir  = 2
 ! ------------------------------------------------------------------
 ! This module defines identifiers for different surface types
 ! as used in the radiation scheme.
+INTEGER, PARAMETER :: npd_tile_type = 4
+!   Number identifiers for surface types (highest value in the list below).
+
 INTEGER, PARAMETER :: ip_ocean_tile   = 1
 !   Identifier for open sea
 INTEGER, PARAMETER :: ip_seaice_tile  = 2

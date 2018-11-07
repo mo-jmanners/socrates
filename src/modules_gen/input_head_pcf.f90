@@ -18,9 +18,8 @@ MODULE input_head_pcf
 !   Great care must be taken if physical identifiers (IP_...) are
 !   changed to ensure that the changes are mirrored in all arrays.
 
-  USE realtype_rd
-  USE dimensions_spec_ucf
-  USE gas_list_pcf
+  USE realtype_rd, ONLY: RealK
+  USE gas_list_pcf, ONLY: npd_gases
   USE rad_pcf, ONLY: npd_aerosol_component
 
   IMPLICIT NONE
@@ -175,7 +174,7 @@ MODULE input_head_pcf
   INTEGER, Parameter :: IP_photolysis                            = 57
 !   Rate of photolysis
   INTEGER, Parameter :: IP_p_level                               = 58
-! pressure on level edges
+!   Pressure on levels (layer boundaries)
 
 !
   CHARACTER  (LEN=len_col_header), Parameter, &

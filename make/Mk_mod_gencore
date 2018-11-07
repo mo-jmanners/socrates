@@ -6,6 +6,7 @@ MODULES_GENCORE = def_aer.f90 \
 		def_dimen.f90 \
 		def_out.f90 \
 		def_spectrum.f90 \
+		diffusivity_factor.f90 \
 		dimensions_spec_ucf.f90 \
 		ereport_mod.f90 \
 		errormessagelength_mod.f90 \

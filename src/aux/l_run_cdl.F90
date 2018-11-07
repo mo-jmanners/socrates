@@ -249,7 +249,6 @@ PROGRAM l_run_cdl
   dimen%nd_opt_level_cloud_prsc   = npd_opt_level_cloud_prsc
   dimen%nd_cloud_component        = npd_cloud_component
   dimen%nd_cloud_type             = npd_cloud_type
-  dimen%nd_cloud_representation   = npd_cloud_representation
   dimen%nd_overlap_coeff          = npd_overlap_coeff
   dimen%nd_source_coeff           = npd_source_coeff
   dimen%nd_region                 = npd_region

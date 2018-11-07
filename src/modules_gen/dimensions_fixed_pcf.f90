@@ -14,8 +14,6 @@ MODULE dimensions_fixed_pcf
 !   Number of components of clouds.
   INTEGER, Parameter :: npd_cloud_type             =  4
 !   Number of permitted types of clouds.
-  INTEGER, Parameter :: npd_cloud_representation   =  4
-!   Number of permitted representations of clouds.
   INTEGER, Parameter :: npd_overlap_coeff          = 18
 !   Number of overlap coefficients for cloud
   INTEGER, Parameter :: npd_source_coeff           =  2

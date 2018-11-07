@@ -123,11 +123,11 @@ CHARACTER (LEN=*), PARAMETER       :: RoutineName = 'READ_SPECTRUM'
 ! from the spectral file: eventually these should all be determined
 ! from a block of dimensions or by other dynamic means.
 nd_band = 1
-nd_exclude = npd_exclude
+nd_exclude = 1
 nd_k_term = npd_k_term
 nd_species = 1
 nd_scale_variable = npd_scale_variable
-nd_continuum = npd_continuum
+nd_continuum = 1
 nd_drop_type = npd_drop_type
 nd_ice_type  = npd_ice_type
 nd_aerosol_species = 1
@@ -1699,6 +1699,7 @@ INTEGER :: idum
 INTEGER :: j
 !   Loop variable
 
+INTEGER, ALLOCATABLE :: index_continuum(:, :)
 
 ! Allocate the continuum arrays:
 ALLOCATE(Sp%Cont%n_band_continuum(nd_band))
@@ -1717,11 +1718,14 @@ DO i=1, Sp%Basic%n_band
     RETURN
   END IF
   IF (Sp%Cont%n_band_continuum(i) > nd_continuum) THEN
-    cmessage = '*** Error in subroutine read_block_8_0_0.\n' // &
-      'There are too many continua: ' // &
-      'increase npd_continuum and recompile: '// TRIM(iomessage)
-    ierr=i_err_fatal
-    RETURN
+    ALLOCATE(index_continuum(nd_band, Sp%Cont%n_band_continuum(i)))
+    index_continuum(:,1:nd_continuum) = Sp%Cont%index_continuum
+    DEALLOCATE(Sp%Cont%index_continuum)
+    ALLOCATE(Sp%Cont%index_continuum(nd_band, Sp%Cont%n_band_continuum(i)))
+    Sp%Cont%index_continuum(:,1:nd_continuum) = &
+            index_continuum(:,1:nd_continuum)
+    DEALLOCATE(index_continuum)
+    nd_continuum = Sp%Cont%n_band_continuum(i)
   END IF
   IF (Sp%Cont%n_band_continuum(i) > 0) THEN
     READ(iu_spc, '(5x, 4(2x, i3))') &
@@ -2794,11 +2798,11 @@ INTEGER :: idum
 !   Dummy integer
 INTEGER :: j
 !   Loop variable
-
+INTEGER, ALLOCATABLE :: index_exclude(:, :)
 
 ! Allocate space for arrys dealing with exclusions: n_band_exclude
 ! has been allocated earlier.
-ALLOCATE(Sp%Basic%index_exclude(nd_exclude, nd_band))
+ALLOCATE(index_exclude(nd_band, nd_band))
 ! Skip over the headers.
 READ(iu_spc, '(//)')
 
@@ -2813,8 +2817,9 @@ DO i=1, Sp%Basic%n_band
     RETURN
   END IF
   IF (Sp%Basic%n_band_exclude(i) > 0) THEN
+    nd_exclude = MAX(nd_exclude, Sp%Basic%n_band_exclude(i))
     READ(iu_spc, '(14x, 8(3x, i5))') &
-      (Sp%Basic%index_exclude(j, i), &
+      (index_exclude(j, i), &
        j=1, Sp%Basic%n_band_exclude(i) )
   END IF
   IF (ios /= 0) THEN
@@ -2824,6 +2829,14 @@ DO i=1, Sp%Basic%n_band
     RETURN
   END IF
 END DO
+
+ALLOCATE(Sp%Basic%index_exclude(nd_exclude, nd_band))
+DO i=1, Sp%Basic%n_band
+  DO j=1, Sp%Basic%n_band_exclude(i)
+    Sp%Basic%index_exclude(j, i) = index_exclude(j, i)
+  END DO
+END DO
+DEALLOCATE(index_exclude)
 
 END SUBROUTINE read_block_14_0_0_int
 

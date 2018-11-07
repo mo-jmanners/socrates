@@ -10,9 +10,6 @@
 !   This module contains the declaration of the structure
 !   used to store aerosol data in the radiation code.
 !
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiance Core
-!
 !------------------------------------------------------------------------------
 MODULE def_aer
 

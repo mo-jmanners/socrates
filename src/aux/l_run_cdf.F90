@@ -167,6 +167,8 @@ PROGRAM l_run_cdf
 ! for bounds checking):
   REAL  (RealK), ALLOCATABLE :: dummy_vert_coord(:,:)
 
+! Extended array to hold heights of layers, surface and top-of-atmosphere
+  REAL (RealK), ALLOCATABLE :: r_layer(:,:)
 
 ! External functions:
   LOGICAL, EXTERNAL :: set_interactive
@@ -269,7 +271,6 @@ PROGRAM l_run_cdf
   dimen%nd_opt_level_cloud_prsc   = npd_opt_level_cloud_prsc
   dimen%nd_cloud_component        = npd_cloud_component
   dimen%nd_cloud_type             = npd_cloud_type
-  dimen%nd_cloud_representation   = npd_cloud_representation
   dimen%nd_overlap_coeff          = npd_overlap_coeff
   dimen%nd_source_coeff           = npd_source_coeff
   dimen%nd_region                 = npd_region
@@ -297,6 +298,8 @@ PROGRAM l_run_cdf
               dimen%nd_channel)                                       )
 
   npd_cdl_data = Max(dimen%nd_profile*dimen%nd_layer*dimen%nd_channel,  &
+                     dimen%nd_profile*spectrum%dim%nd_band*             &
+                     dimen%nd_brdf_basis_fnc,                           &
                      dimen%nd_profile*dimen%nd_direction*               &
                      dimen%nd_viewing_level*dimen%nd_channel)
   print *,'Setting npd_cdl_data: ',npd_cdl_data
@@ -1024,8 +1027,10 @@ PROGRAM l_run_cdf
 ! Determination of heights, and lit layers
 ! ------------------------------------------------------------------
   IF (control%l_spherical_solar) THEN
+    ALLOCATE (r_layer(atm%n_profile,0:atm%n_layer+1))
     DO l=1, atm%n_profile
-      atm%r_level(l, atm%n_layer)=earth_radius
+      atm%r_level(l, atm%n_layer) = earth_radius
+      r_layer(l, atm%n_layer+1) = earth_radius
     END DO
     DO i=atm%n_layer, 1, -1
       DO l=1, atm%n_profile
@@ -1033,12 +1038,16 @@ PROGRAM l_run_cdf
           atm%mass(l, i)/atm%density(l, i) + atm%r_level(l, i)
         atm%r_layer(l, i) = &
           (atm%r_level(l, i-1) + atm%r_level(l, i)) / 2.0_RealK
+        r_layer(l, i) = atm%r_layer(l, i)
       END DO
+    END DO
+    DO l=1, atm%n_profile
+      r_layer(l, 0) = atm%r_level(l, 0)
     END DO
     DO i=0, atm%n_layer+1
       DO l=1, atm%n_profile
         IF (bound%cos_zen(l, i) > 0.0_RealK .OR. &
-            atm%r_layer(l, i)*SQRT(1.0_RealK - bound%cos_zen(l, i)**2) > &
+            r_layer(l, i)*SQRT(1.0_RealK - bound%cos_zen(l, i)**2) > &
             atm%r_level(l, atm%n_layer)) THEN
           ! Layer is lit if the sun is above the horizontal or if the impact
           ! parameter for the beam is higher than the surface.
@@ -1048,6 +1057,7 @@ PROGRAM l_run_cdf
         END IF
       END DO
     END DO
+    DEALLOCATE (r_layer)
   END IF
 
 

@@ -288,6 +288,15 @@ LOGICAL :: l_interactive
   READ(*, "(a)") file_mcica_xcw
   CALL read_mcica_data(file_mcica_xcw)
 
+! Read in the total number of generated sub-columns
+  WRITE(*, "(a)") &
+    "Total number of sub-columns to be generated"
+  WRITE(*, "(a)") &
+    "(or -1 to generate enough for single sampling, -2 for optimal sampling):"
+  READ(*, *) tot_subcol_gen
+  IF (tot_subcol_gen == -1) tot_subcol_gen = total_k_lw
+  IF (tot_subcol_gen == -2) tot_subcol_gen = total_k_lw+n_add_lw
+
 ! Output data as a mcica_data file.
   INQUIRE(file=TRIM(file_mcica_data), exist=l_exist)
   IF (l_exist) THEN

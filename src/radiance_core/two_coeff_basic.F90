@@ -10,9 +10,6 @@
 !   Depending on the two-stream equations employed, the
 !   appropriate coefficients for the fluxes are calculated.
 !
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiance Core
-!
 !- ---------------------------------------------------------------------
 SUBROUTINE two_coeff_basic(ierr                                         &
      , n_profile, i_layer_first, i_layer_last                           &
@@ -25,7 +22,7 @@ SUBROUTINE two_coeff_basic(ierr                                         &
 
   USE realtype_rd, ONLY: RealK
   USE rad_pcf
-  USE rad_ccf, ONLY: elsasser_factor
+  USE diffusivity_factor, ONLY: elsasser_factor
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
   USE ereport_mod, ONLY: ereport

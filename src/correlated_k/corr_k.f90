@@ -4,21 +4,10 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-!+ Program generate correlated-k data for a spectral file.
+! Program to generate correlated-k data for a spectral file.
 !
 PROGRAM corr_k
-!
-! Description:
-! The main correlated-k program
-!
-! Method:
-! <Say how it does it: refer to external documentation>
-! <Include information on I/O>
-! <If this routine is divided into sections, be brief
-!  here, and put Method comments at the start of each
-!  section>
-!
-! Modules used:
+
   USE realtype_rd
   USE rad_pcf
   USE dimensions_pp_ucf
@@ -33,7 +22,6 @@ PROGRAM corr_k
 !
 !
 ! Local scalars:
-!
   INTEGER :: start_time(8) 
 !   Start/finish of program
   INTEGER :: end_time(8)   
@@ -587,17 +575,17 @@ PROGRAM corr_k
     iu_k_out, file_k, iu_monitor, file_monitor, file_lbl, &
     l_load_map, l_load_wgt, l_save_map, file_map, &
     n_omp_threads, ierr )
-!
+
   IF (include_instrument_response) THEN
     DEALLOCATE(filter%wavenumber)
     DEALLOCATE(filter%response)
     DEALLOCATE(filter%d2_response)
   ENDIF
-!
+
   CLOSE(iu_k_out)
-  CLOSE(iu_lbl)
-  CLOSE(iu_cia)
-!
+  IF (l_access_HITRAN .OR. l_access_xsc) CLOSE(iu_lbl)
+  IF (l_access_cia) CLOSE(iu_cia)
+
   WRITE(*,"(a)")"==============================="
   WRITE(*,"(a)")"corr_k : Execution ends   "
   CALL DATE_AND_TIME(VALUES=end_time)
@@ -605,8 +593,5 @@ PROGRAM corr_k
        " at ",end_time(5),":",end_time(6),":",end_time(7),   &
        " on ",end_time(3),"/",end_time(2),"/",end_time(1)
   WRITE(*,"(a)")"==============================="
-!
-!
-!
-  STOP
+
 END PROGRAM corr_k

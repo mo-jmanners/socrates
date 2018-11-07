@@ -4,16 +4,13 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 
-!  Subroutine to generate sub-columns for McICA
+! Subroutine to generate sub-columns for McICA
 
 ! Method:
 !       Allocates arrays to store sub-columns, rearranges cloud fields
 !       so that they are in suitable order for generator and calls
 !       generator which fills these arrays. Copies cloudy sub-columns 
 !       if more are required
-
-! Code Owner: Please refer to the UM file CodeOwners.txt
-! This file belongs in section: Radiation Control
 
 !- ---------------------------------------------------------------------
 SUBROUTINE open_cloud_gen(                                              &
@@ -149,7 +146,7 @@ SUBROUTINE open_cloud_gen(                                              &
   c_ratio=0.0_RealK
   ls_ratio=1.0_RealK
 
-  DO j=1,npd_layer
+  DO j=1,n_layer
     DO i=1,n_profile
       IF (w_cloud1(i,j) .gt. cut) THEN
         w_cloud(i,j)=w_cloud1(i,j)
@@ -165,7 +162,7 @@ SUBROUTINE open_cloud_gen(                                              &
 
 
   cloud_levels=1
-  DO j=1,npd_layer
+  DO j=1,n_layer
     DO i=1,n_profile
       IF (w_cloud1(i,j) .gt. cut) THEN
         cloud_levels=j

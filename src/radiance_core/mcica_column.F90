@@ -229,14 +229,6 @@ SUBROUTINE mcica_column(ierr                                            &
   , path_div_gathered(nd_profile, 1)
 !       Gathered path scaling for calculating direct flux divergence
 
-  REAL (RealK) ::                                                       &
-    a5(nd_profile, 5, 2*nd_layer+2)                                     &
-!       Pentadigonal matrix
-  , b(nd_profile, 2*nd_layer+2)                                         &
-!       RHS of matrix equation
-  , work_1(nd_profile, 2*nd_layer+2)
-!       Working array for solver
-
 
   INTEGER :: path_base
 

@@ -54,7 +54,7 @@ SUBROUTINE conjugate_gradient_cloud_90(ierr, iu_monitor, &
 !   Volume fraction of absorber
   REAL  (RealK), Intent(IN), Dimension(n_data) :: d
 !   Effective radius of particles
-  REAL  (RealK), Intent(OUT), Dimension(n_parameter) :: parm
+  REAL  (RealK), Intent(INOUT), Dimension(n_parameter) :: parm
 !   Fitting parameters
 !
 !

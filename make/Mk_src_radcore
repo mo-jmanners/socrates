@@ -13,7 +13,6 @@ SOURCE_RADCORE=	adjust_ir_radiance.f90 \
 		calc_top_rad.f90 \
 		calc_uplm_sol.f90 \
 		calc_uplm_zero.f90 \
-		calculate_density.f90 \
 		cg_kappa_ms.f90 \
 		check_phf_term.f90 \
 		circumsolar_fraction.f90 \

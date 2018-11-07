@@ -83,8 +83,6 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 !       Number of continua in band
     , i_continuum                                                              &
 !       Continuum number
-    , i_continuum_pointer(spectrum%dim%nd_continuum)                           &
-!       Pointers to continua
     , i_pointer_water                                                          &
 !       Pointer to water vapour
     , n_cont                                                                   &
@@ -549,33 +547,34 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 
 
 ! Initial calculations for aerosols:
+  IF (control%l_aerosol) THEN
 
-! Set the spectrally independent properties of moist aerosols.
-  l_moist_aerosol  = .FALSE.
-  DO j = 1, spectrum%aerosol%n_aerosol
-    SELECT CASE ( spectrum%aerosol%i_aerosol_parm(j) )
-    CASE (ip_aerosol_param_moist, ip_aerosol_param_phf_moist)
-      l_moist_aerosol  = .TRUE.
-      nhumidity_common = spectrum%aerosol%nhumidity(j)
-    END SELECT
-  END DO
-
-  IF (l_moist_aerosol) THEN
-!   Currently all aerosols use the same lookup table of humidities
-    delta_humidity = 1.0e+00_RealK                                             &
-      / ( REAL(nhumidity_common, RealK) - 1.0e+00_RealK )
-    DO i = 1, atm%n_layer
-      DO l = 1, atm%n_profile
-        i_humidity_pointer(l, i) = 1 +                                         &
-          INT( aer%mean_rel_humidity(l, i)*(nhumidity_common-1) )
-      END DO
+!   Set the spectrally independent properties of moist aerosols.
+    l_moist_aerosol  = .FALSE.
+    DO j = 1, spectrum%aerosol%n_aerosol
+      SELECT CASE ( spectrum%aerosol%i_aerosol_parm(j) )
+      CASE (ip_aerosol_param_moist, ip_aerosol_param_phf_moist)
+        l_moist_aerosol  = .TRUE.
+        nhumidity_common = spectrum%aerosol%nhumidity(j)
+      END SELECT
     END DO
+
+    IF (l_moist_aerosol) THEN
+!     Currently all aerosols use the same lookup table of humidities
+      delta_humidity = 1.0e+00_RealK                                           &
+        / ( REAL(nhumidity_common, RealK) - 1.0e+00_RealK )
+      DO i = 1, atm%n_layer
+        DO l = 1, atm%n_profile
+          i_humidity_pointer(l, i) = 1 +                                       &
+            INT( aer%mean_rel_humidity(l, i)*(nhumidity_common-1) )
+        END DO
+      END DO
+    END IF
+
   END IF
 
 
-
 ! Initial calculations for clouds:
-
   IF (control%l_cloud) THEN
 
 !   Set pointers to the types of cloud.
@@ -890,11 +889,9 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
     IF (control%l_continuum) THEN
       n_continuum=spectrum%cont%n_band_continuum(i_band)
       DO i=1, n_continuum
-        i_continuum_pointer(i)=spectrum%cont%index_continuum(i_band, i)
-        i_continuum=i_continuum_pointer(i)
-        IF (spectrum%cont%i_scale_fnc_cont(i_band,i_continuum)                 &
-          == ip_scale_ses2) THEN
-          k_continuum_mono(i_continuum)=0.0
+        i_continuum=spectrum%cont%index_continuum(i_band, i)
+        IF (spectrum%cont%i_scale_fnc_cont(i_band, i) == ip_scale_ses2) THEN
+          k_continuum_mono(i)=0.0
 ! DEPENDS ON: ses_rescale_contm
           CALL ses_rescale_contm(dimen%nd_profile, dimen%nd_layer              &
             , i_continuum, atm%n_profile, atm%n_layer                          &
@@ -903,17 +900,16 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
             )
         ELSE
           l_grey_cont = .TRUE.
-          k_continuum_mono(i_continuum) =                                      &
-            spectrum%cont%k_cont(i_band, i_continuum)
+          k_continuum_mono(i) = spectrum%cont%k_cont(i_band, i)
 ! DEPENDS ON: rescale_continuum
           CALL rescale_continuum(control, atm%n_profile, atm%n_layer           &
             , i_continuum, atm%p, atm%t                                        &
             , atm%density, atm%gas_mix_ratio(1, 1, i_pointer_water)            &
-            , amount_continuum(1, 1, i_continuum)                              &
-            , spectrum%cont%i_scale_fnc_cont(i_band, i_continuum)              &
-            , spectrum%cont%p_ref_cont(i_continuum, i_band)                    &
-            , spectrum%cont%t_ref_cont(i_continuum, i_band)                    &
-            , spectrum%cont%scale_cont(1, i_band, i_continuum)                 &
+            , amount_continuum(1, 1, i)                                        &
+            , spectrum%cont%i_scale_fnc_cont(i_band, i)                        &
+            , spectrum%cont%p_ref_cont(i, i_band)                              &
+            , spectrum%cont%t_ref_cont(i, i_band)                              &
+            , spectrum%cont%scale_cont(1, i_band, i)                           &
             , dimen%nd_profile, dimen%nd_layer                                 &
             , spectrum%dim%nd_scale_variable)
         END IF
@@ -1015,7 +1011,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
       , spectrum%rayleigh%rayleigh_coeff(i_band)                               &
       , spectrum%rayleigh%rayleigh_coeff_gas(1, i_band)                        &
       , atm%gas_mix_ratio                                                      &
-      , l_grey_cont, n_continuum, i_continuum_pointer                          &
+      , l_grey_cont, n_continuum                                               &
       , k_continuum_mono, amount_continuum                                     &
       , spectrum%aerosol%n_aerosol                                             &
       , spectrum%aerosol%n_aerosol_mr, aer%mix_ratio                           &
