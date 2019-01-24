@@ -443,9 +443,9 @@ SUBROUTINE monochromatic_radiance(ierr                                  &
         ! Below cloud top.
         CALL rescale_tau_csr(n_profile                                  &
            , n_cloud_top, n_layer                                       &
-           , ss_prop%forward_scatter_csr(1, id_ct, 0)                   &
-           , ss_prop%tau(1, id_ct, 0), ss_prop%tau_dir(1, id_ct, 0)     &
-           , ss_prop%omega(1, id_ct, 0)                                 &
+           , ss_prop%forward_scatter_csr(:, :, 0)                       &
+           , ss_prop%tau(:, :, 0), ss_prop%tau_dir(:, :, 0)             &
+           , ss_prop%omega(:, :, 0)                                     &
            , nd_profile, nd_layer, id_ct                                &
            )
       ELSE IF (control%i_direct_tau == ip_direct_noscaling) THEN
@@ -479,10 +479,10 @@ SUBROUTINE monochromatic_radiance(ierr                                  &
           DO k=1, cld%n_cloud_type  
             CALL rescale_tau_csr(n_profile                              &
                , n_cloud_top, n_layer                                   &
-               , ss_prop%forward_scatter_csr(1, id_ct, k)               &
-               , ss_prop%tau(1, id_ct, k)                               &
-               , ss_prop%tau_dir(1, id_ct, k)                           &
-               , ss_prop%omega(1, id_ct, k)                             &
+               , ss_prop%forward_scatter_csr(:, :, k)                   &
+               , ss_prop%tau(:, :, k)                                   &
+               , ss_prop%tau_dir(:, :, k)                               &
+               , ss_prop%omega(:, :, k)                                 &
                , nd_profile, nd_layer, id_ct                            &
                )
           END DO

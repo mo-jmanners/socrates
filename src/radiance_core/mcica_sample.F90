@@ -694,9 +694,9 @@ SUBROUTINE mcica_sample(ierr                                            &
 ! the instrument FOV 
 ! DEPENDS ON: circumsolar_fraction
                  CALL circumsolar_fraction(n_cloud_profile(i)           &
-                  , i_cloud_profile(1, i), control%half_angle           &
-                  , ss_prop%phase_fnc(1, i, 1, k)                       &
-                  , ss_prop%forward_scatter_csr(1, i, k)                &
+                  , i_cloud_profile(:, i), control%half_angle           &
+                  , ss_prop%phase_fnc(:, i, 1, k)                       &
+                  , ss_prop%forward_scatter_csr(:, i, k)                &
                   , nd_profile                                          &
                   ) 
               END IF

@@ -856,8 +856,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 ! DEPENDS ON: circumsolar_fraction
           CALL circumsolar_fraction(n_index                             &
            , indx, control%half_angle                                   &
-           , ss_prop%phase_fnc_clr(1, i, 1)                             &
-           , ss_prop%forward_scatter_clr_csr(1, i)                      &
+           , ss_prop%phase_fnc_clr(:, i, 1)                             &
+           , ss_prop%forward_scatter_clr_csr(:, i)                      &
            , nd_profile                                                 &
            )
         END IF
@@ -883,8 +883,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
   ! Below cloud top.
           CALL circumsolar_fraction(n_index                               &
            , indx, control%half_angle                                     &
-           , ss_prop%phase_fnc(1, i, 1, 0)                                &
-           , ss_prop%forward_scatter_csr(1, i, 0)                         &
+           , ss_prop%phase_fnc(:, i, 1, 0)                                &
+           , ss_prop%forward_scatter_csr(:, i, 0)                         &
            , nd_profile                                                   &
            )
         END IF 
@@ -1376,8 +1376,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
       IF (control%i_direct_tau == ip_direct_csr_scaling ) THEN
         CALL circumsolar_fraction(n_index                               &
            , indx, control%half_angle                                   &
-           , ss_prop%phase_fnc_clr(1, i, 1)                             &
-           , ss_prop%forward_scatter_clr_csr(1, i)                      &
+           , ss_prop%phase_fnc_clr(:, i, 1)                             &
+           , ss_prop%forward_scatter_clr_csr(:, i)                      &
            , nd_profile                                                 &
            )
       END IF
@@ -1433,8 +1433,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
       IF (control%i_direct_tau == ip_direct_csr_scaling ) THEN
         CALL circumsolar_fraction(n_index                               &
            , indx, control%half_angle                                   &
-           , ss_prop%phase_fnc(1, i, 1, 0)                              &
-           , ss_prop%forward_scatter_csr(1, i, 0)                       &
+           , ss_prop%phase_fnc(:, i, 1, 0)                              &
+           , ss_prop%forward_scatter_csr(:, i, 0)                       &
            , nd_profile                                                 &
            )
       END IF
@@ -1519,8 +1519,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
         control%i_direct_tau == ip_direct_csr_scaling ) THEN
         CALL circumsolar_fraction(n_index                               &
            , indx, control%half_angle                                   &
-           , ss_prop%phase_fnc(1, i, 1, k)                              &
-           , ss_prop%forward_scatter_csr(1, i, k)                       &
+           , ss_prop%phase_fnc(:, i, 1, k)                              &
+           , ss_prop%forward_scatter_csr(:, i, k)                       &
            , nd_profile                                                 &
            )
       END IF
