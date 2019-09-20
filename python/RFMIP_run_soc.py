@@ -38,11 +38,10 @@ def write_var(ncdf_file, vals, name, vtype, dims, units, standard_name, longname
         variable.coordinates = coords
     variable[:] = vals
     
-def main_socrates_run(infile):
+def main_socrates_run(infile, equivalence):
     
     rfdat = Dataset(infile)
     basename = 'rfmip'
-
     nlevs = len(rfdat.dimensions['level'])
     nlays = len(rfdat.dimensions['layer'])
     nprof = len(rfdat.dimensions['site'])
@@ -167,14 +166,25 @@ def main_socrates_run(infile):
         nc.ncout3d(basename + '.n2o',     lon, lat, pdim, n2o[i],       longname = 'Dinitrogen oxide MMR')
         nc.ncout3d(basename + '.ch4',     lon, lat, pdim, ch4[i],       longname = 'Methane MMR')
         nc.ncout3d(basename + '.o2',      lon, lat, pdim, o2[i],        longname = 'Oxygen MMR')
-    #    nc.ncout3d(basename + '.cfc11',   lon, lat, pdim, cfc11[i],     longname = 'CFC-11 MMR')
-    #    nc.ncout3d(basename + '.cfc12',   lon, lat, pdim, cfc12[i],     longname = 'CFC-12 MMR')
-    #    nc.ncout3d(basename + '.cfc113',  lon, lat, pdim, cfc113[i],    longname = 'CFC-113 MMR')
-    #    nc.ncout3d(basename + '.hcfc22',  lon, lat, pdim, hcfc22[i],    longname = 'HCFC-22 MMR')
-    #    nc.ncout3d(basename + '.hfc134a', lon, lat, pdim, hfc134a[i],   longname = 'HFC-134a MMR')
-        nc.ncout3d(basename + '.cfc12',   lon, lat, pdim, cfc12eq[i],   longname = 'CFC-12 MMR')
-        nc.ncout3d(basename + '.hfc134a', lon, lat, pdim, hfc134aeq[i], longname = 'HFC-134a MMR')
-
+        if equivalence == 2:
+            print("Using Equivalence 2: CFC12 + CFC11eq")
+            nc.ncout3d(basename + '.cfc12',   lon, lat, pdim, cfc12[i],     longname = 'CFC-12 MMR')
+            nc.ncout3d(basename + '.cfc11', lon, lat, pdim, cfc11eq[i], longname = 'CFC-11 MMR')
+        elif equivalence == 3:
+            print("Using Equivalence 3: CFC12eq + HFC134aeq")
+            nc.ncout3d(basename + '.cfc12',   lon, lat, pdim, cfc12eq[i],     longname = 'CFC-12 MMR')
+            nc.ncout3d(basename + '.hfc134a', lon, lat, pdim, hfc134aeq[i], longname = 'HFC-134a MMR')
+        else:
+            print("Set Equivalence 2 or 3. Equivalence 1 currently not supported by SOCRATES")
+            sys.exit(1)
+        #    nc.ncout3d(basename + '.cfc11',   lon, lat, pdim, cfc11[i],     longname = 'CFC-11 MMR')
+        
+        #    nc.ncout3d(basename + '.cfc113',  lon, lat, pdim, cfc113[i],    longname = 'CFC-113 MMR')
+        #    nc.ncout3d(basename + '.hcfc22',  lon, lat, pdim, hcfc22[i],    longname = 'HCFC-22 MMR')
+        #    nc.ncout3d(basename + '.hfc134a', lon, lat, pdim, hfc134a[i],   longname = 'HFC-134a MMR')
+        #    nc.ncout3d(basename + '.cfc12',   lon, lat, pdim, cfc12eq[i],   longname = 'CFC-12 MMR')
+     
+    
     print('Running LW (GA7 & 300 band) and SW (GA7 & 260 band):')
     subprocess.call('date')
     procs=[]
@@ -211,7 +221,8 @@ def main_socrates_run(infile):
 if __name__ == '__main__':
     if (len(sys.argv) > 1):
         infile = sys.argv[1]
-        main_socrates_run(infile)
+        equivalence = 3 # Forcing eqivalence for CFCs; SOCRATES default is 3.
+        main_socrates_run(infile, equivalence)
     else:
         raise RuntimeError('\nplease enter an RFMIP netCDF filename \n'
                            'e.g. python RFMIP_run_soc.py multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc\n'

@@ -36,7 +36,7 @@ def create_attributes(args):
         sys.exit(1)
 
     if (forcing_index < 1 ) or (forcing_index > 3):
-        print('forcing_index must be 1, 2, or 3 (1 = all available greenhouse gases; 2 =  CO2, CH4, N2O, CFC11eq;  3 = CO2, CH4, N2O, CFC12eq, HFC-134eq)')
+        print('forcing_index must be 1, 2, or 3 (1 = all available greenhouse gases; 2 =  CO2, CH4, N2O, CFC12, CFC11eq;  3 = CO2, CH4, N2O, CFC12eq, HFC-134eq)')
         sys.exit(1)
 
     if (physics_index < 1 ):
@@ -172,7 +172,7 @@ def write_files(atmos_file, source_id, physics_index, variant_label, drs_attrs, 
     stand_names = ['upwelling_longwave_flux_in_air','upwelling_shortwave_flux_in_air',
                 'downwelling_longwave_flux_in_air','downwelling_shortwave_flux_in_air']
     variable_data_ga7 = [lw_ga7_up,sw_ga7_up,lw_ga7_down,sw_ga7_down]
-    variable_data_ga7_ref = [lw_300_up,sw_260_up,lw_300_down,sw_260_up]
+    variable_data_ga7_ref = [lw_300_up,sw_260_up,lw_300_down,sw_260_down]
 
     if physics_index==1:
         variable_data = variable_data_ga7
