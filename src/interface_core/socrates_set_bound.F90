@@ -78,8 +78,6 @@ integer, intent(in), optional :: i_profile_debug
 ! Local variables.
 integer :: l, ll, i_band, i_tile
 
-real(RealK) :: frac_tile_tolerance = 1.0_RealK - epsilon(1.0_RealK)
-
 
 ! Allocate structure for the core radiation code interface
 call allocate_bound(bound, dimen, spectrum)
@@ -120,72 +118,54 @@ if (control%l_tile .and. present(n_tile) .and. present(frac_tile)) then
   ! Set up the surface tiling variables.
   bound%n_tile=n_tile
   do l=1, n_profile
-    if (maxval(frac_tile(l, 1:n_tile)) < frac_tile_tolerance) then
-      ! More than one tile present
-      bound%n_point_tile = bound%n_point_tile + 1
-      bound%list_tile(bound%n_point_tile) = l
-      bound%frac_tile(bound%n_point_tile, 1:n_tile) = frac_tile(l, 1:n_tile)
-      if (present(albedo_diff_tile).and..not.l_grey_albedo) then
-        ! Set the diffuse tile albedos
-        bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_diff, 1:n_tile, &
-                           1:spectrum%basic%n_band) &
-          = albedo_diff_tile(l, 1:n_tile, 1:spectrum%basic%n_band)
-        ! Ensure the total albedo is consistent with the tile albedos
-        do i_band=1, spectrum%basic%n_band
-          bound%rho_alb(l, ip_surf_alb_diff, i_band) &
-            = sum(albedo_diff_tile(l, 1:n_tile, i_band)*frac_tile(l, 1:n_tile))
-        end do
-      else
-        ! When not present just use the gridbox mean diffuse albedo 
-        do i_band=1, spectrum%basic%n_band
-          bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_diff, &
-                             1:n_tile, i_band) &
-            = bound%rho_alb(l, ip_surf_alb_diff, i_band)
-        end do
-      end if
-      if (present(albedo_dir_tile).and..not.l_grey_albedo) then
-        ! Set the direct tile albedos
-        bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_dir, 1:n_tile, &
-                           1:spectrum%basic%n_band) &
-          = albedo_dir_tile(l, 1:n_tile, 1:spectrum%basic%n_band)
-        ! Ensure the total albedo is consistent with the tile albedos
-        do i_band=1, spectrum%basic%n_band
-          bound%rho_alb(l, ip_surf_alb_dir, i_band) &
-            = sum(albedo_dir_tile(l, 1:n_tile, i_band)*frac_tile(l, 1:n_tile))
-        end do
-      else
-        ! When not present just use the gridbox mean direct albedo 
-        do i_band=1, spectrum%basic%n_band
-          bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_dir, &
-                             1:n_tile, i_band) &
-            = bound%rho_alb(l, ip_surf_alb_dir, i_band)
-        end do
-      end if
-      if (present(t_tile)) then
-        ! Set the tile temperatures (t_ground will not be used on these points)
-        bound%t_tile(bound%n_point_tile, 1:n_tile) &
-          = t_tile(l, 1:n_tile)
-      else
-        ! When not present just use the gridbox mean surface temperature
-        bound%t_tile(bound%n_point_tile, 1:n_tile) &
-          = bound%t_ground(l)
-      end if
+    ! Treat all points as tiled when l_tile is true
+    bound%n_point_tile = bound%n_point_tile + 1
+    bound%list_tile(bound%n_point_tile) = l
+    bound%frac_tile(bound%n_point_tile, 1:n_tile) = frac_tile(l, 1:n_tile)
+    if (present(albedo_diff_tile).and..not.l_grey_albedo) then
+      ! Set the diffuse tile albedos
+      bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_diff, 1:n_tile, &
+                         1:spectrum%basic%n_band) &
+        = albedo_diff_tile(l, 1:n_tile, 1:spectrum%basic%n_band)
+      ! Ensure the total albedo is consistent with the tile albedos
+      do i_band=1, spectrum%basic%n_band
+        bound%rho_alb(l, ip_surf_alb_diff, i_band) &
+          = sum(albedo_diff_tile(l, 1:n_tile, i_band)*frac_tile(l, 1:n_tile))
+      end do
     else
-      ! One tile has a fraction of 1.0 so consider point to be untiled
-      i_tile = maxloc(frac_tile(l, 1:n_tile), 1)
-      ! If present use the tile albedos and surface temperature.
-      ! Otherwise the gridbox mean values (already set) will be used
-      if (present(albedo_diff_tile).and..not.l_grey_albedo) then
-        bound%rho_alb(l, ip_surf_alb_diff, 1:spectrum%basic%n_band) &
-          = albedo_diff_tile(l, i_tile, 1:spectrum%basic%n_band)
-      end if
-      if (present(albedo_dir_tile).and..not.l_grey_albedo) then
-        bound%rho_alb(l, ip_surf_alb_dir, 1:spectrum%basic%n_band) &
-          = albedo_dir_tile(l, i_tile, 1:spectrum%basic%n_band)
-      end if
-      if (present(t_tile)) then
-        bound%t_ground(l) = t_tile(l, i_tile)
-      end if      
+      ! When not present just use the gridbox mean diffuse albedo 
+      do i_band=1, spectrum%basic%n_band
+        bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_diff, &
+                           1:n_tile, i_band) &
+          = bound%rho_alb(l, ip_surf_alb_diff, i_band)
+      end do
+    end if
+    if (present(albedo_dir_tile).and..not.l_grey_albedo) then
+      ! Set the direct tile albedos
+      bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_dir, 1:n_tile, &
+                         1:spectrum%basic%n_band) &
+        = albedo_dir_tile(l, 1:n_tile, 1:spectrum%basic%n_band)
+      ! Ensure the total albedo is consistent with the tile albedos
+      do i_band=1, spectrum%basic%n_band
+        bound%rho_alb(l, ip_surf_alb_dir, i_band) &
+          = sum(albedo_dir_tile(l, 1:n_tile, i_band)*frac_tile(l, 1:n_tile))
+      end do
+    else
+      ! When not present just use the gridbox mean direct albedo 
+      do i_band=1, spectrum%basic%n_band
+        bound%rho_alb_tile(bound%n_point_tile, ip_surf_alb_dir, &
+                           1:n_tile, i_band) &
+          = bound%rho_alb(l, ip_surf_alb_dir, i_band)
+      end do
+    end if
+    if (present(t_tile)) then
+      ! Set the tile temperatures (t_ground will not be used on these points)
+      bound%t_tile(bound%n_point_tile, 1:n_tile) &
+        = t_tile(l, 1:n_tile)
+    else
+      ! When not present just use the gridbox mean surface temperature
+      bound%t_tile(bound%n_point_tile, 1:n_tile) &
+        = bound%t_ground(l)
     end if
   end do
 end if
