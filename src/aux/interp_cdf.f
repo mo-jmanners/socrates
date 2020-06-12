@@ -23,9 +23,9 @@
       USE def_std_io_icf
       USE dimensions_field_ucf
       USE dimensions_cdl_ucf
-      USE interp_mode_pcf
       USE error_pcf
       USE filenamelength_mod, ONLY: filenamelength
+      USE interpolate_p_mod
 !
       IMPLICIT NONE
 !
@@ -138,7 +138,7 @@
 !
 !     Subroutines called:
       EXTERNAL
-     &    assign_input_vert_cdf, interpolate_p
+     &    assign_input_vert_cdf
      &  , output_vert_cdf
 !
       data 
@@ -220,12 +220,11 @@
         ENDDO
         l_splined=.false.
         DO i=1, n_level_grid
-          CALL interpolate_p(ierr, n_level_in, p_int
+          CALL interpolate_p(n_level_in, p_int
      &      , a_in, x_in, y_in, y2_in
      &      , p_grid(l, i), field_out(l, i)
      &      , i_mode, l_splined
      &      )
-          IF (ierr == i_err_fatal) STOP
         ENDDO
       ENDDO
 !
@@ -253,5 +252,4 @@
 !
 !
 !
-      STOP
       END

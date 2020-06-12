@@ -59,7 +59,7 @@ fi
 if [ $ierr -gt 0 ] ; then
     exit 1
 else
-    rm -f sp_sw_ga9 sp_sw_ga9_k sp_lw_ga9 sp_lw_ga9_k
+    rm -f sp_sw_ga9 sp_sw_ga9_k sp_sw_ga9c sp_sw_ga9c_k sp_lw_ga9 sp_lw_ga9_k
     rm -f sp_sw_260_jm3 sp_sw_260_jm3_k
     rm -f sp_lw_300_jm3 sp_lw_300_jm3_k
     rm -f mcica_data_ga9 mcica_data_ga9_ref

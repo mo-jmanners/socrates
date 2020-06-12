@@ -20,8 +20,8 @@
       USE def_std_io_icf
       USE dimensions_field_ucf
       USE dimensions_cdl_ucf
-      USE interp_mode_pcf
       USE error_pcf
+      USE interpolate_p_mod
 !
 !
       IMPLICIT NONE
@@ -95,7 +95,7 @@
 !
 !     Subroutines called:
       EXTERNAL
-     &    assign_input_vert_cdl, interpolate_p
+     &    assign_input_vert_cdl
 !
 !
       data 
@@ -146,12 +146,11 @@
           p_reversed(n_level+1-i)=p(l, i)
         ENDDO
         l_splined=.false.
-        CALL interpolate_p(ierr, n_level, height_field
+        CALL interpolate_p(n_level, height_field
      &    , p_reversed, x, y, y2
      &    , height, p_evaluated(l)
      &    , i_mode, l_splined
      &    )
-        IF (ierr == i_err_fatal) STOP
 !
       ENDDO
 !
@@ -161,5 +160,4 @@
 !
 !
 !
-      STOP
       END

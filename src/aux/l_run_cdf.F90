@@ -40,6 +40,7 @@ PROGRAM l_run_cdf
     earth_radius, pi
   USE socrates_set_spectrum, only: set_spectrum
   USE socrates_set_cld_mcica, only: set_cld_mcica
+  USE nlte_heating_mod
 
   IMPLICIT NONE
 
@@ -100,6 +101,8 @@ PROGRAM l_run_cdf
 !       Flag Permitting the values of the vertical coordinates to be set
   LOGICAL :: l_vert_coord_level = .FALSE.
 !       Flag for vertical coordinate on levels
+  LOGICAL :: l_nlte = .FALSE.
+!       Flag for NLTE radiation scheme
 
 ! Physical processes included
   CHARACTER  (LEN=10) :: process_flag
@@ -612,6 +615,9 @@ PROGRAM l_run_cdf
       DO l=1, atm%n_profile
         bound%cos_zen(l, :) = COS(pi*bound%zen_0(l)/180.0_RealK)
       END DO
+
+    ELSE IF (process_flag(j:j) == 'n') THEN
+      l_nlte = .TRUE.
     ENDIF
   ENDDO
 
@@ -1282,6 +1288,13 @@ END IF
           ENDDO
         ENDDO
       ENDIF
+
+      ! Non-LTE cooling
+      IF (l_nlte) THEN
+        CALL nlte_heating_lw(atm%t, atm%p, atm%gas_mix_ratio, heating_rate, &
+          atm%n_layer, atm%n_profile)
+      END IF
+
     ENDDO
     IF (control%l_contrib_func) THEN
       contrib_func_i = radout%contrib_funci

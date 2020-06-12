@@ -21,9 +21,9 @@
       USE dimensions_field_ucf
       USE dimensions_cdl_ucf
       USE def_std_io_icf
-      USE interp_mode_pcf
       USE error_pcf
       USE method_merge_pcf
+      USE interpolate_p_mod
 !
 !
       IMPLICIT NONE
@@ -187,7 +187,7 @@
 !
 !     Subroutines called:
       EXTERNAL
-     &    assign_input_vert_cdl, merge_pressure, interpolate_p
+     &    assign_input_vert_cdl, merge_pressure
      &  , output_vert_cdl
 !
       data
@@ -442,19 +442,17 @@
           IF ( (pp < p_front_low).OR.(pp > p_front_high) ) THEN
             field_front_int=0.0_RealK
           ELSE
-            CALL interpolate_p(ierr, n_level_front, p_front
+            CALL interpolate_p(n_level_front, p_front
      &        , a_front, x_front, y_front, y2_front
      &        , pp, field_front_int
      &        , i_mode, l_splined_front
      &        )
-            IF (ierr /= i_normal) STOP
           ENDIF
-          CALL interpolate_p(ierr, n_level_back, p_back
+          CALL interpolate_p(n_level_back, p_back
      &      , a_back, x_back, y_back, y2_back
      &      , pp, field_back_int
      &      , i_mode, l_splined_back
      &      )
-          IF (ierr /= i_normal) STOP
             field_composite(l, i)
      &        =weight_front*field_front_int+weight_back*field_back_int
         ENDDO
@@ -494,5 +492,4 @@
 !
 !
 !
-      STOP
       END

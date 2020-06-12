@@ -44,7 +44,7 @@ SOURCE77_AUX =	angular_control.f \
 		fnc_density.f \
 		input_aerosol_cdl.f \
 		input_cloud_cdl.f \
-		interpolate_p.f \
+		interpolate_p_mod.f \
 		l_find_component.f \
 		merge_pressure.f \
 		mono_rad_ss.f \

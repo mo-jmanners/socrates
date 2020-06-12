@@ -11,6 +11,7 @@ fi
 SRC_LIST="general modules_gen aux scatter correlated_k"
 SRC_LIST=${SRC_LIST}" modules_core radiance_core"
 SRC_LIST=${SRC_LIST}" illumination interface_core"
+SRC_LIST=${SRC_LIST}" nlte"
 
 echo 'Building the radiation code in bin/ and utilities in sbin/'
 date
