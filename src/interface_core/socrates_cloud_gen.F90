@@ -108,7 +108,7 @@ implicit none
 ! Local variables
   real(RealK) :: ls_ratio(nd_profile, cloud_top:nd_layer)
 !     Large-scale condensate ratio
-  real(RealK) :: sigma_ccw(nd_profile, nd_layer)
+  real(RealK) :: sigma_ccw(nd_profile, cloud_top:nd_layer)
 !     Normalized cloud condensate std. dev. for convective cloud
 
   integer :: &

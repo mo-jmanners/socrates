@@ -795,7 +795,7 @@ do k = dimen%id_cloud_top, atm%n_layer
         ! Set c_ratio to the in-cloud convective condensate MMR
         ! divided by the total in-cloud condensate MMR
         cld%c_ratio(l, k) = &
-          cld%c_ratio(l, k) * cld%w_cloud(l, k) / cond_mmr(l, k)
+          cld%c_ratio(l, k) * cld%w_cloud(l, k) / max(cond_mmr(l, k), eps)
       end if
     else
       cld%w_cloud(l, k) = 0.0_RealK
