@@ -22,11 +22,10 @@ if __name__ == '__main__':
         raise RuntimeError('please enter a CIRC case number '
                            '(e.g. python circ2nc.py 2)')
 
-rad_data = subprocess.check_output(['echo $RAD_DATA'], shell = True)[:-1]
-SPECTRAL_FILE = [rad_data + '/spectra/old/sp_sw_hadgem1_3r'
-                 , rad_data + '/spectra/ses_sw_jm1_1'
-                 , rad_data + '/spectra/sp_sw_220_r']
-SP_FILE_NAME = ['hadgem', 'ses', '220']
+rad_data = subprocess.run(['echo $RAD_DATA'], stdout=subprocess.PIPE, universal_newlines=True, shell=True).stdout[:-1]
+SPECTRAL_FILE = [rad_data + '/spectra/ga9/sp_sw_ga9'
+                 , rad_data + '/spectra/ga9_ref/sp_sw_260_jm3']
+SP_FILE_NAME = ['ga9', '260']
 
 nspfs = len(SPECTRAL_FILE)
 ncase = str(arg1)
@@ -90,7 +89,7 @@ with open(SW_charts, 'r') as file:
     contents = file.readlines()
 str = (''.join(contents[5:])).split()
 charts = [float(i) for i in str]
-charts = np.array(charts).reshape(49180, 4)
+charts = np.array(charts).reshape(49180, 5)
 
 with open(LW_lblrtm_bb, 'r') as file:
     contents = file.readlines()
@@ -217,12 +216,12 @@ for i in range(nspfs):
     w2swalb =  np.zeros(bands)
     sp_file = SP_FILE_NAME[i] 
     for band in range(bands):
-        ll= 1.0 / (100.0*band_limits[band, 1])
-        ul= 1.0 / (100.0*band_limits[band, 2])
+        ll= max(1.0 / (100.0*band_limits[band, 1]), 820.5)
+        ul= min(1.0 / (100.0*band_limits[band, 2]), 49998.5)
         sel= np.where((wvl >= ul) & (wvl <= ll))
         swalb[band]= np.sum(albedo[sel, 1]*albedo[sel, 3]) / np.sum(albedo[sel, 3])
-#        wswalb[band]= sum(albedo[2,sel]) / sum(charts[1,sel])
-        w2swalb[band]= np.sum(albedo[sel, 1]*charts[sel, 1]) / np.sum(charts[sel,1])
+        wswalb[band]= np.sum(charts[sel, 4]) / max(np.sum(charts[sel, 1]),1.0e-10)
+        w2swalb[band]= np.sum(albedo[sel, 1]*charts[sel, 1]) / max(np.sum(charts[sel,1]),1.0e-10)
 
         kext= np.sum((1.0e4 / wvl[sel])**(-alpha)) / sel[0].size
         if (i == 0):
@@ -235,14 +234,14 @@ for i in range(nspfs):
         scat[band, :]= ammr*kscat[band]
 
     nc.ncout_spectral_surf(basename + '.surfsw_' + sp_file, lon, lat, bands, swalb)  
-#    nc.ncout_spectral_surf(basename + '.surfwsw_' + sp_file, lon, lat, bands, wswalb  )
+    nc.ncout_spectral_surf(basename + '.surfwsw_' + sp_file, lon, lat, bands, wswalb  )
     nc.ncout_spectral_surf(basename + '.surfw2sw_' + sp_file, lon, lat, bands, w2swalb)
     print('bands=', bands)
     print('absp=', absp)
     nc.ncout_opt_prop(basename + '.op_soot_' + sp_file, lon, lat, p, bands, absp, scat, asym)
 
 # Spectrally constant albedos:
-if (ncase ==  '1'): nc.ncout_surf(basename + '.surfsw_con', lon, lat, 1, 0.196)
+if (ncase == '1'): nc.ncout_surf(basename + '.surfsw_con', lon, lat, 1, 0.196)
 if (ncase == '2'): nc.ncout_surf(basename + '.surfsw_con', lon, lat, 1, 0.188)
 if (ncase == '3'): nc.ncout_surf(basename + '.surfsw_con', lon, lat, 1, 0.171)
 if (ncase == '4'): nc.ncout_surf(basename + '.surfsw_con', lon, lat, 1, 0.670)
@@ -263,8 +262,8 @@ nc.ncout3d(basename + '.cfc11',   lon, lat, p, cfc11,   longname = 'CFC-11 MMR')
 nc.ncout3d(basename + '.cfc12',   lon, lat, p, cfc12,   longname = 'CFC-12 MMR')
 
 # Gases currently unused:
-nc.ncout3d(basename + '.co',  lon, lat, p, h2o, longname = 'Carbon Monoxide MMR')
-nc.ncout3d(basename + '.ccl4',lon, lat, p, ccl4,longname = 'CCL4 MMR')
+#nc.ncout3d(basename + '.co',  lon, lat, p, h2o, longname = 'Carbon Monoxide MMR')
+#nc.ncout3d(basename + '.ccl4',lon, lat, p, ccl4,longname = 'CCL4 MMR')
 
 # Cloud fields:
 nc.ncout3d(basename + '.clfr',lon, lat, p, clfr,longname = 'Cloud fraction')
@@ -276,11 +275,12 @@ nc.ncout3d(basename + '.ire', lon, lat, p, ire, longname = 'Ice effective radius
 subprocess.call(['Cdentomix','-q',''+ basename + '.q','-t','' + basename + '.t','-o','' + basename + '.lwm','' + basename + '.lwc'])
 subprocess.call(['Cdentomix','-q','' + basename + '.q','-t','' + basename + '.t','-o','' + basename + '.iwm','' + basename + '.iwc'])
 
-nc.ncout3d(basename + '.ccfr',lon, lat, p, 0.0, longname = 'Convective Cloud fraction')
-nc.ncout3d(basename +'.lwmcv',lon, lat, p, 0.0, longname = 'Convective liquid water content', units = 'KGM-3')
-nc.ncout3d(basename +'.iwmcv',lon, lat, p, 0.0, longname = 'Convective ice water content', units = 'KGM-3')
-nc.ncout3d(basename + '.recv',lon, lat, p, re,  longname = 'Droplet effective radius', units = 'M')
-nc.ncout3d(basename +'.irecv',lon, lat, p, ire, longname = 'Ice effective radius', units = 'M')
+# Convective cloud fields:
+#nc.ncout3d(basename + '.ccfr',lon, lat, p, 0.0, longname = 'Convective Cloud fraction')
+#nc.ncout3d(basename +'.lwmcv',lon, lat, p, 0.0, longname = 'Convective liquid water content', units = 'KGM-3')
+#nc.ncout3d(basename +'.iwmcv',lon, lat, p, 0.0, longname = 'Convective ice water content', units = 'KGM-3')
+#nc.ncout3d(basename + '.recv',lon, lat, p, re,  longname = 'Droplet effective radius', units = 'M')
+#nc.ncout3d(basename +'.irecv',lon, lat, p, ire, longname = 'Ice effective radius', units = 'M')
 
 # LW output files:
 nc.ncout3d(basename + '_lwref.dflx', lon, lat, pl, lwflxdn, longname = 'downward flux', units = 'WM-2')

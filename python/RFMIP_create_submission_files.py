@@ -47,9 +47,17 @@ def create_attributes(args):
     # Model/institution specific attributes
     #
     if physics_index == 1:
-        variant_info="Spectral file: sp_{0}_ga7"
+        variant_info_lw="Spectral file: sp_lw_ga7"
+        variant_info_sw="Spectral file: sp_sw_ga7"
     elif physics_index == 2:
-        variant_info="Spectral file: sp_{0}_jm2"
+        variant_info_lw="Spectral file: sp_lw_300_jm2"
+        variant_info_sw="Spectral file: sp_sw_260_jm2"
+    elif physics_index == 3:
+        variant_info_lw="Spectral file: sp_lw_ga9"
+        variant_info_sw="Spectral file: sp_sw_ga9"
+    elif physics_index == 4:
+        variant_info_lw="Spectral file: sp_lw_300_jm3"
+        variant_info_sw="Spectral file: sp_sw_260_jm3"
     
     variant_label  = "r1i1p{0}f{1}".format(physics_index,forcing_index)
     model_attrs = {
@@ -73,29 +81,17 @@ def create_attributes(args):
     "physics_index":np.int32(physics_index)}
 
     # Submission attrs
+    sub_attrs_lw = {
+        'creation_date':time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),
+        'tracking_id'  : '/'.join(['hdl:21.14100',str(uuid.uuid4())]),
+        "variant_label":variant_label,
+            "variant_info":variant_info_lw}
+    sub_attrs_sw = {
+        'creation_date':time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),
+        'tracking_id'  : '/'.join(['hdl:21.14100',str(uuid.uuid4())]),
+        "variant_label":variant_label,
+            "variant_info":variant_info_sw}
 
-    if physics_index == 1:
-        sub_attrs_lw = {
-            'creation_date':time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),
-            'tracking_id'  : '/'.join(['hdl:21.14100',str(uuid.uuid4())]),
-            "variant_label":variant_label,
-            "variant_info":variant_info.format("lw")}
-        sub_attrs_sw = {
-            'creation_date':time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),
-            'tracking_id'  : '/'.join(['hdl:21.14100',str(uuid.uuid4())]),
-            "variant_label":variant_label,
-            "variant_info":variant_info.format("sw")}
-    elif physics_index == 2:
-        sub_attrs_lw = {
-            'creation_date':time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),
-            'tracking_id'  : '/'.join(['hdl:21.14100',str(uuid.uuid4())]),
-            "variant_label":variant_label,
-            "variant_info":variant_info.format("lw_300")}
-        sub_attrs_sw = {
-            'creation_date':time.strftime("%Y-%m-%dT%H:%M:%SZ",time.gmtime()),
-            'tracking_id'  : '/'.join(['hdl:21.14100',str(uuid.uuid4())]),
-            "variant_label":variant_label,
-            "variant_info":variant_info.format("sw_260")}
     # Attributes are taken from https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit
     # Data reference syntax attributes
     drs_attrs = {
@@ -148,36 +144,44 @@ def write_files(atmos_file, source_id, physics_index, variant_label, drs_attrs, 
     label[16]='future_all'
     label[17]='LGM'
     # Read in fluxes
-    lw_ga7_down = np.zeros((nexpt,nprof,nlevs))
-    lw_ga7_up   = np.zeros((nexpt,nprof,nlevs))
-    lw_300_down = np.zeros((nexpt,nprof,nlevs))
-    lw_300_up   = np.zeros((nexpt,nprof,nlevs))
-    sw_ga7_down = np.zeros((nexpt,nprof,nlevs))
-    sw_ga7_up   = np.zeros((nexpt,nprof,nlevs))
-    sw_260_down = np.zeros((nexpt,nprof,nlevs))
-    sw_260_up   = np.zeros((nexpt,nprof,nlevs))
+    lw_down = np.zeros((nexpt,nprof,nlevs))
+    lw_up   = np.zeros((nexpt,nprof,nlevs))
+    sw_down = np.zeros((nexpt,nprof,nlevs))
+    sw_up   = np.zeros((nexpt,nprof,nlevs))
 
-    for i in np.arange(nexpt):
-        basename=str(label[i])
-        lw_ga7_down[i,:,:] = Dataset(basename+'_lw_ga7.dflx').variables['dflx'][:,:,0].T
-        lw_ga7_up[i,:,:]   = Dataset(basename+'_lw_ga7.uflx').variables['uflx'][:,:,0].T
-        lw_300_down[i,:,:] = Dataset(basename+'_lw_300.dflx').variables['dflx'][:,:,0].T
-        lw_300_up[i,:,:]   = Dataset(basename+'_lw_300.uflx').variables['uflx'][:,:,0].T
-        sw_ga7_down[i,:,:] = Dataset(basename+'_sw_ga7.vflx').variables['vflx'][:,:,0].T
-        sw_ga7_up[i,:,:]   = Dataset(basename+'_sw_ga7.uflx').variables['uflx'][:,:,0].T
-        sw_260_down[i,:,:] = Dataset(basename+'_sw_260.vflx').variables['vflx'][:,:,0].T
-        sw_260_up[i,:,:]   = Dataset(basename+'_sw_260.uflx').variables['uflx'][:,:,0].T
+    if physics_index==1:
+        for i in np.arange(nexpt):
+            basename=str(label[i])
+            lw_down[i,:,:] = Dataset(basename+'_lw_ga7.dflx').variables['dflx'][:,:,0].T
+            lw_up[i,:,:]   = Dataset(basename+'_lw_ga7.uflx').variables['uflx'][:,:,0].T
+            sw_down[i,:,:] = Dataset(basename+'_sw_ga7.vflx').variables['vflx'][:,:,0].T
+            sw_up[i,:,:]   = Dataset(basename+'_sw_ga7.uflx').variables['uflx'][:,:,0].T
+    elif physics_index==2:
+        for i in np.arange(nexpt):
+            basename=str(label[i])
+            lw_down[i,:,:] = Dataset(basename+'_lw_300.dflx').variables['dflx'][:,:,0].T
+            lw_up[i,:,:]   = Dataset(basename+'_lw_300.uflx').variables['uflx'][:,:,0].T
+            sw_down[i,:,:] = Dataset(basename+'_sw_260.vflx').variables['vflx'][:,:,0].T
+            sw_up[i,:,:]   = Dataset(basename+'_sw_260.uflx').variables['uflx'][:,:,0].T
+    elif physics_index==3:
+        for i in np.arange(nexpt):
+            basename=str(label[i])
+            lw_down[i,:,:] = Dataset(basename+'_lw_ga9.dflx').variables['dflx'][:,:,0].T
+            lw_up[i,:,:]   = Dataset(basename+'_lw_ga9.uflx').variables['uflx'][:,:,0].T
+            sw_down[i,:,:] = Dataset(basename+'_sw_ga9.vflx').variables['vflx'][:,:,0].T
+            sw_up[i,:,:]   = Dataset(basename+'_sw_ga9.uflx').variables['uflx'][:,:,0].T
+    elif physics_index==4:
+        for i in np.arange(nexpt):
+            basename=str(label[i])
+            lw_down[i,:,:] = Dataset(basename+'_lw_ga9_300.dflx').variables['dflx'][:,:,0].T
+            lw_up[i,:,:]   = Dataset(basename+'_lw_ga9_300.uflx').variables['uflx'][:,:,0].T
+            sw_down[i,:,:] = Dataset(basename+'_sw_ga9_260.vflx').variables['vflx'][:,:,0].T
+            sw_up[i,:,:]   = Dataset(basename+'_sw_ga9_260.uflx').variables['uflx'][:,:,0].T
 
     short_names = ['rlu','rsu', 'rld', 'rsd']
     stand_names = ['upwelling_longwave_flux_in_air','upwelling_shortwave_flux_in_air',
                 'downwelling_longwave_flux_in_air','downwelling_shortwave_flux_in_air']
-    variable_data_ga7 = [lw_ga7_up,sw_ga7_up,lw_ga7_down,sw_ga7_down]
-    variable_data_ga7_ref = [lw_300_up,sw_260_up,lw_300_down,sw_260_down]
-
-    if physics_index==1:
-        variable_data = variable_data_ga7
-    elif physics_index==2:
-        variable_data = variable_data_ga7_ref
+    variable_data = [lw_up,sw_up,lw_down,sw_down]
     
     for short, std, data in zip(short_names, stand_names,variable_data) :
         # File name is constructed per https://docs.google.com/document/d/1h0r8RZr_f3-8egBMMh7aqLwy3snpD6_MrDz1q8n5XUk/edit#
@@ -227,9 +231,8 @@ def main():
                         help='Forcing index (1 = all available greenhouse gases; 2 =  CO2, CH4, N2O, CFC11eq;  3 = CO2, CH4, N2O, CFC12eq, HFC-134eq)')
     parser.add_argument('--physics_index', type=int, \
                     default = 1,      \
-                    help='Physics index: 1 for ga7 and 2 for ga7_ref')
+                    help='Physics index: 1 = ga7; 2 = ga7_ref; 3 = ga9; 4 = ga9_ref')
     args = parser.parse_args()
-    # --source_id=HadGEM3-GC31-LL
 
     source_id, physics_index, variant_label, model_attrs, std_attrs, sub_attrs_lw, sub_attrs_sw, drs_attrs, expt_attrs = create_attributes(args)
     write_files(atmos_file, source_id, physics_index, variant_label, drs_attrs, std_attrs, expt_attrs, model_attrs, sub_attrs_lw, sub_attrs_sw)

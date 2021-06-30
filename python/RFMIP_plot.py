@@ -14,15 +14,17 @@ import matplotlib.pyplot as plt
 import sys, math, subprocess, time
 
 def plot_rfmip_out():
+    physics_index_expt=1
+    physics_index_cont=2
     rfdat = Dataset('multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc')
-    lw_u_data = Dataset('rlu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(1))
-    lw_d_data = Dataset('rld_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(1))
-    sw_u_data = Dataset('rsu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(1))
-    sw_d_data = Dataset('rsd_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(1))
-    lw_u_data_2 = Dataset('rlu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(2))
-    lw_d_data_2 = Dataset('rld_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(2))
-    sw_u_data_2 = Dataset('rsu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(2))
-    sw_d_data_2 = Dataset('rsd_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(2))
+    lw_u_data = Dataset('rlu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_expt))
+    lw_d_data = Dataset('rld_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_expt))
+    sw_u_data = Dataset('rsu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_expt))
+    sw_d_data = Dataset('rsd_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_expt))
+    lw_u_data_2 = Dataset('rlu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_cont))
+    lw_d_data_2 = Dataset('rld_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_cont))
+    sw_u_data_2 = Dataset('rsu_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_cont))
+    sw_d_data_2 = Dataset('rsd_Efx_HadGEM3-GC31-LL_rad-irf_r1i1p{0}f3_gn.nc'.format(physics_index_cont))
     nlevs = len(rfdat.dimensions['level'])
     nprof = len(rfdat.dimensions['site'])
     nexpt = len(rfdat.dimensions['expt'])
@@ -97,21 +99,22 @@ def plot_rfmip_out():
     params = plt.subplots_adjust(left=.03, right=.99, top=.98, bottom=.02)
     for expt in np.arange(18):
         ax = fig.add_subplot(5,4,expt+1)
-        #if (expt == 18):
-        #    expt = 0
-        ax.plot(sw_down_mean[expt,:], height[expt,:], color='blue', label=sw_d_data.variables['rsd'].standard_name)
-        ax.plot(sw_up_mean[expt,:], height[expt,:], color='green', label=sw_u_data.variables['rsu'].standard_name)
-        ax.plot(lw_down_mean[expt,:], height[expt,:], color='red', label=lw_d_data.variables['rld'].standard_name)
-        ax.plot(lw_up_mean[expt,:], height[expt,:], color='purple', label=lw_u_data.variables['rlu'].standard_name)
-        ax.plot(sw_down2_mean[expt,:], height[expt,:], color='blue', linestyle='--', label=sw_d_data_2.variables['rsd'].standard_name)
-        ax.plot(sw_up2_mean[expt,:], height[expt,:], color='green', linestyle='--', label=sw_u_data_2.variables['rsu'].standard_name)
-        ax.plot(lw_down2_mean[expt,:], height[expt,:], color='red', linestyle='--', label=lw_d_data_2.variables['rld'].standard_name)
-        ax.plot(lw_up2_mean[expt,:], height[expt,:], color='purple', linestyle='--', label=lw_u_data_2.variables['rlu'].standard_name)
+#    for expt in [9]:
+#        ax = fig.add_subplot(1,1,1)
+        ax.plot(sw_down_mean[expt,:], height[expt,:], color='blue', label='SW down')
+        ax.plot(sw_up_mean[expt,:], height[expt,:], color='green', label='SW up')
+        ax.plot(lw_down_mean[expt,:], height[expt,:], color='red', label='LW down')
+        ax.plot(lw_up_mean[expt,:], height[expt,:], color='purple', label='LW up')
+        ax.plot(sw_down2_mean[expt,:], height[expt,:], color='blue', linestyle='--', label='SW down (control)')
+        ax.plot(sw_up2_mean[expt,:], height[expt,:], color='green', linestyle='--', label='SW up (control)')
+        ax.plot(lw_down2_mean[expt,:], height[expt,:], color='red', linestyle='--', label='LW down (control)')
+        ax.plot(lw_up2_mean[expt,:], height[expt,:], color='purple', linestyle='--', label='LW up (control)')
         ax.set_title(expt_label[expt])
         ax.set_ylabel('Approx height (km)')
 
     leg=plt.legend()
-    leg.draggable()
+    leg.set_draggable(True)
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":

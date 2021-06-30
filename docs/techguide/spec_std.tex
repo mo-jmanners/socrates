@@ -1,11 +1,50 @@
 \section{Standard Spectral Files}
 
 Standard spectral files that have been used operationally for numerical
-weater prediction or climate runs are described. Spectral files with names
+weather prediction or climate runs are described. Spectral files with names
 beginning spec\_ or spec3a\_ are namelist files available for UM versions
 up to 8.5 (readable text equivalents of these files are available with the
 offline Edwards-Slingo code). Files with names beginning sp\_ are readable
 text versions for use with UM versions 8.6 onwards or the offline code.
+
+\subsection{Global Atmosphere Configuration 9}
+
+Spectral files currently being trialled for use in the upcoming GA9 configuration are a minor update on those used for GA7. Principal changes are to the water vapour continuum and aerosol optical properties. Minor updates have also been made to the cloud optical properties including an adjustment to the optimal sampling configuration for MCICA: the mcica\_data file adds 10 monochromatic calculations to the SW and 6 to the LW.
+
+Scripts to update the ga7 spectral files to the ga9 configuration are provided in examples/sp\_ga9.
+
+\subsection*{Elsey-Shine water vapour continuum}
+
+An update to the CAVIAR water vapour continuum has been provided by Jon Elsey and Keith P. Shine, motivated by several advancements in understanding since the version used with GA7:
+\begin{itemize}
+\item Changes to the far-infrared continuum \citep{Mlawer19} as part of MT\_CKD3.2 - increased continuum at 0-500 cm$^{-1}$ with more modest changes at other wavenumbers.
+\item Additional near-infrared in-band measurements from \cite{Ptashnik19}, \cite{Birk20}.
+\item Additional window measurements in 4, 2.1 and 1.6 $\mu$m windows using Cavity Ring-Down Spectroscopy (CRDS) e.g. \cite{Mondelain14, Ventrillard15, Richard17}.
+\item Increased understanding of CAVIAR-lab measurements \citep{Ptashnik11}, as inconsistencies in the temperature dependence were discovered when using room-temperature data (293 K). Omitting this low-temperature data in the 4 and 2.1 $\mu$m windows leads to better consistency with the various Grenoble data (although that consistency varies between near-IR windows). See \cite{Elsey20} for more details. 
+\end{itemize}
+
+\subsubsection*{Aerosols}
+ 
+CLASSIC aerosol optical properties have been recalculated following the recommendations of Ben T. Johnson in order to more closely match the optical properties of GLOMAP-mode aerosols:
+\begin{itemize}
+\item Change soot species refractive index to make it consistent with black carbon (BC) in GLOMAP GA7.1 \citep{Bond06}.
+\item Change soot species size distribution to make it consistent with freshly emitted size distribution for FF BC in GLOMAP-mode (diameter reduced from 80nm to 60nm, stdev reduced from 2.0 to 1.59).
+\item Reduce soot density from current value of 1.9g/cm$^3$ to value of 1.5g/cm$^3$ in GLOMAP-mode.
+\item Re-compute biomass burning aerosol refractive index based on the BC:OC mass ratio already assumed in CLASSIC but using the refractive index of \cite{Bond06} and density of 1.5 g/cm$^3$ for the BC component as in GLOMAP-mode GA7.1.
+\item All aerosol optical properties have been recalcuated with the GA7 spectral file waveband limits (compared to GA6 and earlier the only change is that SW bands 2 and 3 are no longer identical but have been split into 0.32 - 0.505, 0.505 - 0.69 $\mu$m), using the refractive indices and size distributions above and previously documented. This has resulted in minor changes in aerosol species not listed above in both the SW and LW.
+\end{itemize}
+
+\subsection*{Spectral file: sp\_sw\_ga9}
+
+Sections are identical to sp\_sw\_ga7 except for changes to the water vapour continuum and aerosols (detailed above), along with cloud droplet optical properties:
+
+\subsubsection*{Cloud droplets}
+
+The cloud droplet optical properties have been recalculated using identical methodology as previous files (first detailed for the HadGEM1 spectral files below). The only change is the band weighting, using the latest band limits for SW bands 2 and 3 (now split into 0.32 - 0.505, 0.505 - 0.69 $\mu$m) and the "lean\_12" solar spectrum.
+
+\subsection*{Spectral file: sp\_lw\_ga9}
+
+Sections are identical to sp\_lw\_ga7 except for changes to the water vapour continuum and aerosols (detailed above).
 
 \subsection{Global Atmosphere Configuration 7}
 

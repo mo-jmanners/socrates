@@ -5,7 +5,8 @@ pyerr=0
 ln -s $RAD_DIR/python/RFMIP* .
 python RFMIP_run_soc.py multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc || pyerr=1
 python RFMIP_create_submission_files.py --physics_index 1 || pyerr=1
-python RFMIP_create_submission_files.py --physics_index 2 || pyerr=1
+# python RFMIP_run_soc.py multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc ga7_ref || pyerr=1
+# python RFMIP_create_submission_files.py --physics_index 2 || pyerr=1
 # python RFMIP_plot.py
 
 if [ $pyerr -eq 0 ]; then

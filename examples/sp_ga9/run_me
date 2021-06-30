@@ -3,11 +3,57 @@
 # Initialise error status (to test for output differences)
 ierr=0
 
+while [ $# -gt 0 ]
+do case $1 in
+    -s) sw=T ; shift ;;
+    -l) lw=T ; shift ;;
+     *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
 # Create GA9 SW & LW spectral files
-echo 'Creating sp_sw_ga9...'
-./mk_sp_sw_ga9 > mk_sp_sw_ga9_log
-echo 'Creating sp_lw_ga9...'
-./mk_sp_lw_ga9 > mk_sp_lw_ga9_log
+# Note, the creation of the high-resolution files takes a long time.
+# To run this step on spice at the Met Office you can use:
+# sbatch -n 24 -o ./mk_sp_sw_260_jm3_log -t 360 ./mk_sp_sw_260_jm3
+# sbatch -n 24 -o ./mk_sp_lw_300_jm3_log -t 360 ./mk_sp_lw_300_jm3
+# The job progress can be checked using:
+# sacct --format=jobname%50,jobid%9,submit,start,timelimit,elapsed,totalcpu,ncpus%5,reqmem,maxrss,nodelist%15,exitcode,state
+# Once completed, a LBL database file will be created so that re-running
+# this script will be much cheaper.
+if [ "$sw" ] ; then
+  echo 'Creating sp_sw_260_jm3...'
+  ./mk_sp_sw_260_jm3 > mk_sp_sw_260_jm3_log
+  echo 'Creating sp_sw_ga9...'
+  ./mk_sp_sw_ga9 > mk_sp_sw_ga9_log
+else
+  cp ../../data/spectra/ga9/sp_sw_ga9 .
+  cp ../../data/spectra/ga9/sp_sw_ga9_k .
+  cp ../../data/spectra/ga9_ref/sp_sw_260_jm3 .
+  cp ../../data/spectra/ga9_ref/sp_sw_260_jm3_k .
+fi
+if [ "$lw" ] ; then
+  echo 'Creating sp_lw_300_jm3...'
+  ./mk_sp_lw_300_jm3 > mk_sp_lw_300_jm3_log
+  echo 'Creating sp_lw_ga9...'
+  ./mk_sp_lw_ga9 > mk_sp_lw_ga9_log
+else
+  cp ../../data/spectra/ga9/sp_lw_ga9 .
+  cp ../../data/spectra/ga9/sp_lw_ga9_k .
+  cp ../../data/spectra/ga9_ref/sp_lw_300_jm3 .
+  cp ../../data/spectra/ga9_ref/sp_lw_300_jm3_k .
+fi
+
+# Create mcica_data file for reference spectral files
+echo 'Creating mcica_data_ga9_ref'
+assign_subcols > assign_subcols_ga9_ref_log << EOF
+sp_sw_260_jm3
+1000
+sp_lw_300_jm3
+1000
+../../data/spectra/ga7/mcica_data
+-2
+EOF
+mv mcica_data mcica_data_ga9_ref
 
 # Create mcica_data file for GA9 spectral files
 echo 'Creating mcica_data_ga9'
@@ -21,24 +67,6 @@ sp_lw_ga9
 64
 EOF
 mv mcica_data mcica_data_ga9
-
-# Create GA9 reference SW & LW spectral files
-echo 'Creating sp_sw_260_jm3...'
-./mk_sp_sw_260_jm3 > mk_sp_sw_260_jm3_log
-echo 'Creating sp_lw_300_jm3...'
-./mk_sp_lw_300_jm3 > mk_sp_lw_300_jm3_log
-
-# Create mcica_data file for reference spectral files
-echo 'Creating mcica_data_ga9_ref'
-assign_subcols > assign_subcols_ga9_ref_log << EOF
-sp_sw_260_jm3
-1000
-sp_lw_300_jm3
-1000
-../../data/spectra/ga7/mcica_data
--2
-EOF
-mv mcica_data mcica_data_ga9_ref
 
 echo 'Testing output...'
 intel=0

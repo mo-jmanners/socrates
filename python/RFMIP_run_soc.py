@@ -5,7 +5,7 @@
 # *****************************COPYRIGHT*******************************
 '''
 Converts the netCDF files from RFMIP into netCDF input files for the SOCRATES code.
-Calculates radiative fluxes using the GA7 and reference spectral files.
+Calculates radiative fluxes using the GA7 or GA9 and reference spectral files.
 Creates netCDF files for the output fluxes to submit to RFMIP.
 '''
 
@@ -38,7 +38,7 @@ def write_var(ncdf_file, vals, name, vtype, dims, units, standard_name, longname
         variable.coordinates = coords
     variable[:] = vals
     
-def main_socrates_run(infile, equivalence):
+def main_socrates_run(infile, configuration, equivalence):
     
     rfdat = Dataset(infile)
     basename = 'rfmip'
@@ -185,24 +185,64 @@ def main_socrates_run(infile, equivalence):
         #    nc.ncout3d(basename + '.cfc12',   lon, lat, pdim, cfc12eq[i],   longname = 'CFC-12 MMR')
      
     
-    print('Running LW (GA7 & 300 band) and SW (GA7 & 260 band):')
+    if configuration == 'ga7':
+        print('Running GA7 configuration: LW and SW')
+    elif configuration == 'ga7_ref':
+        print('Running GA7 reference configuration: LW (300 band) and SW (260 band)')
+    elif configuration == 'ga9':
+        print('Running GA9 configuration: LW and SW')
+    elif configuration == 'ga9_ref':
+        print('Running GA9 reference configuration: LW (300 band) and SW (260 band)')
+    else:
+        print('Configurations currently supported: ga7, ga7_ref, ga9, ga9_ref')
+        sys.exit(1)
     subprocess.call('date')
     procs=[]
     for i in np.arange(nexpt):
         basename=str(label[i])
-        procs.append( subprocess.Popen(
-            'resrm '+basename+' && '+
-            'cp '+basename+'.surflw '+basename+'.surf && '+
-            'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7/sp_lw_ga7 -q -R 1 9 -I -g 4 -c -C 5 -z 2 && '+
-            'fmove '+basename+' '+basename+'_lw_ga7 && '+
-            'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7_ref/sp_lw_300_jm2 -q -R 1 300 -I -g 2 -c -C 5 -z 2 && ' +
-            'fmove '+basename+' '+basename+'_lw_300 && '+
-            'cp '+basename+'.surfsw '+basename+'.surf && '+
-            'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7/sp_sw_ga7 -R 1 6 -S -r -g 4 -c -C 5 && '+
-            'fmove '+basename+' '+basename+'_sw_ga7 && '+
-            'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7_ref/sp_sw_260_jm2 -R 1 260 -S -r -g 2 -c -C 5 && ' +
-            'fmove '+basename+' '+basename+'_sw_260 && '+
-            'echo "'+basename+': '+expt_label[i]+'"', shell=True) )
+        if configuration == 'ga7':
+            procs.append( subprocess.Popen(
+                'resrm '+basename+' && '+
+                'cp '+basename+'.surflw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7/sp_lw_ga7 -q -R 1 9 -I -g 4 -c -C 5 -z 2 && '+
+                'fmove '+basename+' '+basename+'_lw_ga7 && '+
+                'cp '+basename+'.surfsw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7/sp_sw_ga7 -R 1 6 -S -r -g 4 -c -C 5 && '+
+                'fmove '+basename+' '+basename+'_sw_ga7 && '+
+                'echo "'+basename+': '+expt_label[i]+'"', shell=True) )
+        elif configuration == 'ga7_ref':
+            procs.append( subprocess.Popen(
+                'resrm '+basename+' && '+
+                'cp '+basename+'.surflw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7_ref/sp_lw_300_jm2 -q -R 1 300 -I -g 2 -c -C 5 -z 2 && ' +
+                'fmove '+basename+' '+basename+'_lw_300 && '+
+                'cp '+basename+'.surfsw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga7_ref/sp_sw_260_jm2 -R 1 260 -S -r -g 2 -c -C 5 && ' +
+                'fmove '+basename+' '+basename+'_sw_260 && '+
+                'echo "'+basename+': '+expt_label[i]+'"', shell=True) )
+        elif configuration == 'ga9':
+            procs.append( subprocess.Popen(
+                'resrm '+basename+' && '+
+                'cp '+basename+'.surflw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga9/sp_lw_ga9 -q -R 1 9 -I -g 4 -c -C 5 -z 2 && '+
+                'fmove '+basename+' '+basename+'_lw_ga9 && '+
+                'cp '+basename+'.surfsw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga9/sp_sw_ga9 -R 1 6 -S -r -g 4 -c -C 5 && '+
+                'fmove '+basename+' '+basename+'_sw_ga9 && '+
+                'echo "'+basename+': '+expt_label[i]+'"', shell=True) )
+        elif configuration == 'ga9_ref':
+            procs.append( subprocess.Popen(
+                'resrm '+basename+' && '+
+                'cp '+basename+'.surflw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga9_ref/sp_lw_300_jm3 -q -R 1 300 -I -g 2 -c -C 5 -z 2 && ' +
+                'fmove '+basename+' '+basename+'_lw_ga9_300 && '+
+                'cp '+basename+'.surfsw '+basename+'.surf && '+
+                'Cl_run_cdf -B '+basename+' -s $RAD_DATA/spectra/ga9_ref/sp_sw_260_jm3 -R 1 260 -S -r -g 2 -c -C 5 && ' +
+                'fmove '+basename+' '+basename+'_sw_ga9_260 && '+
+                'echo "'+basename+': '+expt_label[i]+'"', shell=True) )
+        else:
+            print('Configurations currently supported: ga7, ga7_ref, ga9, ga9_ref')
+            sys.exit(1)
 
         # Simple parallel processing (run 6 experiments at once)
         running = 6
@@ -219,10 +259,16 @@ def main_socrates_run(infile, equivalence):
     subprocess.call('date')
     
 if __name__ == '__main__':
-    if (len(sys.argv) > 1):
+    if (len(sys.argv) > 2):
         infile = sys.argv[1]
+        configuration = sys.argv[2]
         equivalence = 3 # Forcing eqivalence for CFCs; SOCRATES default is 3.
-        main_socrates_run(infile, equivalence)
+        main_socrates_run(infile, configuration, equivalence)
+    elif (len(sys.argv) > 1):
+        infile = sys.argv[1]
+        configuration = 'ga7'
+        equivalence = 3 # Forcing eqivalence for CFCs; SOCRATES default is 3.
+        main_socrates_run(infile, configuration, equivalence)
     else:
         raise RuntimeError('\nplease enter an RFMIP netCDF filename \n'
                            'e.g. python RFMIP_run_soc.py multiple_input4MIPs_radiation_RFMIP_UColorado-RFMIP-1-2_none.nc\n'
