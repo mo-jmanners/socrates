@@ -10,6 +10,12 @@ fi
 err=0
 
 echo ---
+echo "Testing the runes interface used with LFRic:"
+cd runes
+./run_me || err=1
+cd ../
+
+echo ---
 echo "Testing raw_input to convert column data into input files:"
 cd raw_input
 ./run_me || err=1

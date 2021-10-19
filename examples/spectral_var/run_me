@@ -4,9 +4,9 @@
 ierr=0
 
 # Download CMIP5 solar variability data
-wget -nc http://solarisheppa.geomar.de/solarisheppa/sites/default/files/data/CMIP5/spectra_1610_2000a_21Jan09.txt.gz
-wget -nc http://solarisheppa.geomar.de/solarisheppa/sites/default/files/data/CMIP5/spectra_1882_2000m_17Dec08.txt.gz
-wget -nc http://solarisheppa.geomar.de/solarisheppa/sites/default/files/data/CMIP5/spectra_2000_2008m_6May09.txt.gz
+wget -nc --no-check-certificate http://solarisheppa.geomar.de/solarisheppa/sites/default/files/data/CMIP5/spectra_1610_2000a_21Jan09.txt.gz
+wget -nc --no-check-certificate http://solarisheppa.geomar.de/solarisheppa/sites/default/files/data/CMIP5/spectra_1882_2000m_17Dec08.txt.gz
+wget -nc --no-check-certificate http://solarisheppa.geomar.de/solarisheppa/sites/default/files/data/CMIP5/spectra_2000_2008m_6May09.txt.gz
 cp spectra_1610_2000a_21Jan09.txt.gz spectra_1610_2000a_21Jan09.txt.gz2
 cp spectra_1882_2000m_17Dec08.txt.gz spectra_1882_2000m_17Dec08.txt.gz2
 cp spectra_2000_2008m_6May09.txt.gz spectra_2000_2008m_6May09.txt.gz2

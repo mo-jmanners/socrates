@@ -83,10 +83,10 @@ logical, intent(in), optional :: l_invert
 !   Flag to invert fields in the vertical
 
 
-integer :: l, k
-integer, target :: i, ii
-integer, pointer :: i_p
+integer :: i, ii, l, k
 !   Loop variables
+integer :: layer_offset, level_offset
+!   Offset to loop counters to allow indexing in inverted order
 real(RealK) :: flux_divergence(n_profile, n_layer)
 !   Flux divergence across layer (Wm-2)
 
@@ -97,13 +97,16 @@ character (len=*), parameter :: RoutineName = 'SET_DIAG'
 if (present(l_invert)) then
   if (l_invert) then
     ! The layer is indexed using an inverted loop counter
-    i_p => ii
+    layer_offset = n_layer + 1
+    level_offset = n_layer
   else
     ! The layer is indexed in the standard order
-    i_p => i
+    layer_offset = 0
+    level_offset = 0
   end if
 else
-  i_p => i
+  layer_offset = 0
+  level_offset = 0
 end if
 
 
@@ -112,9 +115,9 @@ end if
 !------------------------------------------------------------------------------
 if (associated(diag%heating_rate)) then
   do i=1, n_layer
-    ii = n_layer-i+1
+    ii = abs(layer_offset-i)
     do l=1, n_profile
-      flux_divergence(l, i_p) = &
+      flux_divergence(l, ii) = &
         sum(radout%flux_down(l, i-1, 1:control%n_channel)) - &
         sum(radout%flux_down(l, i,   1:control%n_channel)) + &
         sum(radout%flux_up(  l, i,   1:control%n_channel)) - &
@@ -141,27 +144,27 @@ end if
 !------------------------------------------------------------------------------
 if (associated(diag%flux_direct)) then
   do i=0, n_layer
-    ii = n_layer-i
+    ii = abs(level_offset-i)
     do l=1, n_profile
-      diag%flux_direct(l, i_p) &
+      diag%flux_direct(l, ii) &
         = sum(radout%flux_direct(l, i, 1:control%n_channel))
     end do
   end do
 end if
 if (associated(diag%flux_down)) then
   do i=0, n_layer
-    ii = n_layer-i
+    ii = abs(level_offset-i)
     do l=1, n_profile
-      diag%flux_down(l, i_p) &
+      diag%flux_down(l, ii) &
         = sum(radout%flux_down(l, i, 1:control%n_channel))
     end do
   end do
 end if
 if (associated(diag%flux_up)) then
   do i=0, n_layer
-    ii = n_layer-i
+    ii = abs(level_offset-i)
     do l=1, n_profile
-      diag%flux_up(l, i_p) &
+      diag%flux_up(l, ii) &
         = sum(radout%flux_up(l, i, 1:control%n_channel))
     end do
   end do
@@ -199,15 +202,15 @@ if (associated(diag%total_cloud_fraction)) then
     diag%total_cloud_fraction(1:n_profile, 1:n_layer) = 0.0_RealK
   else
     do i=1, dimen%id_cloud_top-1
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        diag%total_cloud_fraction(l, i_p) = 0.0_RealK
+        diag%total_cloud_fraction(l, ii) = 0.0_RealK
       end do
     end do
     do i=dimen%id_cloud_top, n_layer
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        diag%total_cloud_fraction(l, i_p) = cld%w_cloud(l, i)
+        diag%total_cloud_fraction(l, ii) = cld%w_cloud(l, i)
       end do
     end do
   end if
@@ -261,12 +264,12 @@ if (associated(diag%aerosol_optical_depth)) then
          min(ubound(diag%aerosol_optical_depth,3), spectrum%basic%n_band)
       do i=max(lbound(diag%aerosol_optical_depth,2), 1), &
            min(ubound(diag%aerosol_optical_depth,2), n_layer)
-        ii = n_layer+1-i
+        ii = abs(layer_offset-i)
         do l=max(lbound(diag%aerosol_optical_depth,1), 1), &
              min(ubound(diag%aerosol_optical_depth,1), n_profile)
           diag%aerosol_optical_depth(l, i, k) &
-            = (radout%aerosol_absorption_band(l, i_p, k) &
-             + radout%aerosol_scattering_band(l, i_p, k)) * atm%mass(l, i_p)
+            = (radout%aerosol_absorption_band(l, ii, k) &
+             + radout%aerosol_scattering_band(l, ii, k)) * atm%mass(l, ii)
         end do
       end do
     end do
@@ -278,11 +281,11 @@ if (associated(diag%aerosol_scat_optical_depth)) then
          min(ubound(diag%aerosol_scat_optical_depth,3), spectrum%basic%n_band)
       do i=max(lbound(diag%aerosol_scat_optical_depth,2), 1), &
            min(ubound(diag%aerosol_scat_optical_depth,2), n_layer)
-        ii = n_layer+1-i
+        ii = abs(layer_offset-i)
         do l=max(lbound(diag%aerosol_scat_optical_depth,1), 1), &
              min(ubound(diag%aerosol_scat_optical_depth,1), n_profile)
           diag%aerosol_scat_optical_depth(l, i, k) &
-            = radout%aerosol_scattering_band(l, i_p, k) * atm%mass(l, i_p)
+            = radout%aerosol_scattering_band(l, ii, k) * atm%mass(l, ii)
         end do
       end do
     end do
@@ -294,11 +297,11 @@ if (associated(diag%aerosol_asymmetry_scat)) then
          min(ubound(diag%aerosol_asymmetry_scat,3), spectrum%basic%n_band)
       do i=max(lbound(diag%aerosol_asymmetry_scat,2), 1), &
            min(ubound(diag%aerosol_asymmetry_scat,2), n_layer)
-        ii = n_layer+1-i
+        ii = abs(layer_offset-i)
         do l=max(lbound(diag%aerosol_asymmetry_scat,1), 1), &
              min(ubound(diag%aerosol_asymmetry_scat,1), n_profile)
           diag%aerosol_asymmetry_scat(l, i, k) &
-            = radout%aerosol_asymmetry_band(l, i_p, k) * atm%mass(l, i_p)
+            = radout%aerosol_asymmetry_band(l, ii, k) * atm%mass(l, ii)
         end do
       end do
     end do
@@ -342,7 +345,7 @@ subroutine set_cloud_dim(field)
   integer :: i_lower, i_upper
 
   if (associated(field)) then
-    if (associated(i_p, ii)) then
+    if (layer_offset == n_layer + 1) then
       ! Field output is inverted
       i_lower = n_layer + 1 - ubound(field, 2)
       i_upper = n_layer + 1 - lbound(field, 2)
@@ -352,15 +355,15 @@ subroutine set_cloud_dim(field)
     end if
     ! Fill diagnostic between requested layers
     do i=max(i_lower, 1), min(i_upper, dimen%id_cloud_top-1)
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        field(l, i_p) = 0.0_RealK
+        field(l, ii) = 0.0_RealK
       end do
     end do
     do i=max(i_lower, dimen%id_cloud_top), min(i_upper, n_layer)
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        field(l, i_p) = cld%condensed_dim_char(l, i, k)
+        field(l, ii) = cld%condensed_dim_char(l, i, k)
       end do
     end do
   end if
@@ -377,7 +380,7 @@ subroutine set_cloud_mmr(field)
   integer :: i_lower, i_upper
 
   if (associated(field)) then
-    if (associated(i_p, ii)) then
+    if (layer_offset == n_layer + 1) then
       ! Field output is inverted
       i_lower = n_layer + 1 - ubound(field, 2)
       i_upper = n_layer + 1 - lbound(field, 2)
@@ -387,15 +390,15 @@ subroutine set_cloud_mmr(field)
     end if
     ! Fill diagnostic between requested layers
     do i=max(i_lower, 1), min(i_upper, dimen%id_cloud_top-1)
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        field(l, i_p) = 0.0_RealK
+        field(l, ii) = 0.0_RealK
       end do
     end do
     do i=max(i_lower, dimen%id_cloud_top), min(i_upper, n_layer)
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        field(l, i_p) = cld%condensed_mix_ratio(l, i, k)
+        field(l, ii) = cld%condensed_mix_ratio(l, i, k)
       end do
     end do
   end if
@@ -412,7 +415,7 @@ subroutine set_cloud_frac(field)
   integer :: i_lower, i_upper
 
   if (associated(field)) then
-    if (associated(i_p, ii)) then
+    if (layer_offset == n_layer + 1) then
       ! Field output is inverted
       i_lower = n_layer + 1 - ubound(field, 2)
       i_upper = n_layer + 1 - lbound(field, 2)
@@ -422,15 +425,15 @@ subroutine set_cloud_frac(field)
     end if
     ! Fill diagnostic between requested layers
     do i=max(i_lower, 1), min(i_upper, dimen%id_cloud_top-1)
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        field(l, i_p) = 0.0_RealK
+        field(l, ii) = 0.0_RealK
       end do
     end do
     do i=max(i_lower, dimen%id_cloud_top), min(i_upper, n_layer)
-      ii = n_layer+1-i
+      ii = abs(layer_offset-i)
       do l=1, n_profile
-        field(l, i_p) = cld%w_cloud(l, i) * &
+        field(l, ii) = cld%w_cloud(l, i) * &
           cld%frac_cloud(l, i, cld%i_cloud_type(k))
       end do
     end do

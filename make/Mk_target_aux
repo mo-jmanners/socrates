@@ -10,7 +10,7 @@ AUX_CDL: l_run_cdl run_mono assign_subcols dentomix dentoq format_size \
 		gen_view_cdl hmrsph inc_field ice_size interp \
 		merge mid_point nettohr phgt prep_opt_profile \
 		raw_input scale_field solar_inc vert_int wadd \
-		samson2cdl cdl2samson
+		samson2cdl cdl2samson runes_driver
 
 
 TARGET_AUX: AUX_CDL AUX_CDF
@@ -25,6 +25,9 @@ l_run_cdf: l_run_cdf.o $(CDF_OBJ) radlib.$(LIBSUFFIX)
 
 l_run_cdl: l_run_cdl.o radlib.$(LIBSUFFIX)
 	$(LINK) -o l_run_cdl l_run_cdl.o radlib.$(LIBSUFFIX)
+
+runes_driver: runes_driver.o radlib.$(LIBSUFFIX)
+	$(LINK) -o runes_driver runes_driver.o radlib.$(LIBSUFFIX)
 
 #
 # Monochromatic Version
