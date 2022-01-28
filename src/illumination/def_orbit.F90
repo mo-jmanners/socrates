@@ -115,21 +115,23 @@ SUBROUTINE set_orbit(orbit, &
   mean_anomaly, mean_anomaly_inc, hour_angle, hour_angle_inc, &
   fixed_zenith_angle, fixed_azimuth_angle, observer_lon, observer_lat)
 
+USE realtype_rd, ONLY: RealExt
+
 IMPLICIT NONE
 
 TYPE (StrOrbit), INTENT(OUT) :: orbit
 
 INTEGER, INTENT(IN), OPTIONAL :: i_elements, i_spin, i_eqt
 
-REAL(RealK), INTENT(IN), OPTIONAL :: epoch
-REAL(RealK), INTENT(IN), OPTIONAL :: eccentricity, eccentricity_inc
-REAL(RealK), INTENT(IN), OPTIONAL :: arg_periapsis, arg_periapsis_inc
-REAL(RealK), INTENT(IN), OPTIONAL :: obliquity, obliquity_inc
-REAL(RealK), INTENT(IN), OPTIONAL :: semimajor_axis, semimajor_axis_inc
-REAL(RealK), INTENT(IN), OPTIONAL :: mean_anomaly, mean_anomaly_inc
-REAL(RealK), INTENT(IN), OPTIONAL :: hour_angle, hour_angle_inc
-REAL(RealK), INTENT(IN), OPTIONAL :: fixed_zenith_angle, fixed_azimuth_angle
-REAL(RealK), INTENT(IN), OPTIONAL :: observer_lon, observer_lat
+REAL(RealExt), INTENT(IN), OPTIONAL :: epoch
+REAL(RealExt), INTENT(IN), OPTIONAL :: eccentricity, eccentricity_inc
+REAL(RealExt), INTENT(IN), OPTIONAL :: arg_periapsis, arg_periapsis_inc
+REAL(RealExt), INTENT(IN), OPTIONAL :: obliquity, obliquity_inc
+REAL(RealExt), INTENT(IN), OPTIONAL :: semimajor_axis, semimajor_axis_inc
+REAL(RealExt), INTENT(IN), OPTIONAL :: mean_anomaly, mean_anomaly_inc
+REAL(RealExt), INTENT(IN), OPTIONAL :: hour_angle, hour_angle_inc
+REAL(RealExt), INTENT(IN), OPTIONAL :: fixed_zenith_angle, fixed_azimuth_angle
+REAL(RealExt), INTENT(IN), OPTIONAL :: observer_lon, observer_lat
 
 ! Defaults to use when arguments are not present
 INTEGER, PARAMETER :: default_i_elements = ip_elements_user
@@ -159,62 +161,62 @@ CASE (ip_elements_user)
     orbit%i_eqt = ip_mueller
   END IF
   IF (PRESENT(epoch)) THEN
-    orbit%epoch = epoch
+    orbit%epoch = real(epoch, RealK)
   ELSE
     orbit%epoch = default_epoch
   END IF
   IF (PRESENT(eccentricity)) THEN
-    orbit%eccentricity = eccentricity
+    orbit%eccentricity = real(eccentricity, RealK)
   ELSE
     orbit%eccentricity = zero_element
   END IF
   IF (PRESENT(eccentricity_inc)) THEN
-    orbit%eccentricity_inc = eccentricity_inc
+    orbit%eccentricity_inc = real(eccentricity_inc, RealK)
   ELSE
     orbit%eccentricity_inc = zero_element
   END IF
   IF (PRESENT(arg_periapsis)) THEN
-    orbit%arg_periapsis = arg_periapsis
+    orbit%arg_periapsis = real(arg_periapsis, RealK)
   ELSE
     orbit%arg_periapsis = zero_element
   END IF
   IF (PRESENT(arg_periapsis_inc)) THEN
-    orbit%arg_periapsis_inc = arg_periapsis_inc
+    orbit%arg_periapsis_inc = real(arg_periapsis_inc, RealK)
   ELSE
     orbit%arg_periapsis_inc = zero_element
   END IF
   IF (PRESENT(obliquity)) THEN
-    orbit%obliquity = obliquity
+    orbit%obliquity = real(obliquity, RealK)
   ELSE
     orbit%obliquity = zero_element
   END IF
   IF (PRESENT(obliquity_inc)) THEN
-    orbit%obliquity_inc = obliquity_inc
+    orbit%obliquity_inc = real(obliquity_inc, RealK)
   ELSE
     orbit%obliquity_inc = zero_element
   END IF
   IF (PRESENT(semimajor_axis)) THEN
-    orbit%semimajor_axis = semimajor_axis
+    orbit%semimajor_axis = real(semimajor_axis, RealK)
   ELSE
     orbit%semimajor_axis = default_a
   END IF
   IF (PRESENT(semimajor_axis_inc)) THEN
-    orbit%semimajor_axis_inc = semimajor_axis_inc
+    orbit%semimajor_axis_inc = real(semimajor_axis_inc, RealK)
   ELSE
     orbit%semimajor_axis_inc = zero_element
   END IF
   IF (PRESENT(mean_anomaly)) THEN
-    orbit%mean_anomaly = mean_anomaly
+    orbit%mean_anomaly = real(mean_anomaly, RealK)
   ELSE
     orbit%mean_anomaly = zero_element
   END IF
   IF (PRESENT(mean_anomaly_inc)) THEN
-    orbit%mean_anomaly_inc = mean_anomaly_inc
+    orbit%mean_anomaly_inc = real(mean_anomaly_inc, RealK)
   ELSE
     orbit%mean_anomaly_inc = zero_element
   END IF
   IF (PRESENT(hour_angle)) THEN
-    orbit%hour_angle = hour_angle
+    orbit%hour_angle = real(hour_angle, RealK)
   ELSE
     orbit%hour_angle = zero_element
   END IF
@@ -236,32 +238,32 @@ END SELECT
 SELECT CASE (orbit%i_spin)
 CASE (ip_spin_user)
   IF (PRESENT(hour_angle_inc)) THEN
-    orbit%hour_angle_inc = hour_angle_inc
+    orbit%hour_angle_inc = real(hour_angle_inc, RealK)
   ELSE
     orbit%hour_angle_inc = zero_element
   END IF
 CASE (ip_spin_earth_day)
 CASE (ip_spin_fixed_sun)
   IF (PRESENT(fixed_zenith_angle)) THEN
-    orbit%fixed_zenith_angle = fixed_zenith_angle
+    orbit%fixed_zenith_angle = real(fixed_zenith_angle, RealK)
   ELSE
     orbit%fixed_zenith_angle = zero_element
   END IF
   IF (PRESENT(fixed_azimuth_angle)) THEN
-    orbit%fixed_azimuth_angle = fixed_azimuth_angle
+    orbit%fixed_azimuth_angle = real(fixed_azimuth_angle, RealK)
   ELSE
     orbit%fixed_azimuth_angle = zero_element
   END IF
 END SELECT
 
 IF (PRESENT(observer_lon)) THEN
-  orbit%observer_lon = observer_lon
+  orbit%observer_lon = real(observer_lon, RealK)
 ELSE
   orbit%observer_lon = zero_element
 END IF
 
 IF (PRESENT(observer_lat)) THEN
-  orbit%observer_lat = observer_lat
+  orbit%observer_lat = real(observer_lat, RealK)
 ELSE
   orbit%observer_lat = zero_element
 END IF

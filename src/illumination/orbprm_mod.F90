@@ -57,31 +57,31 @@ REAL(RealK), INTENT(OUT) :: mean_anomaly ! Mean anomaly at 12Z
 
 
 ! Local Variables
-REAL :: tau0          ! Time of the perihelion passage in days
-REAL :: diny          ! Length of the calendar year (in whole days)
-REAL :: year_offset   ! Offset of the year from the reference year
-                      !   when default values apply
-REAL :: ecn_sn        ! Eccentricity multiplied by
-                      !   the sine of the longitude of the perihelion
-REAL :: ecn_cn        ! Eccentricity multiplied by
-                      !   the cosine of the longitude of the perihelion
-REAL :: lph_fixed_ve  ! Longitude of the perihelion
-                      !   relative to a fixed vernal equinox
-REAL :: gn_prcs       ! General precession
-REAL :: date_ve       ! Date of the vernal equinox in days into the year
-REAL :: no_leap_days  ! The number of leap days, used to calculate DATE_VE
-REAL :: mean_anom_ve  ! Mean anomaly at the vernal equinox
+REAL(RealK) :: tau0          ! Time of the perihelion passage in days
+REAL(RealK) :: diny          ! Length of the calendar year (in whole days)
+REAL(RealK) :: year_offset   ! Offset of the year from the reference year
+                             !   when default values apply
+REAL(RealK) :: ecn_sn        ! Eccentricity multiplied by
+                             !   the sine of the longitude of the perihelion
+REAL(RealK) :: ecn_cn        ! Eccentricity multiplied by
+                             !   the cosine of the longitude of the perihelion
+REAL(RealK) :: lph_fixed_ve  ! Longitude of the perihelion
+                             !   relative to a fixed vernal equinox
+REAL(RealK) :: gn_prcs       ! General precession
+REAL(RealK) :: date_ve       ! Date of the vernal equinox in days into the year
+REAL(RealK) :: no_leap_days  ! The number of leap days, used to calculate DATE_VE
+REAL(RealK) :: mean_anom_ve  ! Mean anomaly at the vernal equinox
 
 ! Synthetic constants
-REAL :: beta
-REAL :: ee1
-REAL :: ee2
-REAL :: ee3
+REAL(RealK) :: beta
+REAL(RealK) :: ee1
+REAL(RealK) :: ee2
+REAL(RealK) :: ee3
 
 INTEGER :: i  ! Loop variable
 
 ! Mathematical constants:
-REAL, PARAMETER :: twopi = 2.0 * pi
+REAL(RealK), PARAMETER :: twopi = 2.0_RealK * pi
 
 INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
 INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
@@ -99,15 +99,15 @@ IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName,zhook_in,zhook_handle)
 !  or for a real Gregorian calendar which has 365 days in
 !  non-leap years and 366 in leap years.
 IF (lcal360) THEN
-  diny=360.0
+  diny=360.0_RealK
 ELSE
   ! Is this a leap year?
   IF (MOD(year,4)    ==  0 .AND.                                  &
      (MOD(year,400)  ==  0 .OR. MOD(year,100)  /=  0)) THEN
-    diny = 366.0
+    diny = 366.0_RealK
   ! Is this a normal year?
   ELSE
-    diny = 365.0
+    diny = 365.0_RealK
   END IF
 END IF
 
@@ -116,7 +116,7 @@ END IF
 
 IF (l_sec_var) THEN
 
-  year_offset = REAL( year - year_ref )
+  year_offset = REAL( year - year_ref, RealK )
 
   ! Obliquity: (Equation 1 from Berger 1978)
   oblq = oblq_cnst
@@ -170,11 +170,11 @@ IF (l_sec_var) THEN
   !    These integers are then subtracted and the resulting integer
   !    is then converted to a real.
 
-  no_leap_days = ( tropyearlength - 365.0)                        &
-    * REAL( year     - year_ref_ve     )                          &
-    - REAL( year/4   - year_ref_ve/4   )                          &
-    + REAL( year/100 - year_ref_ve/100 )                          &
-    - REAL( year/400 - year_ref_ve/400 )
+  no_leap_days = ( tropyearlength - 365.0_RealK)                  &
+    * REAL( year     - year_ref_ve,     RealK )                   &
+    - REAL( year/4   - year_ref_ve/4,   RealK )                   &
+    + REAL( year/100 - year_ref_ve/100, RealK )                   &
+    - REAL( year/400 - year_ref_ve/400, RealK )
 
   !  Now we can calculate the date of the vernal equinox!
   !  Because the date of the vernal equinox is varying with the year,
@@ -196,22 +196,22 @@ IF (l_sec_var) THEN
     IF (MOD(year_ref_ve,4)    ==  0 .AND.                         &
        (MOD(year_ref_ve,400)  ==  0 .OR.                          &
         MOD(year_ref_ve,100)  /=  0)) THEN
-      date_ve = date_ve_dflt + (no_leap_days + (diny - 366.0))
+      date_ve = date_ve_dflt + (no_leap_days + (diny - 366.0_RealK))
 
     ! Is the epoch reference year a normal year?
     ELSE
-      date_ve = date_ve_dflt + (no_leap_days + (diny - 365.0))
+      date_ve = date_ve_dflt + (no_leap_days + (diny - 365.0_RealK))
     END IF
   END IF
 
-  beta = SQRT(1.0e+00-e*e)
-  ee1  = (0.5*e + 0.125*e*e*e)*(1.0 + beta)
-  ee2  = -0.25*e*e* (0.5 + beta)
-  ee3  = 0.125*e*e*e*((1.0/3.0) + beta)
-  mean_anom_ve = gamph - 2.0e+00 * (                              &
+  beta = SQRT(1.0e+00_RealK-e*e)
+  ee1  = (0.5_RealK*e + 0.125_RealK*e*e*e)*(1.0_RealK + beta)
+  ee2  = -0.25_RealK*e*e* (0.5_RealK + beta)
+  ee3  = 0.125_RealK*e*e*e*((1.0_RealK/3.0_RealK) + beta)
+  mean_anom_ve = gamph - 2.0e+00_RealK * (                        &
       ee1 * SIN (gamph)                                           &
-    + ee2 * SIN (2.0 * gamph)                                     &
-    + ee3 * SIN (3.0 * gamph)                                     &
+    + ee2 * SIN (2.0_RealK * gamph)                               &
+    + ee3 * SIN (3.0_RealK * gamph)                               &
     )
 
   tau0 = date_ve - mean_anom_ve * tropyearlength/(twopi)
@@ -227,7 +227,7 @@ END IF
 
 ! If using a 360-day calendar the time of the perihelion is adjusted.
 IF (lcal360) THEN
-  tau0 = tau0*(360.0/tropyearlength)+0.71
+  tau0 = tau0*(360.0_RealK/tropyearlength)+0.71_RealK
 END IF
 
 ! Calculate the mean anomaly at 12Z on the current day.
@@ -235,9 +235,9 @@ END IF
 ! The references are to Smart 1944 (and UMDP23)
 ! Eq 67 p. 113 and n=2pi/orbital period     (Eq 3.1.1)
 IF (lcal360) THEN
-  mean_anomaly = (twopi / diny)           * (REAL(day) - tau0 - 0.5)
+  mean_anomaly = (twopi/diny)           * (REAL(day, RealK) - tau0 - 0.5_RealK)
 ELSE
-  mean_anomaly = (twopi / tropyearlength) * (REAL(day) - tau0 - 0.5)
+  mean_anomaly = (twopi/tropyearlength) * (REAL(day, RealK) - tau0 - 0.5_RealK)
 END IF
 
 

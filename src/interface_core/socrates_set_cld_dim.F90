@@ -13,18 +13,18 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_CLD_DIM'
 contains
 
 subroutine set_cld_dim(cld, control, dimen, spectrum, atm, &
-  liq_nc, liq_conv_nc, &
+  profile_list, n_layer_stride, liq_nc, liq_conv_nc, &
   liq_dim, ice_dim, liq_conv_dim, ice_conv_dim, &
   liq_nc_1d, liq_conv_nc_1d, &
   liq_dim_1d, ice_dim_1d, liq_conv_dim_1d, ice_conv_dim_1d, &
-  l_invert, l_debug, i_profile_debug)
+  l_invert, l_profile_last, l_debug, i_profile_debug)
 
 use def_cld,      only: StrCld
 use def_control,  only: StrCtrl
 use def_dimen,    only: StrDim
 use def_spectrum, only: StrSpecData
 use def_atm,      only: StrAtm
-use realtype_rd,  only: RealK
+use realtype_rd,  only: RealK, RealExt
 use rad_pcf,      only: &
   ip_cloud_split_homogen, ip_cloud_split_ice_water, &
   ip_clcmp_st_water, ip_clcmp_st_ice, ip_clcmp_cnv_water, ip_clcmp_cnv_ice, &
@@ -51,16 +51,24 @@ type(StrSpecData), intent(in)  :: spectrum
 ! Atmospheric properties:
 type(StrAtm),      intent(in)  :: atm
 
-real(RealK), intent(in), dimension(:, :), optional :: &
+integer, intent(in), optional :: profile_list(:)
+!   List of profiles to use from input fields
+
+integer, intent(in), optional :: n_layer_stride
+!   Number of layers in input 1d arrays
+
+real(RealExt), intent(in), dimension(:, :), optional :: &
   liq_nc, liq_conv_nc, &
   liq_dim, ice_dim, liq_conv_dim, ice_conv_dim
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   liq_nc_1d, liq_conv_nc_1d, &
   liq_dim_1d, ice_dim_1d, liq_conv_dim_1d, ice_conv_dim_1d
 !   Liquid number concentration, liquid and ice effective dimensions
 
 logical, intent(in), optional :: l_invert
 !   Flag to invert fields in the vertical
+logical, intent(in), optional :: l_profile_last
+!   Loop over profiles is last in input fields
 
 logical, intent(in), optional :: l_debug
 integer, intent(in), optional :: i_profile_debug
@@ -68,12 +76,12 @@ integer, intent(in), optional :: i_profile_debug
 
 
 ! Local variables
-integer :: i, k, l
+integer :: i, k, kk, l, ll, list(dimen%nd_profile)
 !   Loop variables
-integer :: i_param_type
+integer :: i_param_type, layer_offset, stride_layer
 !   Working variable
-logical :: l_inv
-!   Local flag to invert fields in the vertical
+logical :: l_last
+!   Local flag to loop over profiles last in 1d fields
 logical :: l_split
 !   Split cloud into optically thick and thin regions
 
@@ -86,10 +94,33 @@ if (.not.control%l_cloud) then
   return
 end if
 
-if (present(l_invert)) then
-  l_inv = l_invert
+if (present(profile_list)) then
+  list(1:atm%n_profile) = profile_list(1:atm%n_profile)
 else
-  l_inv = .false.
+  do l=1, atm%n_profile
+    list(l) = l
+  end do
+end if
+
+layer_offset = 0
+if (present(l_invert)) then
+  if (l_invert) then
+    ! The layer is indexed using an inverted loop counter
+    layer_offset = atm%n_layer + 1
+  end if
+end if
+
+if (present(l_profile_last)) then
+  l_last = l_profile_last
+else
+  l_last = .false.
+end if
+
+! Set the number of layers in the 1d arrays
+if (present(n_layer_stride)) then
+  stride_layer = n_layer_stride
+else
+  stride_layer = atm%n_layer
 end if
 
 
@@ -182,36 +213,42 @@ contains
 
     real(RealK), intent(inout) :: out_field(:, dimen%id_cloud_top:)
 !     Output field
-    real(RealK), intent(in), optional :: full_field(:, :)
+    real(RealExt), intent(in), optional :: full_field(:, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     if (present(full_field)) then
-      if (l_inv) then
+      if (l_last) then
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = full_field(l, atm%n_layer+1-k)
+            out_field(l, k) = real(full_field(kk, list(l)), RealK)
           end do
         end do
       else
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = full_field(l, k)
+            out_field(l, k) = real(full_field(list(l), kk), RealK)
           end do
         end do
       end if
     else if (present(oned_field)) then
-      if (l_inv) then
+      if (l_last) then
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = oned_field(atm%n_layer+1-k)
+            ll = stride_layer*(list(l)-1) + kk
+            out_field(l, k) = real(oned_field(ll), RealK)
           end do
         end do
       else
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = oned_field(k)
+            ll = atm%n_profile*(kk-1) + list(l)
+            out_field(l, k) = real(oned_field(ll), RealK)
           end do
         end do
       end if
@@ -229,9 +266,9 @@ contains
     use rad_ccf, only: pi, rho_water
     implicit none
 
-    real(RealK), intent(in), optional :: full_nc(:, :)
+    real(RealExt), intent(in), optional :: full_nc(:, :)
 !     Full field cloud droplet number concentration
-    real(RealK), intent(in), optional :: oned_nc(:)
+    real(RealExt), intent(in), optional :: oned_nc(:)
 !     One-dimensional cloud droplet number concentration
 
     real(RealK) :: cdnc(dimen%nd_profile, dimen%id_cloud_top:dimen%nd_layer)

@@ -13,19 +13,19 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_BOUND'
 contains
 
 subroutine set_bound(bound, control, dimen, spectrum, &
-  n_profile, n_tile, &
+  n_profile, profile_list, n_tile, &
   t_ground, cos_zenith_angle, solar_irrad, orog_corr, &
   l_grey_albedo, grey_albedo, albedo_diff, albedo_dir, &
   albedo_diff_1d, albedo_dir_1d, &
   frac_tile, t_tile, albedo_diff_tile, albedo_dir_tile, &
   frac_tile_1d, t_tile_1d, albedo_diff_tile_1d, albedo_dir_tile_1d, &
-  l_debug, i_profile_debug)
+  l_profile_last, l_debug, i_profile_debug)
 
 use def_bound,    only: StrBound, allocate_bound
 use def_control,  only: StrCtrl
 use def_dimen,    only: StrDim
 use def_spectrum, only: StrSpecData
-use realtype_rd,  only: RealK
+use realtype_rd,  only: RealK, RealExt
 use rad_pcf,      only: &
   ip_solar, ip_infra_red, ip_surf_alb_diff, ip_surf_alb_dir
 
@@ -46,57 +46,76 @@ type(StrSpecData), intent(in)  :: spectrum
 
 integer, intent(in) :: n_profile
 !   Number of atmospheric profiles for radiation calculations
+integer, intent(in), optional :: profile_list(:)
+!   List of profiles to use from input fields
 integer, intent(in), optional :: n_tile
 !   Number of surface tiles for radiation calculations
 
-real(RealK), intent(in), optional :: t_ground(n_profile)
+real(RealExt), intent(in), optional :: t_ground(:)
 !   Effective radiative temperature over whole grid-box
-real(RealK), intent(in), optional :: cos_zenith_angle(n_profile)
+real(RealExt), intent(in), optional :: cos_zenith_angle(:)
 !   Cosine of solar zenith angle
-real(RealK), intent(in), optional :: solar_irrad(n_profile)
+real(RealExt), intent(in), optional :: solar_irrad(:)
 !   Solar irradiance at top-of-atmosphere (mean over timestep)
-real(RealK), intent(in), optional :: orog_corr(n_profile)
+real(RealExt), intent(in), optional :: orog_corr(:)
 !   Orographic correction factor
 
 logical, intent(in), optional :: l_grey_albedo
 !   Set a single grey albedo for the surface
-real(RealK), intent(in), optional :: grey_albedo
+real(RealExt), intent(in), optional :: grey_albedo
 !   Grey surface albedo
 
-real(RealK), intent(in), dimension(:, :), optional :: &
+real(RealExt), intent(in), dimension(:, :), optional :: &
   albedo_diff, albedo_dir
 !   Diffuse, direct albedo (n_profile, n_band)
 
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   albedo_diff_1d, albedo_dir_1d
 !   1d diffuse, direct albedo (n_band)
 
-real(RealK), intent(in), dimension(:, :), optional :: &
+real(RealExt), intent(in), dimension(:, :), optional :: &
   frac_tile, t_tile
 !   Tile fraction, temperature (n_profile, n_tile)
 
-real(RealK), intent(in), dimension(:, :, :), optional :: &
+real(RealExt), intent(in), dimension(:, :, :), optional :: &
   albedo_diff_tile, albedo_dir_tile
 !   Tile albedos (n_profile, n_tile, n_band)
 
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   frac_tile_1d, t_tile_1d
 !   1d tile fraction, temperature (n_tile)
 
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   albedo_diff_tile_1d, albedo_dir_tile_1d
 !   1d tile albedos (n_tile*n_band)
+
+logical, intent(in), optional :: l_profile_last
+!   Loop over profiles is last in input fields
 
 logical, intent(in), optional :: l_debug
 integer, intent(in), optional :: i_profile_debug
 !   Options for outputting debugging information
 
 ! Local variables.
-integer :: l, ll, i_band, i_tile
-logical :: l_grey_alb
+integer :: l, ll, i_band, i_tile, list(n_profile)
+logical :: l_grey_alb, l_last
 
 ! Allocate structure for the core radiation code interface
 call allocate_bound(bound, dimen, spectrum)
+
+if (present(profile_list)) then
+  list = profile_list(1:n_profile)
+else
+  do l=1, n_profile
+    list(l) = l
+  end do
+end if
+
+if (present(l_profile_last)) then
+  l_last = l_profile_last
+else
+  l_last = .false.
+end if
 
 if (present(l_grey_albedo)) then
   l_grey_alb = l_grey_albedo
@@ -108,25 +127,47 @@ end if
 if (l_grey_alb .and. present(grey_albedo)) then
   do i_band=1, spectrum%basic%n_band
     do l=1, n_profile
-      bound%rho_alb(l, ip_surf_alb_diff, i_band) = grey_albedo
+      bound%rho_alb(l, ip_surf_alb_diff, i_band) = real(grey_albedo, RealK)
     end do
     do l=1, n_profile
-      bound%rho_alb(l, ip_surf_alb_dir,  i_band) = grey_albedo
+      bound%rho_alb(l, ip_surf_alb_dir,  i_band) = real(grey_albedo, RealK)
     end do
   end do
 else
   if (present(albedo_diff)) then
-    do i_band=1, spectrum%basic%n_band
-      do l=1, n_profile
-        bound%rho_alb(l, ip_surf_alb_diff, i_band) = albedo_diff(l, i_band)
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          bound%rho_alb(l, ip_surf_alb_diff, i_band) &
+            = real(albedo_diff(i_band, list(l)), RealK)
+        end do
       end do
-    end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          bound%rho_alb(l, ip_surf_alb_diff, i_band) &
+            = real(albedo_diff(list(l), i_band), RealK)
+        end do
+      end do
+    end if
   else if (present(albedo_diff_1d)) then
-    do i_band=1, spectrum%basic%n_band
-      do l=1, n_profile
-        bound%rho_alb(l, ip_surf_alb_diff, i_band) = albedo_diff_1d(i_band)
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          ll = spectrum%basic%n_band*(list(l)-1) + i_band
+          bound%rho_alb(l, ip_surf_alb_diff, i_band) &
+            = real(albedo_diff_1d(ll), RealK)
+        end do
       end do
-    end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          ll = n_profile*(i_band-1) + list(l)
+          bound%rho_alb(l, ip_surf_alb_diff, i_band) &
+            = real(albedo_diff_1d(ll), RealK)
+        end do
+      end do
+    end if
   else
     do i_band=1, spectrum%basic%n_band
       do l=1, n_profile
@@ -135,17 +176,39 @@ else
     end do
   end if
   if (present(albedo_dir)) then
-    do i_band=1, spectrum%basic%n_band
-      do l=1, n_profile
-        bound%rho_alb(l, ip_surf_alb_dir, i_band) = albedo_dir(l, i_band)
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          bound%rho_alb(l, ip_surf_alb_dir, i_band) &
+            = real(albedo_dir(i_band, list(l)), RealK)
+        end do
       end do
-    end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          bound%rho_alb(l, ip_surf_alb_dir, i_band) &
+            = real(albedo_dir(list(l), i_band), RealK)
+        end do
+      end do
+    end if
   else if (present(albedo_dir_1d)) then
-    do i_band=1, spectrum%basic%n_band
-      do l=1, n_profile
-        bound%rho_alb(l, ip_surf_alb_dir, i_band) = albedo_dir_1d(i_band)
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          ll = spectrum%basic%n_band*(list(l)-1) + i_band
+          bound%rho_alb(l, ip_surf_alb_dir, i_band) &
+            = real(albedo_dir_1d(ll), RealK)
+        end do
       end do
-    end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          ll = n_profile*(i_band-1) + list(l)
+          bound%rho_alb(l, ip_surf_alb_dir, i_band) &
+            = real(albedo_dir_1d(ll), RealK)
+        end do
+      end do
+    end if
   else
     do i_band=1, spectrum%basic%n_band
       do l=1, n_profile
@@ -158,7 +221,7 @@ end if
 ! Surface temperature
 if (present(t_ground)) then
   do l=1, n_profile
-    bound%t_ground(l) = t_ground(l)
+    bound%t_ground(l) = real(t_ground(list(l)), RealK)
   end do
 else
   do l=1, n_profile
@@ -180,29 +243,85 @@ if (control%l_tile .and. present(n_tile) .and. &
   end do
 
   if (present(frac_tile)) then
-    do i_tile=1, n_tile
-      do l=1, n_profile
-        bound%frac_tile(l, i_tile) = frac_tile(l, i_tile)
+    if (l_last) then
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          bound%frac_tile(l, i_tile) = real(frac_tile(i_tile, list(l)), RealK)
+        end do
       end do
-    end do
+    else
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          bound%frac_tile(l, i_tile) = real(frac_tile(list(l), i_tile), RealK)
+        end do
+      end do
+    end if
   else
-    do i_tile=1, n_tile
-      do l=1, n_profile
-        bound%frac_tile(l, i_tile) = frac_tile_1d(i_tile)
+    if (l_last) then
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          ll = n_tile*(list(l)-1) + i_tile
+          bound%frac_tile(l, i_tile) = real(frac_tile_1d(ll), RealK)
+        end do
       end do
-    end do
+    else
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          ll = n_profile*(i_tile-1) + list(l)
+          bound%frac_tile(l, i_tile) = real(frac_tile_1d(ll), RealK)
+        end do
+      end do
+    end if
   end if
 
   ! Diffuse tile albedos
-  if (present(albedo_diff_tile).and..not.l_grey_alb) then
-    do i_band=1, spectrum%basic%n_band
-      do i_tile=1, n_tile
-        do l=1, n_profile
-          bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
-            = albedo_diff_tile(l, i_tile, i_band)
+  if ((present(albedo_diff_tile) .or. present(albedo_diff_tile_1d)) &
+      .and. .not. l_grey_alb) then
+    if (present(albedo_diff_tile)) then
+      if (l_last) then
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
+                = real(albedo_diff_tile(i_tile, i_band, list(l)), RealK)
+            end do
+          end do
         end do
-      end do
-    end do
+      else
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
+                = real(albedo_diff_tile(list(l), i_tile, i_band), RealK)
+            end do
+          end do
+        end do
+      end if
+    else
+      if (l_last) then
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              ll = spectrum%basic%n_band*n_tile*(list(l)-1) &
+                 + n_tile*(i_band-1) + i_tile
+              bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
+                = real(albedo_diff_tile_1d(ll), RealK)
+            end do
+          end do
+        end do
+      else
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              ll = n_profile*n_tile*(i_band-1) &
+                 + n_profile*(i_tile-1) + list(l)
+              bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
+                = real(albedo_diff_tile_1d(ll), RealK)
+            end do
+          end do
+        end do
+      end if
+    end if
     ! Ensure the total albedo is consistent with the tile albedos
     do i_band=1, spectrum%basic%n_band
       do l=1, n_profile
@@ -212,29 +331,7 @@ if (control%l_tile .and. present(n_tile) .and. &
         do l=1, n_profile
           bound%rho_alb(l, ip_surf_alb_diff, i_band) &
             = bound%rho_alb(l, ip_surf_alb_diff, i_band) &
-            + albedo_diff_tile(l, i_tile, i_band) * bound%frac_tile(l, i_tile)
-        end do
-      end do
-    end do
-  else if (present(albedo_diff_tile_1d).and..not.l_grey_alb) then
-    do i_band=1, spectrum%basic%n_band
-      do i_tile=1, n_tile
-        do l=1, n_profile
-          bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
-            = albedo_diff_tile_1d( (i_band-1)*n_tile + i_tile )
-        end do
-      end do
-    end do
-    ! Ensure the total albedo is consistent with the tile albedos
-    do i_band=1, spectrum%basic%n_band
-      do l=1, n_profile
-        bound%rho_alb(l, ip_surf_alb_diff, i_band) = 0.0_RealK
-      end do
-      do i_tile=1, n_tile
-        do l=1, n_profile
-          bound%rho_alb(l, ip_surf_alb_diff, i_band) &
-            = bound%rho_alb(l, ip_surf_alb_diff, i_band) &
-            + albedo_diff_tile_1d( (i_band-1)*n_tile + i_tile ) &
+            + bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
             * bound%frac_tile(l, i_tile)
         end do
       end do
@@ -252,15 +349,53 @@ if (control%l_tile .and. present(n_tile) .and. &
   end if
 
   ! Direct tile albedos
-  if (present(albedo_dir_tile).and..not.l_grey_alb) then
-    do i_band=1, spectrum%basic%n_band
-      do i_tile=1, n_tile
-        do l=1, n_profile
-          bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
-            = albedo_dir_tile(l, i_tile, i_band)
+  if ((present(albedo_dir_tile) .or. present(albedo_dir_tile_1d)) &
+      .and. .not. l_grey_alb) then
+    if (present(albedo_dir_tile)) then
+      if (l_last) then
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
+                = real(albedo_dir_tile(i_tile, i_band, list(l)), RealK)
+            end do
+          end do
         end do
-      end do
-    end do
+      else
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
+                = real(albedo_dir_tile(list(l), i_tile, i_band), RealK)
+            end do
+          end do
+        end do
+      end if
+    else
+      if (l_last) then
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              ll = spectrum%basic%n_band*n_tile*(list(l)-1) &
+                 + n_tile*(i_band-1) + i_tile
+              bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
+                = real(albedo_dir_tile_1d(ll), RealK)
+            end do
+          end do
+        end do
+      else
+        do i_band=1, spectrum%basic%n_band
+          do i_tile=1, n_tile
+            do l=1, n_profile
+              ll = n_profile*n_tile*(i_band-1) &
+                 + n_profile*(i_tile-1) + list(l)
+              bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
+                = real(albedo_dir_tile_1d(ll), RealK)
+            end do
+          end do
+        end do
+      end if
+    end if
     ! Ensure the total albedo is consistent with the tile albedos
     do i_band=1, spectrum%basic%n_band
       do l=1, n_profile
@@ -270,29 +405,7 @@ if (control%l_tile .and. present(n_tile) .and. &
         do l=1, n_profile
           bound%rho_alb(l, ip_surf_alb_dir, i_band) &
             = bound%rho_alb(l, ip_surf_alb_dir, i_band) &
-            + albedo_dir_tile(l, i_tile, i_band) * bound%frac_tile(l, i_tile)
-        end do
-      end do
-    end do
-  else if (present(albedo_dir_tile_1d).and..not.l_grey_alb) then
-    do i_band=1, spectrum%basic%n_band
-      do i_tile=1, n_tile
-        do l=1, n_profile
-          bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
-            = albedo_dir_tile_1d( (i_band-1)*n_tile + i_tile )
-        end do
-      end do
-    end do
-    ! Ensure the total albedo is consistent with the tile albedos
-    do i_band=1, spectrum%basic%n_band
-      do l=1, n_profile
-        bound%rho_alb(l, ip_surf_alb_dir, i_band) = 0.0_RealK
-      end do
-      do i_tile=1, n_tile
-        do l=1, n_profile
-          bound%rho_alb(l, ip_surf_alb_dir, i_band) &
-            = bound%rho_alb(l, ip_surf_alb_dir, i_band) &
-            + albedo_dir_tile_1d( (i_band-1)*n_tile + i_tile ) &
+            + bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
             * bound%frac_tile(l, i_tile)
         end do
       end do
@@ -311,18 +424,36 @@ if (control%l_tile .and. present(n_tile) .and. &
 
   if (present(t_tile)) then
     ! Set the tile temperatures (t_ground will not be used on these points)
-    do i_tile=1, n_tile
-      do l=1, n_profile
-        bound%t_tile(l, i_tile) = t_tile(l, i_tile)
+    if (l_last) then
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          bound%t_tile(l, i_tile) = real(t_tile(i_tile, list(l)), RealK)
+        end do
       end do
-    end do
+    else
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          bound%t_tile(l, i_tile) = real(t_tile(list(l), i_tile), RealK)
+        end do
+      end do
+    end if
   else if (present(t_tile_1d)) then
     ! Set the tile temperatures from 1d input
-    do i_tile=1, n_tile
-      do l=1, n_profile
-        bound%t_tile(l, i_tile) = t_tile_1d(i_tile)
+    if (l_last) then
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          ll = n_tile*(list(l)-1) + i_tile
+          bound%t_tile(l, i_tile) = real(t_tile_1d(ll), RealK)
+        end do
       end do
-    end do
+    else
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          ll = n_profile*(i_tile-1) + list(l)
+          bound%t_tile(l, i_tile) = real(t_tile_1d(ll), RealK)
+        end do
+      end do
+    end if
   else
     ! When not present just use the gridbox mean surface temperature
     do i_tile=1, n_tile
@@ -343,7 +474,7 @@ bound%f_brdf(1, 0, 0, 0)=4.0_RealK
 ! Orographic correction factor
 if (present(orog_corr)) then
   do l=1, n_profile
-    bound%orog_corr(l)=orog_corr(l)
+    bound%orog_corr(l) = real(orog_corr(list(l)), RealK)
   end do
 end if
 
@@ -351,9 +482,9 @@ end if
 ! Incident solar flux
 if (present(cos_zenith_angle) .and. present(solar_irrad)) then
   do l=1, n_profile
-    if (cos_zenith_angle(l) > 0.0_RealK) then
-      bound%solar_irrad(l)=solar_irrad(l)
-      bound%zen_0(l)=1.0_RealK/cos_zenith_angle(l)
+    if (cos_zenith_angle(list(l)) > 0.0_RealExt) then
+      bound%solar_irrad(l) = real(solar_irrad(list(l)), RealK)
+      bound%zen_0(l)=1.0_RealK/real(cos_zenith_angle(list(l)), RealK)
     else
       bound%solar_irrad(l)=0.0_RealK
       bound%zen_0(l)=1.0_RealK

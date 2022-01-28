@@ -22,25 +22,26 @@ MODULE astro_constants_mod
 !      Andre' L. Berger Journ. of Atm. Sci. Volume 35 p. 2362-2367,
 !      and is available from the Met Office library.
 
+USE realtype_rd, ONLY: RealK
 USE rad_ccf, ONLY: pi
 
 IMPLICIT NONE
 
 ! Eccentricity of the orbit
-REAL,    PARAMETER :: E_DFLT         = 1.6710222E-02
+REAL(RealK), PARAMETER :: E_DFLT = 1.6710222E-02_RealK
 
 ! Longitude of the perihelion in radians
-REAL,    PARAMETER :: LPH_DFLT       = 102.94719*pi/180.0
+REAL(RealK), PARAMETER :: LPH_DFLT = 102.94719_RealK * pi / 180.0_RealK
 
 ! Obliquity of the orbit - corresponds to 23.43929111 degrees
-REAL,    PARAMETER :: OBLQ_DFLT      = 0.409092804
+REAL(RealK), PARAMETER :: OBLQ_DFLT = 0.409092804_RealK
 
 ! Reference year for setting the date of the vernal equinox
-INTEGER, PARAMETER :: YEAR_REF_VE    = 2000
+INTEGER, PARAMETER :: YEAR_REF_VE = 2000
 
 ! Date of the vernal equinox in days after the start of the year
 ! This date is for the year 2000.
-REAL,    PARAMETER :: DATE_VE_DFLT   = 79.3159
+REAL(RealK), PARAMETER :: DATE_VE_DFLT = 79.3159_RealK
 
 !     The final parameter required is the time of the perihelion
 !     passage, TAU0. For a pure Keplerian orbit, with a specified
@@ -54,7 +55,7 @@ REAL,    PARAMETER :: DATE_VE_DFLT   = 79.3159
 !     years.
 
 ! Time of the perihelion passage in days
-REAL,    PARAMETER :: TAU0_DFLT      = 2.667
+REAL(RealK), PARAMETER :: TAU0_DFLT = 2.667_RealK
 
 !     The tropical year is defined as the mean interval between two
 !     successive passages of the sun through the vernal equinox.
@@ -63,7 +64,7 @@ REAL,    PARAMETER :: TAU0_DFLT      = 2.667
 !     the year starting at different points on the ellipse.
 
 ! Number of days in the tropical year
-REAL, PARAMETER    :: TropYearLength = 365.2424
+REAL(RealK), PARAMETER :: TropYearLength = 365.2424_RealK
 
 !     ------------------------------------------------------------------
 
@@ -84,8 +85,8 @@ REAL, PARAMETER    :: TropYearLength = 365.2424
 !     eccentricity to NASA values is not so easy and has not been done.
 
 
-! Reference year     YEAR_REF
-INTEGER, PARAMETER :: YEAR_REF       = 2000
+! Reference year
+INTEGER, PARAMETER :: YEAR_REF = 2000
 
 !  -----------------------------------------------------------------
 !     Obliquity (Table 1) from the first 24 terms:
@@ -93,37 +94,37 @@ INTEGER, PARAMETER :: YEAR_REF       = 2000
 
 ! Constant term in the obliquity: from the Astr. Almanac for 1984
 ! The following value corresponds to 23.320870 degrees at J2000
-REAL,    PARAMETER :: OBLQ_CNST      = 0.40702597
+REAL(RealK), PARAMETER :: OBLQ_CNST = 0.40702597_RealK
 !
 ! Number of terms retained in the series for the obliquity
-INTEGER, PARAMETER :: N_TERM_OBQ     = 24
+INTEGER, PARAMETER :: N_TERM_OBQ = 24
 !
 ! Amplitude
-REAL, PARAMETER :: A(N_TERM_OBQ) = (/                                   &
-          -1.19372E-02, -4.15640E-03, -3.05103E-03, -2.00849E-03        &
-        , -1.51146E-03,  1.49778E-03, -7.88065E-04, -5.62917E-04        &
-        ,  4.90244E-04, -3.28170E-04,  1.20767E-04,  1.09471E-04        &
-        , -1.02587E-04, -7.58733E-05,  7.46128E-05,  7.11222E-05        &
-        , -5.68686E-05,  4.97904E-05,  3.14644E-05,  2.83616E-05        &
-        , -2.66163E-05, -2.63254E-05,  2.50164E-05,  2.46285E-05 /)
+REAL(RealK), PARAMETER :: A(N_TERM_OBQ) = (/ &
+  -1.19372E-02_RealK,-4.15640E-03_RealK,-3.05103E-03_RealK,-2.00849E-03_RealK, &
+  -1.51146E-03_RealK, 1.49778E-03_RealK,-7.88065E-04_RealK,-5.62917E-04_RealK, &
+   4.90244E-04_RealK,-3.28170E-04_RealK, 1.20767E-04_RealK, 1.09471E-04_RealK, &
+  -1.02587E-04_RealK,-7.58733E-05_RealK, 7.46128E-05_RealK, 7.11222E-05_RealK, &
+  -5.68686E-05_RealK, 4.97904E-05_RealK, 3.14644E-05_RealK, 2.83616E-05_RealK, &
+  -2.66163E-05_RealK,-2.63254E-05_RealK, 2.50164E-05_RealK, 2.46285E-05_RealK /)
 ! Angular frequency
-REAL, PARAMETER :: F(N_TERM_OBQ) = (/                                   &
-           1.5324946E-04,  1.5814864E-04,  1.1719011E-04                &
-        ,  1.5506174E-04,  2.1733392E-04,  1.5016256E-04                &
-        ,  2.1170962E-04,  1.5633636E-04,  1.4835028E-04                &
-        ,  2.0692488E-04,  2.1252514E-04,  2.2999289E-04                &
-        ,  3.0649899E-04,  3.1139817E-04,  4.8991877E-06                &
-        ,  3.6059331E-05,  2.7043965E-04,  1.8122966E-06                &
-        ,  6.4084427E-05,  3.0341210E-04,  3.0831127E-04                &
-        ,  3.7058338E-04,  2.2211866E-04,  4.0958519E-05 /)
+REAL(RealK), PARAMETER :: F(N_TERM_OBQ) = (/ &
+  1.5324946E-04_RealK,  1.5814864E-04_RealK,  1.1719011E-04_RealK, &
+  1.5506174E-04_RealK,  2.1733392E-04_RealK,  1.5016256E-04_RealK, &
+  2.1170962E-04_RealK,  1.5633636E-04_RealK,  1.4835028E-04_RealK, &
+  2.0692488E-04_RealK,  2.1252514E-04_RealK,  2.2999289E-04_RealK, &
+  3.0649899E-04_RealK,  3.1139817E-04_RealK,  4.8991877E-06_RealK, &
+  3.6059331E-05_RealK,  2.7043965E-04_RealK,  1.8122966E-06_RealK, &
+  6.4084427E-05_RealK,  3.0341210E-04_RealK,  3.0831127E-04_RealK, &
+  3.7058338E-04_RealK,  2.2211866E-04_RealK,  4.0958519E-05_RealK /)
 ! Phase in the series
-REAL, PARAMETER :: D(N_TERM_OBQ) = (/                                   &
-           4.4041E+00,  4.9093E+00,  2.2451E+00,  5.1167E+00            &
-        ,  2.7912E-01,  4.6115E+00,  5.3935E+00,  4.1966E+00            &
-        ,  3.8990E+00,  4.7014E+00,  5.5397E+00,  5.5896E+00            &
-        ,  2.5251E+00,  3.0303E+00,  5.0517E-01,  2.1589E+00            &
-        ,  3.6608E-01,  7.1253E-01,  2.1582E+00,  2.7325E+00            &
-        ,  3.2376E+00,  4.6833E+00,  9.7121E-01,  2.6640E+00 /)
+REAL(RealK), PARAMETER :: D(N_TERM_OBQ) = (/ &
+  4.4041E+00_RealK,  4.9093E+00_RealK,  2.2451E+00_RealK,  5.1167E+00_RealK, &
+  2.7912E-01_RealK,  4.6115E+00_RealK,  5.3935E+00_RealK,  4.1966E+00_RealK, &
+  3.8990E+00_RealK,  4.7014E+00_RealK,  5.5397E+00_RealK,  5.5896E+00_RealK, &
+  2.5251E+00_RealK,  3.0303E+00_RealK,  5.0517E-01_RealK,  2.1589E+00_RealK, &
+  3.6608E-01_RealK,  7.1253E-01_RealK,  2.1582E+00_RealK,  2.7325E+00_RealK, &
+  3.2376E+00_RealK,  4.6833E+00_RealK,  9.7121E-01_RealK,  2.6640E+00_RealK /)
 
 !   -----------------------------------------------------------------
 !     Eccentricity and longitude of the fixed perihelion (Table 4):
@@ -133,59 +134,60 @@ REAL, PARAMETER :: D(N_TERM_OBQ) = (/                                   &
 INTEGER, PARAMETER :: N_TERM_ECN_LPH = 19
 !
 ! Amplitude
-REAL, PARAMETER :: M(N_TERM_ECN_LPH)= (/                                &
-           1.8607980E-02,  1.6275220E-02, -1.3006600E-02                &
-        ,  9.8882900E-03, -3.3670000E-03,  3.3307700E-03                &
-        , -2.3540000E-03,  1.4001500E-03,  1.0070000E-03                &
-        ,  8.5700000E-04,  6.4990000E-04,  5.9900000E-04                &
-        ,  3.7800000E-04, -3.3700000E-04,  2.7600000E-04                &
-        ,  1.8200000E-04, -1.7400000E-04, -1.2400000E-04                &
-        ,  1.2500000E-05 /)
+REAL(RealK), PARAMETER :: M(N_TERM_ECN_LPH)= (/ &
+  1.8607980E-02_RealK,  1.6275220E-02_RealK, -1.3006600E-02_RealK, &
+  9.8882900E-03_RealK, -3.3670000E-03_RealK,  3.3307700E-03_RealK, &
+  2.3540000E-03_RealK,  1.4001500E-03_RealK,  1.0070000E-03_RealK, &
+  8.5700000E-04_RealK,  6.4990000E-04_RealK,  5.9900000E-04_RealK, &
+  3.7800000E-04_RealK, -3.3700000E-04_RealK,  2.7600000E-04_RealK, &
+  1.8200000E-04_RealK, -1.7400000E-04_RealK, -1.2400000E-04_RealK, &
+  1.2500000E-05_RealK /)
 ! Angular frequency
-REAL, PARAMETER :: G(N_TERM_ECN_LPH)= (/                                &
-           2.0397105E-05,  3.5614854E-05,  8.6574454E-05                &
-        ,  8.3487563E-05,  8.1675266E-05,  2.5205846E-05                &
-        ,  8.8386751E-05,  1.2710243E-04,  3.0830121E-05                &
-        ,  7.8588375E-05,  1.4860417E-05,  8.0400672E-05                &
-        ,  8.9661345E-05,  3.0014587E-05,  9.1473642E-05                &
-        ,  8.4481533E-05,  2.9990579E-05,  8.9290274E-05                &
-        ,  3.2378912E-06 /)
+REAL(RealK), PARAMETER :: G(N_TERM_ECN_LPH)= (/ &
+  2.0397105E-05_RealK,  3.5614854E-05_RealK,  8.6574454E-05_RealK, &
+  8.3487563E-05_RealK,  8.1675266E-05_RealK,  2.5205846E-05_RealK, &
+  8.8386751E-05_RealK,  1.2710243E-04_RealK,  3.0830121E-05_RealK, &
+  7.8588375E-05_RealK,  1.4860417E-05_RealK,  8.0400672E-05_RealK, &
+  8.9661345E-05_RealK,  3.0014587E-05_RealK,  9.1473642E-05_RealK, &
+  8.4481533E-05_RealK,  2.9990579E-05_RealK,  8.9290274E-05_RealK, &
+  3.2378912E-06_RealK /)
 ! Phase in the series
-REAL, PARAMETER :: B(N_TERM_ECN_LPH) = (/                               &
-           5.0053E-01,  3.3839E+00,  5.3852E+00,  5.5925E+00            &
-        ,  4.8800E+00,  1.5230E+00,  6.0977E+00,  2.2481E+00            &
-        ,  2.6918E+00,  5.0874E+00,  2.0054E+00,  5.8001E+00            &
-        ,  5.1778E+00,  2.5455E+00,  5.8903E+00,  2.6587E+00            &
-        ,  2.2151E+00,  3.6812E+00,  1.2585E+00 /)
+REAL(RealK), PARAMETER :: B(N_TERM_ECN_LPH) = (/ &
+  5.0053E-01_RealK,  3.3839E+00_RealK,  5.3852E+00_RealK,  5.5925E+00_RealK, &
+  4.8800E+00_RealK,  1.5230E+00_RealK,  6.0977E+00_RealK,  2.2481E+00_RealK, &
+  2.6918E+00_RealK,  5.0874E+00_RealK,  2.0054E+00_RealK,  5.8001E+00_RealK, &
+  5.1778E+00_RealK,  2.5455E+00_RealK,  5.8903E+00_RealK,  2.6587E+00_RealK, &
+  2.2151E+00_RealK,  3.6812E+00_RealK,  1.2585E+00_RealK /)
 !   ------------------------------------------------------------------
 !     General Precession (Table 5):
 
 ! Linear rate of precession!
 ! The value corresponds to 50.439273 seconds per year -Berger 1979
-REAL,    PARAMETER :: LIN_RATE_GN_PRCS  = 2.44536496E-04
+REAL(RealK), PARAMETER :: LIN_RATE_GN_PRCS = 2.44536496E-04_RealK
 
 ! Constant offset to general precession (in seconds pre year),
 ! corrected for 50 years difference in reference time.
-REAL,    PARAMETER ::  GN_PRCS_CNST      = 7.14372244E-02
+REAL(RealK), PARAMETER :: GN_PRCS_CNST = 7.14372244E-02_RealK
 
 ! Number of terms kept in the series for the general precession
 INTEGER, PARAMETER :: N_TERM_GN_PRCS = 10
 
 ! Amplitude
-REAL, PARAMETER :: C(N_TERM_GN_PRCS) = (/                               &
-           3.58327E-02,  1.23877E-02,  9.80662E-03, -9.56853E-03        &
-        ,  6.01280E-03,  4.62449E-03, -4.51725E-03,  4.22942E-03        &
-        ,  2.93967E-03, -2.40482E-03 /)
+REAL(RealK), PARAMETER :: C(N_TERM_GN_PRCS) = (/ &
+  3.58327E-02_RealK, 1.23877E-02_RealK, 9.80662E-03_RealK,-9.56853E-03_RealK, &
+  6.01280E-03_RealK, 4.62449E-03_RealK,-4.51725E-03_RealK, 4.22942E-03_RealK, &
+  2.93967E-03_RealK,-2.40482E-03_RealK /)
 ! Angular frequency
-REAL, PARAMETER :: H(N_TERM_GN_PRCS) = (/                               &
-           1.5324946E-04,  1.5814864E-04,  1.1719011E-04,  3.0868911E-06&
-        ,  1.5506174E-04,  1.5217749E-05,  1.5016256E-04,  2.1733392E-04&
-        ,  4.8087409E-06,  1.8122966E-06 /)
+REAL(RealK), PARAMETER :: H(N_TERM_GN_PRCS) = (/ &
+  1.5324946E-04_RealK,  1.5814864E-04_RealK,  1.1719011E-04_RealK,  &
+  3.0868911E-06_RealK,  1.5506174E-04_RealK,  1.5217749E-05_RealK,  &
+  1.5016256E-04_RealK,  2.1733392E-04_RealK,  4.8087409E-06_RealK,  &
+  1.8122966E-06_RealK /)
 ! Phase in the series
-REAL, PARAMETER :: R(N_TERM_GN_PRCS) = (/                               &
-           4.4041E+00,  4.9093E+00,  2.2451E+00,  6.0756E+00            &
-        ,  5.1167E+00,  2.8833E+00,  4.6115E+00,  2.7912E-01            &
-        ,  1.0225E+00,  7.1253E-01 /)
+REAL(RealK), PARAMETER :: R(N_TERM_GN_PRCS) = (/ &
+  4.4041E+00_RealK,  4.9093E+00_RealK,  2.2451E+00_RealK,  6.0756E+00_RealK, &
+  5.1167E+00_RealK,  2.8833E+00_RealK,  4.6115E+00_RealK,  2.7912E-01_RealK, &
+  1.0225E+00_RealK,  7.1253E-01_RealK /)
 !
 
 END MODULE astro_constants_mod

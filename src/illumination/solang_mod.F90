@@ -230,7 +230,7 @@ ELSE
         IF (PRESENT(cosz_end)) cosz_end(j) = 0.0_RealK
         lit(j) = 0.0_RealK
       ELSE
-        cosz(j) = difsin*coscos/diftim + sinsin
+        cosz(j) = MIN(MAX(difsin*coscos/diftim + sinsin, 0.0_RealK), 1.0_RealK)
         IF (PRESENT(cosz_beg)) cosz_beg(j) = coscos*COS(omega1) + sinsin
         IF (PRESENT(cosz_end)) cosz_end(j) = coscos*COS(omega2) + sinsin
         lit(j) = diftim / dtrad

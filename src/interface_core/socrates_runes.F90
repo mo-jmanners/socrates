@@ -35,6 +35,7 @@ contains
 
 subroutine runes(n_profile, n_layer, diag, &
   spectrum, spectrum_name, mcica_data, &
+  profile_list, n_layer_stride, n_level_stride, &
   n_cloud_layer, n_aer_mode, n_aer_layer, n_tile, &
   p_layer, t_layer, t_level, mass, density, &
   h2o, o3, &
@@ -101,7 +102,7 @@ subroutine runes(n_profile, n_layer, diag, &
   l_nitrate, nitrate, nitrate_1d, &
   l_twobindust_1, twobindust_1, twobindust_1_1d, &
   l_twobindust_2, twobindust_2, twobindust_2_1d, &
-  l_invert, l_debug, i_profile_debug)
+  l_invert, l_profile_last, l_debug, i_profile_debug)
 
 
 use def_spectrum, only: StrSpecData
@@ -128,7 +129,7 @@ use socrates_set_cld_mcica, only: set_cld_mcica
 use socrates_set_aer,       only: set_aer
 use socrates_set_diag,      only: set_diag
 
-use realtype_rd, only: RealK
+use realtype_rd, only: RealExt
 use ereport_mod, only: ereport
 use errormessagelength_mod, only: errormessagelength
 use rad_pcf, only: i_normal, i_err_fatal
@@ -149,6 +150,12 @@ integer, intent(in) :: n_profile
 !   Number of columns to operate on
 integer, intent(in) :: n_layer
 !   Number of layers for radiation
+integer, intent(in), optional :: profile_list(:)
+!   List of profiles to use from input fields
+integer, intent(in), optional :: n_layer_stride
+!   Number of layers in input 1d arrays
+integer, intent(in), optional :: n_level_stride
+!   Number of levels in input 1d arrays
 integer, intent(in), optional :: n_tile
 !   Number of surface tiles
 integer, intent(in), optional :: n_cloud_layer
@@ -158,84 +165,84 @@ integer, intent(in), optional :: n_aer_mode
 integer, intent(in), optional :: n_aer_layer
 !   Number of aerosol layers in 1d arrays
 
-real(RealK), intent(in), optional :: p_layer(n_profile, n_layer)
-real(RealK), intent(in), optional :: p_layer_1d(n_layer)
+real(RealExt), intent(in), optional :: p_layer(:, :)
+real(RealExt), intent(in), optional :: p_layer_1d(:)
 !   Pressure at layer centres
-real(RealK), intent(in), optional :: t_layer(n_profile, n_layer)
-real(RealK), intent(in), optional :: t_layer_1d(n_layer)
+real(RealExt), intent(in), optional :: t_layer(:, :)
+real(RealExt), intent(in), optional :: t_layer_1d(:)
 !   Temperature at layer centres
-real(RealK), intent(in), optional :: t_level(n_profile, 0:n_layer)
-real(RealK), intent(in), optional :: t_level_1d(0:n_layer)
+real(RealExt), intent(in), optional :: t_level(:, :)
+real(RealExt), intent(in), optional :: t_level_1d(:)
 !   Temperature at layer boundaries
-real(RealK), intent(in), optional :: mass(n_profile, n_layer)
-real(RealK), intent(in), optional :: mass_1d(n_layer)
+real(RealExt), intent(in), optional :: mass(:, :)
+real(RealExt), intent(in), optional :: mass_1d(:)
 !   Mass of layer (kg m-2)
-real(RealK), intent(in), optional :: density(n_profile, n_layer)
-real(RealK), intent(in), optional :: density_1d(n_layer)
+real(RealExt), intent(in), optional :: density(:, :)
+real(RealExt), intent(in), optional :: density_1d(:)
 !   Density of layer (kg m-3)
-real(RealK), intent(in), optional :: h2o(n_profile, n_layer)
-real(RealK), intent(in), optional :: h2o_1d(n_layer)
+real(RealExt), intent(in), optional :: h2o(:, :)
+real(RealExt), intent(in), optional :: h2o_1d(:)
 !   Mass mixing ratio of water vapour
-real(RealK), intent(in), optional :: o3(n_profile, n_layer)
-real(RealK), intent(in), optional :: o3_1d(n_layer)
+real(RealExt), intent(in), optional :: o3(:, :)
+real(RealExt), intent(in), optional :: o3_1d(:)
 !   Mass mixing ratio of ozone
 
-real(RealK), intent(in), optional :: &
+real(RealExt), intent(in), optional :: &
   co2_mix_ratio, n2o_mix_ratio, ch4_mix_ratio, &
   o2_mix_ratio, so2_mix_ratio, cfc11_mix_ratio, cfc12_mix_ratio, &
   cfc113_mix_ratio, hcfc22_mix_ratio, hfc134a_mix_ratio
 !   Trace gas mass mixing ratios
 
-real(RealK), intent(in), optional :: t_ground(n_profile)
+real(RealExt), intent(in), optional :: t_ground(:)
 !   Effective radiative temperature over whole grid-box
-real(RealK), intent(in), optional :: cos_zenith_angle(n_profile)
+real(RealExt), intent(in), optional :: cos_zenith_angle(:)
 !   Cosine of solar zenith angle
-real(RealK), intent(in), optional :: solar_irrad(n_profile)
+real(RealExt), intent(in), optional :: solar_irrad(:)
 !   Solar irradiance at top-of-atmosphere (mean over timestep)
-real(RealK), intent(in), optional :: orog_corr(n_profile)
+real(RealExt), intent(in), optional :: orog_corr(:)
 !   Orographic correction factor
 
 logical, intent(in), optional :: l_grey_albedo
 !   Set a single grey albedo / emissivity for the surface
-real(RealK), intent(in), optional :: grey_albedo
+real(RealExt), intent(in), optional :: grey_albedo
 !   Grey surface albedo
 
-real(RealK), intent(in), optional :: albedo_diff(:, :)
+real(RealExt), intent(in), optional :: albedo_diff(:, :)
 !   Spectral diffuse albedo (n_profile, n_band)
-real(RealK), intent(in), optional :: albedo_dir(:, :)
+real(RealExt), intent(in), optional :: albedo_dir(:, :)
 !   Spectral direct albedo (n_profile, n_band)
-real(RealK), intent(in), optional :: albedo_diff_1d(:)
+real(RealExt), intent(in), optional :: albedo_diff_1d(:)
 !   1d spectral diffuse albedo (n_band)
-real(RealK), intent(in), optional :: albedo_dir_1d(:)
+real(RealExt), intent(in), optional :: albedo_dir_1d(:)
 !   1d spectral direct albedo (n_band)
 
 logical, intent(in), optional :: l_tile
 !   Use tiled surface properties
-real(RealK), intent(in), optional :: frac_tile(:, :)
+real(RealExt), intent(in), optional :: frac_tile(:, :)
 !   Tile fractions (n_profile, n_tile)
-real(RealK), intent(in), optional :: t_tile(:, :)
+real(RealExt), intent(in), optional :: t_tile(:, :)
 !   Tile temperatures (n_profile, n_tile)
-real(RealK), intent(in), optional :: albedo_diff_tile(:, :, :)
+real(RealExt), intent(in), optional :: albedo_diff_tile(:, :, :)
 !   Diffuse tile albedo (n_profile, n_tile, n_band)
-real(RealK), intent(in), optional :: albedo_dir_tile(:, :, :)
+real(RealExt), intent(in), optional :: albedo_dir_tile(:, :, :)
 !   Direct tile albedo (n_profile, n_tile, n_band)
-real(RealK), intent(in), optional :: frac_tile_1d(:)
+real(RealExt), intent(in), optional :: frac_tile_1d(:)
 !   1d tile fractions (n_tile)
-real(RealK), intent(in), optional :: t_tile_1d(:)
+real(RealExt), intent(in), optional :: t_tile_1d(:)
 !   1d tile temperatures (n_tile)
-real(RealK), intent(in), optional :: albedo_diff_tile_1d(:)
+real(RealExt), intent(in), optional :: albedo_diff_tile_1d(:)
 !   1d diffuse tile albedo (n_tile*n_band)
-real(RealK), intent(in), optional :: albedo_dir_tile_1d(:)
+real(RealExt), intent(in), optional :: albedo_dir_tile_1d(:)
 !   1d direct tile albedo (n_tile*n_band)
 
-real(RealK), intent(in), dimension (n_profile, n_layer), optional :: &
+real(RealExt), intent(in), dimension (:, :), optional :: &
   cloud_frac, conv_frac, &
   liq_frac, ice_frac, liq_conv_frac, ice_conv_frac, &
   liq_mmr, ice_mmr, liq_conv_mmr, ice_conv_mmr, &
   liq_dim, ice_dim, liq_conv_dim, ice_conv_dim, &
   liq_rsd, ice_rsd, liq_conv_rsd, ice_conv_rsd, &
   liq_nc, liq_conv_nc
-real(RealK), intent(in), dimension (n_layer), optional :: &
+real(RealExt), intent(in), dimension (:), optional :: &
   cloud_frac_1d, conv_frac_1d, &
   liq_frac_1d, ice_frac_1d, liq_conv_frac_1d, ice_conv_frac_1d, &
   liq_mmr_1d, ice_mmr_1d, liq_conv_mmr_1d, ice_conv_mmr_1d, &
@@ -246,15 +253,15 @@ real(RealK), intent(in), dimension (n_layer), optional :: &
 !   effective dimensions, relative standard deviation of condensate,
 !   and number concentration
 
-real(RealK), intent(in), optional :: cloud_vertical_decorr
+real(RealExt), intent(in), optional :: cloud_vertical_decorr
 !   Decorrelation pressure scale for cloud vertical overlap
-real(RealK), intent(in), optional :: conv_vertical_decorr
+real(RealExt), intent(in), optional :: conv_vertical_decorr
 !   Decorrelation pressure scale for convective cloud vertical overlap
-real(RealK), intent(in), optional :: cloud_horizontal_rsd
+real(RealExt), intent(in), optional :: cloud_horizontal_rsd
 !   Relative standard deviation of sub-grid cloud condensate
 
-real(RealK), intent(in), optional :: layer_heat_capacity(n_profile, n_layer)
-real(RealK), intent(in), optional :: layer_heat_capacity_1d(n_layer)
+real(RealExt), intent(in), optional :: layer_heat_capacity(:, :)
+real(RealExt), intent(in), optional :: layer_heat_capacity_1d(:)
 !   Heat capacity of layer
 
 integer, intent(in), optional :: i_source
@@ -263,7 +270,7 @@ integer, intent(in), optional :: &
   i_cloud_representation, i_overlap, i_inhom, &
   i_mcica_sampling, i_st_water, i_st_ice, i_cnv_water, i_cnv_ice, i_drop_re
 !   Select treatment of cloud
-integer, intent(in), optional :: rand_seed(n_profile)
+integer, intent(in), optional :: rand_seed(:)
 !   Random seed for cloud generator
 
 logical, intent(in), optional :: l_rayleigh
@@ -275,22 +282,22 @@ logical, intent(in), optional :: l_mixing_ratio
 logical, intent(in), optional :: l_aerosol_mode
 !   Include aerosol optical properties specified by mode
 
-real(RealK), intent(in), optional :: aer_mix_ratio(:, :, :)
+real(RealExt), intent(in), optional :: aer_mix_ratio(:, :, :)
 !   MODE aerosol mass-mixing ratio (n_profile, n_layer, n_mode)
 
-real(RealK), intent(in), optional :: aer_mix_ratio_1d(:)
+real(RealExt), intent(in), optional :: aer_mix_ratio_1d(:)
 !   1d MODE aerosol mass-mixing ratio (n_aer_layer*n_mode)
 
-real(RealK), intent(in), dimension(:, :, :, :), optional :: &
+real(RealExt), intent(in), dimension(:, :, :, :), optional :: &
   aer_absorption, aer_scattering, aer_asymmetry
 !   MODE aerosol optical properties (n_profile, n_layer, n_mode, n_band)
 
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d
 !   1d MODE aerosol optical properties (n_aer_layer*n_mode*n_band)
 
-real(RealK), intent(in), optional :: mean_rel_humidity(n_profile, n_layer)
-real(RealK), intent(in), optional :: mean_rel_humidity_1d(n_layer)
+real(RealExt), intent(in), optional :: mean_rel_humidity(:, :)
+real(RealExt), intent(in), optional :: mean_rel_humidity_1d(:)
 !   Mean relative humidity applicable for CLASSIC aerosols (clear-sky)
 
 logical, intent(in), optional :: &
@@ -309,7 +316,7 @@ logical, intent(in), optional :: &
   l_twobindust_1, l_twobindust_2
 ! Flags to include CLASSIC aerosols
 
-real(RealK), intent(in), dimension(n_profile, n_layer), optional :: &
+real(RealExt), intent(in), dimension(:, :), optional :: &
   water_soluble, dust_like, oceanic, soot, ash, sulphuric, &
   ammonium_sulphate, saharan_dust, &
   accum_sulphate, aitken_sulphate, &
@@ -325,7 +332,7 @@ real(RealK), intent(in), dimension(n_profile, n_layer), optional :: &
   twobindust_1, twobindust_2
 ! CLASSIC aerosol mass mixing ratios
 
-real(RealK), intent(in), dimension(n_layer), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   water_soluble_1d, dust_like_1d, oceanic_1d, soot_1d, ash_1d, sulphuric_1d, &
   ammonium_sulphate_1d, saharan_dust_1d, &
   accum_sulphate_1d, aitken_sulphate_1d, &
@@ -343,6 +350,8 @@ real(RealK), intent(in), dimension(n_layer), optional :: &
 
 logical, intent(in), optional :: l_invert
 !   Flag to invert fields in the vertical
+logical, intent(in), optional :: l_profile_last
+!   Loop over profiles is last in input fields and diagnostics
 
 logical, intent(in), optional :: l_debug
 integer, intent(in), optional :: i_profile_debug
@@ -464,35 +473,40 @@ call set_dimen(dimen, control, n_profile, n_layer, &
   n_aer_mode    = n_aer_mode )
 
 call set_atm(atm, dimen, spec, n_profile, n_layer, &
-  p_layer           = p_layer,           &
-  t_layer           = t_layer,           &
-  mass              = mass,              &
-  density           = density,           &
-  t_level           = t_level,           &
-  h2o               = h2o,               &
-  o3                = o3,                &
-  p_layer_1d        = p_layer_1d,        &
-  t_layer_1d        = t_layer_1d,        &
-  mass_1d           = mass_1d,           &
-  density_1d        = density_1d,        &
-  t_level_1d        = t_level_1d,        &
-  h2o_1d            = h2o_1d,            &
-  o3_1d             = o3_1d,             &
-  co2_mix_ratio     = co2_mix_ratio,     &
-  n2o_mix_ratio     = n2o_mix_ratio,     &
-  ch4_mix_ratio     = ch4_mix_ratio,     &
-  o2_mix_ratio      = o2_mix_ratio,      &
-  so2_mix_ratio     = so2_mix_ratio,     &
-  cfc11_mix_ratio   = cfc11_mix_ratio,   &
-  cfc12_mix_ratio   = cfc12_mix_ratio,   &
-  cfc113_mix_ratio  = cfc113_mix_ratio,  &
-  hcfc22_mix_ratio  = hcfc22_mix_ratio,  &
+  profile_list      = profile_list, &
+  n_layer_stride    = n_layer_stride, &
+  n_level_stride    = n_level_stride, &
+  p_layer           = p_layer, &
+  t_layer           = t_layer, &
+  mass              = mass, &
+  density           = density, &
+  t_level           = t_level, &
+  h2o               = h2o, &
+  o3                = o3, &
+  p_layer_1d        = p_layer_1d, &
+  t_layer_1d        = t_layer_1d, &
+  mass_1d           = mass_1d, &
+  density_1d        = density_1d, &
+  t_level_1d        = t_level_1d, &
+  h2o_1d            = h2o_1d, &
+  o3_1d             = o3_1d, &
+  co2_mix_ratio     = co2_mix_ratio, &
+  n2o_mix_ratio     = n2o_mix_ratio, &
+  ch4_mix_ratio     = ch4_mix_ratio, &
+  o2_mix_ratio      = o2_mix_ratio, &
+  so2_mix_ratio     = so2_mix_ratio, &
+  cfc11_mix_ratio   = cfc11_mix_ratio, &
+  cfc12_mix_ratio   = cfc12_mix_ratio, &
+  cfc113_mix_ratio  = cfc113_mix_ratio, &
+  hcfc22_mix_ratio  = hcfc22_mix_ratio, &
   hfc134a_mix_ratio = hfc134a_mix_ratio, &
-  l_invert          = l_invert,          &
-  l_debug           = l_debug,           &
+  l_invert          = l_invert, &
+  l_profile_last    = l_profile_last, &
+  l_debug           = l_debug, &
   i_profile_debug   = i_profile_debug )
 
 call set_bound(bound, control, dimen, spec, n_profile, &
+  profile_list        = profile_list, &
   n_tile              = n_tile, &
   t_ground            = t_ground, &
   cos_zenith_angle    = cos_zenith_angle, &
@@ -512,10 +526,13 @@ call set_bound(bound, control, dimen, spec, n_profile, &
   t_tile_1d           = t_tile_1d, &
   albedo_diff_tile_1d = albedo_diff_tile_1d, &
   albedo_dir_tile_1d  = albedo_dir_tile_1d, &
+  l_profile_last      = l_profile_last, &
   l_debug             = l_debug, &
   i_profile_debug     = i_profile_debug )
 
 call set_cld(cld, control, dimen, spec, atm, &
+  profile_list          = profile_list, &
+  n_layer_stride        = n_layer_stride, &
   cloud_frac            = cloud_frac, &
   conv_frac             = conv_frac, &
   liq_frac              = liq_frac, &
@@ -548,10 +565,13 @@ call set_cld(cld, control, dimen, spec, atm, &
   conv_vertical_decorr  = conv_vertical_decorr, &
   cloud_horizontal_rsd  = cloud_horizontal_rsd, &
   l_invert              = l_invert, &
+  l_profile_last        = l_profile_last, &
   l_debug               = l_debug, &
   i_profile_debug       = i_profile_debug )
 
 call set_cld_dim(cld, control, dimen, spec, atm, &
+  profile_list    = profile_list, &
+  n_layer_stride  = n_layer_stride, &
   liq_nc          = liq_nc, &
   liq_conv_nc     = liq_conv_nc, &
   liq_dim         = liq_dim, &
@@ -565,14 +585,16 @@ call set_cld_dim(cld, control, dimen, spec, atm, &
   liq_conv_dim_1d = liq_conv_dim_1d, &
   ice_conv_dim_1d = ice_conv_dim_1d, &
   l_invert        = l_invert, &
+  l_profile_last  = l_profile_last, &
   l_debug         = l_debug, &
   i_profile_debug = i_profile_debug )
 
 call set_cld_mcica(cld, mcica, control, dimen, spec, atm, &
-  rand_seed = rand_seed)
+  profile_list = profile_list, &
+  rand_seed    = rand_seed )
 
 call set_aer(aer, control, dimen, spec, &
-  n_profile, n_layer, n_aer_mode, n_aer_layer, &
+  n_profile, n_layer, n_aer_mode, profile_list, n_layer_stride, n_aer_layer, &
   aer_mix_ratio, aer_absorption, aer_scattering, aer_asymmetry, &
   aer_mix_ratio_1d, aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d, &
   mean_rel_humidity, mean_rel_humidity_1d, &
@@ -607,7 +629,7 @@ call set_aer(aer, control, dimen, spec, &
   l_nitrate, nitrate, nitrate_1d, &
   l_twobindust_1, twobindust_1, twobindust_1_1d, &
   l_twobindust_2, twobindust_2, twobindust_2_1d, &
-  l_invert)
+  l_invert, l_profile_last)
 
 ! DEPENDS ON: radiance_calc
 call radiance_calc(control, dimen, spec, atm, cld, aer, bound, radout)
@@ -615,10 +637,13 @@ call radiance_calc(control, dimen, spec, atm, cld, aer, bound, radout)
 call set_diag(diag, &
   control, dimen, spec, atm, cld, mcica, aer, bound, radout, &
   n_profile, n_layer, &
+  profile_list           = profile_list, &
+  n_layer_stride         = n_layer_stride, &
   n_tile                 = n_tile, &
   layer_heat_capacity    = layer_heat_capacity, &
   layer_heat_capacity_1d = layer_heat_capacity_1d, &
-  l_invert               = l_invert)
+  l_invert               = l_invert, &
+  l_profile_last         = l_profile_last)
 
 call deallocate_out(radout)
 call deallocate_aer_prsc(aer)

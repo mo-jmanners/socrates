@@ -10,6 +10,10 @@ MODULE realtype_rd
 
   IMPLICIT NONE
 
+  ! Internal Real precision within Socrates
   INTEGER, PARAMETER :: RealK=SELECTED_REAL_KIND(15, 307)
+
+  ! External Real precision for variables passed through the Runes interface
+  INTEGER, PARAMETER :: RealExt=SELECTED_REAL_KIND(15, 307)
 
 END MODULE realtype_rd

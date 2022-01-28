@@ -13,6 +13,7 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_ATM'
 contains
 
 subroutine set_atm(atm, dimen, spectrum, n_profile, n_layer, &
+  profile_list, n_layer_stride, n_level_stride, &
   p_layer, t_layer, mass, density, p_level, t_level, r_layer, r_level, &
   p_layer_1d, t_layer_1d, mass_1d, density_1d, p_level_1d, t_level_1d, &
   r_layer_1d, r_level_1d, &
@@ -26,12 +27,12 @@ subroutine set_atm(atm, dimen, spectrum, n_profile, n_layer, &
   l_ch4_well_mixed, l_o2_well_mixed, l_so2_well_mixed, l_n2_well_mixed, &
   l_cfc11_well_mixed, l_cfc12_well_mixed, l_cfc113_well_mixed, &
   l_hcfc22_well_mixed, l_hfc134a_well_mixed, &
-  l_invert, l_debug, i_profile_debug)
+  l_invert, l_profile_last, l_debug, i_profile_debug)
 
 use def_atm,      only: StrAtm, allocate_atm
 use def_dimen,    only: StrDim
 use def_spectrum, only: StrSpecData
-use realtype_rd,  only: RealK
+use realtype_rd,  only: RealK, RealExt
 use gas_list_pcf, only: ip_h2o, ip_co2, ip_o3, ip_n2o, ip_ch4, ip_o2, ip_so2, &
   ip_n2, ip_cfc11, ip_cfc12, ip_cfc113, ip_hcfc22, ip_hfc134a
 
@@ -51,34 +52,40 @@ integer, intent(in) :: n_profile
 !   Number of atmospheric profiles for radiation calculations
 integer, intent(in) :: n_layer
 !   Number of atmospheric layers for radiation calculations
+integer, intent(in), optional :: profile_list(:)
+!   List of profiles to use from input fields
+integer, intent(in), optional :: n_layer_stride
+!   Number of layers in input 1d arrays
+integer, intent(in), optional :: n_level_stride
+!   Number of levels in input 1d arrays
 
-real(RealK), intent(in), optional :: p_layer(:, :), p_layer_1d(:)
+real(RealExt), intent(in), optional :: p_layer(:, :), p_layer_1d(:)
 !   Pressure at layer centres
-real(RealK), intent(in), optional :: t_layer(:, :), t_layer_1d(:)
+real(RealExt), intent(in), optional :: t_layer(:, :), t_layer_1d(:)
 !   Temperature at layer centres
-real(RealK), intent(in), optional :: mass(:, :), mass_1d(:)
+real(RealExt), intent(in), optional :: mass(:, :), mass_1d(:)
 !   Mass of layer (kg m-2)
-real(RealK), intent(in), optional :: density(:, :), density_1d(:)
+real(RealExt), intent(in), optional :: density(:, :), density_1d(:)
 !   Density of layer (kg m-3)
-real(RealK), intent(in), optional :: p_level(:, 0:), p_level_1d(0:)
+real(RealExt), intent(in), optional :: p_level(:, :), p_level_1d(:)
 !   Pressure at layer boundaries
-real(RealK), intent(in), optional :: t_level(:, 0:), t_level_1d(0:)
+real(RealExt), intent(in), optional :: t_level(:, :), t_level_1d(:)
 !   Temperature at layer boundaries
-real(RealK), intent(in), optional :: r_layer(:, :), r_layer_1d(:)
+real(RealExt), intent(in), optional :: r_layer(:, :), r_layer_1d(:)
 !   Radius (height from centre of planet) at layer centres
-real(RealK), intent(in), optional :: r_level(:, 0:), r_level_1d(0:)
+real(RealExt), intent(in), optional :: r_level(:, :), r_level_1d(:)
 !   Radius (height from centre of planet) at layer boundaries
 
-real(RealK), intent(in), dimension(:, :), optional :: &
+real(RealExt), intent(in), dimension(:, :), optional :: &
   h2o, co2, o3, n2o, ch4, o2, so2, n2, cfc11, cfc12, cfc113, hcfc22, hfc134a
 !   Full field mass mixing ratios
 
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   h2o_1d, co2_1d, o3_1d, n2o_1d, ch4_1d, o2_1d, so2_1d, n2_1d, cfc11_1d, &
   cfc12_1d, cfc113_1d, hcfc22_1d, hfc134a_1d
 !   1d mass mixing ratios
 
-real(RealK), intent(in), optional :: &
+real(RealExt), intent(in), optional :: &
   h2o_mix_ratio, co2_mix_ratio, o3_mix_ratio, n2o_mix_ratio, ch4_mix_ratio, &
   o2_mix_ratio, so2_mix_ratio, n2_mix_ratio, cfc11_mix_ratio, cfc12_mix_ratio, &
   cfc113_mix_ratio, hcfc22_mix_ratio, hfc134a_mix_ratio
@@ -93,14 +100,17 @@ logical, intent(in), optional :: &
 
 logical, intent(in), optional :: l_invert
 !   Flag to invert fields in the vertical
+logical, intent(in), optional :: l_profile_last
+!   Loop over profiles is last in input fields
 
 logical, intent(in), optional :: l_debug
 integer, intent(in), optional :: i_profile_debug
 !   Options for outputting debugging information
 
 ! Local variables.
-integer :: i, l, i_gas
-logical :: l_inv
+integer :: i, ii, l, ll, i_gas, list(n_profile)
+integer :: layer_offset, level_offset, stride_layer, stride_level
+logical :: l_last
 
 call allocate_atm(atm, dimen, spectrum)
 
@@ -108,10 +118,40 @@ call allocate_atm(atm, dimen, spectrum)
 atm%n_profile = n_profile
 atm%n_layer   = n_layer
 
-if (present(l_invert)) then
-  l_inv = l_invert
+if (present(profile_list)) then
+  list = profile_list(1:n_profile)
 else
-  l_inv = .false.
+  do l=1, n_profile
+    list(l) = l
+  end do
+end if
+
+layer_offset = 0
+level_offset = 0
+if (present(l_invert)) then
+  if (l_invert) then
+    ! The layer is indexed using an inverted loop counter
+    layer_offset = n_layer + 1
+    level_offset = n_layer
+  end if
+end if
+
+if (present(l_profile_last)) then
+  l_last = l_profile_last
+else
+  l_last = .false.
+end if
+
+! Set the number of layers and levels in the 1d arrays
+if (present(n_layer_stride)) then
+  stride_layer = n_layer_stride
+else
+  stride_layer = n_layer
+end if
+if (present(n_level_stride)) then
+  stride_level = n_level_stride
+else
+  stride_level = n_layer + 1
 end if
 
 ! Set the pressures, temperatures, masses (per square metre) and densities
@@ -191,36 +231,42 @@ contains
 
     real(RealK), intent(inout) :: out_field(:, :)
 !     Output field
-    real(RealK), intent(in), optional :: full_field(:, :)
+    real(RealExt), intent(in), optional :: full_field(:, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     if (present(full_field)) then
-      if (l_inv) then
+      if (l_last) then
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = full_field(l, n_layer+1-i)
+            out_field(l, i) = real(full_field(ii, list(l)), RealK)
           end do
         end do
       else
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = full_field(l, i)
+            out_field(l, i) = real(full_field(list(l), ii), RealK)
           end do
         end do
       end if
     else if (present(oned_field)) then
-      if (l_inv) then
+      if (l_last) then
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = oned_field(n_layer+1-i)
+            ll = stride_layer*(list(l)-1) + ii
+            out_field(l, i) = real(oned_field(ll), RealK)
           end do
         end do
       else
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = oned_field(i)
+            ll = n_profile*(ii-1) + list(l)
+            out_field(l, i) = real(oned_field(ll), RealK)
           end do
         end do
       end if
@@ -233,36 +279,42 @@ contains
 
     real(RealK), intent(inout) :: out_field(:, 0:)
 !     Output field
-    real(RealK), intent(in), optional :: full_field(:, 0:)
+    real(RealExt), intent(in), optional :: full_field(:, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(0:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     if (present(full_field)) then
-      if (l_inv) then
+      if (l_last) then
         do i=0, n_layer
+          ii = abs(level_offset-i) + 1
           do l=1, n_profile
-            out_field(l, i) = full_field(l, n_layer-i)
+            out_field(l, i) = real(full_field(ii, list(l)), RealK)
           end do
         end do
       else
         do i=0, n_layer
+          ii = abs(level_offset-i) + 1
           do l=1, n_profile
-            out_field(l, i) = full_field(l, i)
+            out_field(l, i) = real(full_field(list(l), ii), RealK)
           end do
         end do
       end if
     else if (present(oned_field)) then
-      if (l_inv) then
+      if (l_last) then
         do i=0, n_layer
+          ii = abs(level_offset-i) + 1
           do l=1, n_profile
-            out_field(l, i) = oned_field(n_layer-i)
+            ll = stride_level*(list(l)-1) + ii
+            out_field(l, i) = real(oned_field(ll), RealK)
           end do
         end do
       else
         do i=0, n_layer
+          ii = abs(level_offset-i) + 1
           do l=1, n_profile
-            out_field(l, i) = oned_field(i)
+            ll = n_profile*(ii-1) + list(l)
+            out_field(l, i) = real(oned_field(ll), RealK)
           end do
         end do
       end if
@@ -273,11 +325,11 @@ contains
   subroutine set_gas_mix_ratio(full_field, oned_field, mix_ratio, l_well_mixed)
     implicit none
 
-    real(RealK), intent(in), optional :: full_field(:, :)
+    real(RealExt), intent(in), optional :: full_field(:, :)
 !     Full field mass mixing ratio
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional mass mixing ratio
-    real(RealK), intent(in), optional :: mix_ratio
+    real(RealExt), intent(in), optional :: mix_ratio
 !     Well mixed mass mixing ratio
     logical, intent(in), optional :: l_well_mixed
 !     Flag to use the well mixed ratio
@@ -305,39 +357,47 @@ contains
 
     select case(i_select)
     case(ip_full_field)
-      if (l_inv) then
+      if (l_last) then
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            atm%gas_mix_ratio(l, i, i_gas) = &
-              max(full_field(l, n_layer+1-i), 0.0_RealK)
+            atm%gas_mix_ratio(l, i, i_gas) &
+              = max(real(full_field(ii, list(l)), RealK), 0.0_RealK)
           end do
         end do
       else
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            atm%gas_mix_ratio(l, i, i_gas) = max(full_field(l, i), 0.0_RealK)
+            atm%gas_mix_ratio(l, i, i_gas) &
+              = max(real(full_field(list(l), ii), RealK), 0.0_RealK)
           end do
         end do
       end if
     case(ip_oned_field)
-      if (l_inv) then
+      if (l_last) then
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            atm%gas_mix_ratio(l, i, i_gas) = &
-              max(oned_field(n_layer+1-i), 0.0_RealK)
+            ll = stride_layer*(list(l)-1) + ii
+            atm%gas_mix_ratio(l, i, i_gas) &
+              = max(real(oned_field(ll), RealK), 0.0_RealK)
           end do
         end do
       else
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            atm%gas_mix_ratio(l, i, i_gas) = max(oned_field(i), 0.0_RealK)
+            ll = n_profile*(ii-1) + list(l)
+            atm%gas_mix_ratio(l, i, i_gas) &
+              = max(real(oned_field(ll), RealK), 0.0_RealK)
           end do
         end do
       end if
     case(ip_well_mixed)
       do i=1, n_layer
         do l=1, n_profile
-          atm%gas_mix_ratio(l, i, i_gas) = mix_ratio
+          atm%gas_mix_ratio(l, i, i_gas) = real(mix_ratio, RealK)
         end do
       end do
     case(ip_zero)

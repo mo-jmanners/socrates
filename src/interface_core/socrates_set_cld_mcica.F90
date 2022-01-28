@@ -13,7 +13,7 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_CLD_MCICA'
 contains
 
 subroutine set_cld_mcica(cld, mcica_data, control, dimen, spectrum, atm, &
-  rand_seed)
+  profile_list, rand_seed)
 
 use def_cld,      only: StrCld, allocate_cld_mcica
 use def_mcica,    only: StrMcica, ip_mcica_full_sampling, &
@@ -52,6 +52,9 @@ type(StrSpecData), intent(in) :: spectrum
 ! Atmospheric properties:
 type(StrAtm),      intent(in) :: atm
 
+integer, intent(in), optional :: profile_list(:)
+!   List of profiles to use from input fields
+
 integer, intent(in), optional :: rand_seed(:)
 !   Random seed for cloud generator
 
@@ -67,7 +70,7 @@ real(RealK), dimension(dimen%nd_profile, dimen%id_cloud_top:dimen%nd_layer) :: &
 integer :: rnd_seed(dimen%nd_profile)
 !   Random seed
 
-integer :: l, i, j, k
+integer :: l, i, j, k, list(dimen%nd_profile)
 integer :: i_k, i_band, n_k
 integer :: n_subcol_fill
 
@@ -81,6 +84,14 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
 
   ! Allocate MCICA data arrays
   call allocate_cld_mcica(cld, dimen, spectrum)
+
+  if (present(profile_list)) then
+    list(1:atm%n_profile) = profile_list(1:atm%n_profile)
+  else
+    do i=1, atm%n_profile
+      list(i) = i
+    end do
+  end if
 
   ! Set the number of sub-columns to be sampled by each k-term
   select case (control%i_mcica_sampling)
@@ -146,7 +157,9 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
   where (cld%subcol_reorder == 0) cld%subcol_reorder=mcica_data%n_subcol_gen
 
   if (present(rand_seed)) then
-    rnd_seed(1:atm%n_profile) = rand_seed(1:atm%n_profile)
+    do i=1, atm%n_profile
+      rnd_seed(i) = rand_seed(list(i))
+    end do
   else
     do i=1, atm%n_profile
       rnd_seed(i) = 10 + i

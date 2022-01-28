@@ -23,14 +23,14 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_CLOUD_LEVEL_DIAG'
 contains
 
 subroutine cloud_level_diag(control, dimen, atm, cld, l_all_temps, &
-  weighted_diag, sum_weight_diag)
+  list, weighted_diag, sum_weight_diag)
 
 use def_control, only: StrCtrl
 use def_dimen,   only: StrDim
 use def_atm,     only: StrAtm
 use def_cld,     only: StrCld
 
-use realtype_rd, only: RealK
+use realtype_rd, only: RealK, RealExt
 use ereport_mod, only: ereport
 use errormessagelength_mod, only: errormessagelength
 use rad_pcf, only: i_normal, i_err_fatal, &
@@ -62,9 +62,12 @@ logical, intent(in) :: l_all_temps
 !   If FALSE, only clouds with temperatures above freezing are to be diagnosed
 !   (as done in AVHRR retrievals).
 
-real(RealK), intent(inout), pointer :: weighted_diag(:)
+integer, intent(in) :: list(:)
+!   List of profiles to fill in output fields
+
+real(RealExt), intent(inout), pointer :: weighted_diag(:)
 !   Weighted sum of cloud-top diagnostic and weighting function
-real(RealK), intent(inout), pointer :: sum_weight_diag(:)
+real(RealExt), intent(inout), pointer :: sum_weight_diag(:)
 !   Sum of weights for cloud-top diagnostic
 
 
@@ -118,8 +121,8 @@ real(RealK), parameter :: tm = 273.15_RealK
 
 ! Initialization
 do l=1, atm%n_profile
-  weighted_diag(l)=0.0_RealK
-  sum_weight_diag(l)=0.0_RealK
+  weighted_diag(list(l))=0.0_RealExt
+  sum_weight_diag(list(l))=0.0_RealExt
 end do
 
 ! Initialize the transmision above clouds
@@ -167,10 +170,11 @@ do i=dimen%id_cloud_top, atm%n_layer
     do l = 1, atm%n_profile
       if (cld%condensed_mix_ratio(l, i, ip_clcmp_st_water) > 0.0_RealK .and. &
          ((atm%t(l, i) > tm) .or. l_all_temps)) then
-        weighted_diag(l) = weighted_diag(l) + trans_overlying_space(l) &
-          * area_exposed(l) * cld%condensed_dim_char(l, i, ip_clcmp_st_water)
-        sum_weight_diag(l) = sum_weight_diag(l) + trans_overlying_space(l) &
-          * area_exposed(l)
+        weighted_diag(list(l)) = weighted_diag(list(l)) &
+          + real(trans_overlying_space(l) * area_exposed(l) &
+          * cld%condensed_dim_char(l, i, ip_clcmp_st_water), RealExt)
+        sum_weight_diag(list(l)) = sum_weight_diag(list(l)) &
+          + real(trans_overlying_space(l) * area_exposed(l), RealExt)
       end if
     end do
 
@@ -179,11 +183,13 @@ do i=dimen%id_cloud_top, atm%n_layer
     ! water droplets.
     do l = 1, atm%n_profile
       if ((atm%t(l, i) > tm) .or. l_all_temps) then
-        weighted_diag(l) = weighted_diag(l) + trans_overlying_space(l) &
-          * area_exposed(l) * cld%frac_cloud(l, i, ip_cloud_type_water) &
-          * cld%condensed_dim_char(l, i, ip_clcmp_st_water)
-        sum_weight_diag(l) = sum_weight_diag(l) + trans_overlying_space(l) &
-          * area_exposed(l) * cld%frac_cloud(l, i, ip_cloud_type_water)
+        weighted_diag(list(l)) = weighted_diag(list(l)) &
+          + real(trans_overlying_space(l) * area_exposed(l) &
+          * cld%frac_cloud(l, i, ip_cloud_type_water) &
+          * cld%condensed_dim_char(l, i, ip_clcmp_st_water), RealExt)
+        sum_weight_diag(list(l)) = sum_weight_diag(list(l)) &
+          + real(trans_overlying_space(l) * area_exposed(l) &
+          * cld%frac_cloud(l, i, ip_cloud_type_water), RealExt)
       end if
     end do
 
@@ -232,14 +238,16 @@ do i=dimen%id_cloud_top, atm%n_layer
     ! Include contributions from convective and stratiform water clouds.
     do l=1, atm%n_profile
       if ((atm%t(l, i) > tm) .or. l_all_temps) then
-        weighted_diag(l)=weighted_diag(l)+trans_overlying_space(l) &
+        weighted_diag(list(l))=weighted_diag(list(l)) &
+           +real(trans_overlying_space(l) &
            *(area_exposed_cnv(l)*chi_cnv(l) &
            *cld%condensed_dim_char(l, i, ip_clcmp_cnv_water) &
            +area_exposed_st(l)*chi_st(l) &
-           *cld%condensed_dim_char(l, i, ip_clcmp_st_water))
-        sum_weight_diag(l)=sum_weight_diag(l)+trans_overlying_space(l) &
+           *cld%condensed_dim_char(l, i, ip_clcmp_st_water)), RealExt)
+        sum_weight_diag(list(l))=sum_weight_diag(list(l)) &
+           +real(trans_overlying_space(l) &
            *(area_exposed_cnv(l)*chi_cnv(l) &
-           +area_exposed_st(l)*chi_st(l))
+           +area_exposed_st(l)*chi_st(l)), RealExt)
       end if
     end do
 
@@ -296,13 +304,15 @@ do i=dimen%id_cloud_top, atm%n_layer
 
     do l=1, atm%n_profile
       if ((atm%t(l, i) > tm) .or. l_all_temps) then
-        weighted_diag(l)=weighted_diag(l)+trans_overlying_space(l) &
+        weighted_diag(list(l))=weighted_diag(list(l)) &
+           +real(trans_overlying_space(l) &
            *(area_exposed_cnv(l) &
            *cld%condensed_dim_char(l, i, ip_clcmp_cnv_water) &
            +area_exposed_st(l) &
-           *cld%condensed_dim_char(l, i, ip_clcmp_st_water))
-        sum_weight_diag(l)=sum_weight_diag(l)+trans_overlying_space(l) &
-           *(area_exposed_cnv(l)+area_exposed_st(l))
+           *cld%condensed_dim_char(l, i, ip_clcmp_st_water)), RealExt)
+        sum_weight_diag(list(l))=sum_weight_diag(list(l)) &
+           +real(trans_overlying_space(l) &
+           *(area_exposed_cnv(l)+area_exposed_st(l)), RealExt)
       end if
     end do
 

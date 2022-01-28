@@ -13,7 +13,7 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_CLD'
 contains
 
 subroutine set_cld(cld, control, dimen, spectrum, atm, &
-  cloud_frac, conv_frac, &
+  profile_list, n_layer_stride, cloud_frac, conv_frac, &
   liq_frac, ice_frac, liq_conv_frac, ice_conv_frac, &
   liq_mmr, ice_mmr, liq_conv_mmr, ice_conv_mmr, &
   liq_rsd, ice_rsd, liq_conv_rsd, ice_conv_rsd, &
@@ -22,14 +22,14 @@ subroutine set_cld(cld, control, dimen, spectrum, atm, &
   liq_mmr_1d, ice_mmr_1d, liq_conv_mmr_1d, ice_conv_mmr_1d, &
   liq_rsd_1d, ice_rsd_1d, liq_conv_rsd_1d, ice_conv_rsd_1d, &
   cloud_vertical_decorr, conv_vertical_decorr, cloud_horizontal_rsd, &
-  l_invert, l_debug, i_profile_debug)
+  l_invert, l_profile_last, l_debug, i_profile_debug)
 
 use def_cld,      only: StrCld, allocate_cld, allocate_cld_prsc
 use def_control,  only: StrCtrl
 use def_dimen,    only: StrDim
 use def_spectrum, only: StrSpecData
 use def_atm,      only: StrAtm
-use realtype_rd,  only: RealK
+use realtype_rd,  only: RealK, RealExt
 use rad_pcf,      only: &
   ip_cloud_homogen, ip_cloud_ice_water, ip_cloud_conv_strat, ip_cloud_csiw, &
   ip_cloud_combine_homogen, ip_cloud_combine_ice_water, &
@@ -63,7 +63,13 @@ type(StrSpecData), intent(in)  :: spectrum
 ! Atmospheric properties:
 type(StrAtm),      intent(in)  :: atm
 
-real(RealK), intent(in), dimension(:, :), optional :: &
+integer, intent(in), optional :: profile_list(:)
+!   List of profiles to use from input fields
+
+integer, intent(in), optional :: n_layer_stride
+!   Number of layers in input 1d arrays
+
+real(RealExt), intent(in), dimension(:, :), optional :: &
   cloud_frac, conv_frac, &
   liq_frac, ice_frac, liq_conv_frac, ice_conv_frac, &
   liq_mmr, ice_mmr, liq_conv_mmr, ice_conv_mmr, &
@@ -71,7 +77,7 @@ real(RealK), intent(in), dimension(:, :), optional :: &
 !   Liquid and ice cloud fractions, gridbox mean mixing ratios,
 !   and relative standard deviation of condensate
 
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   cloud_frac_1d, conv_frac_1d, &
   liq_frac_1d, ice_frac_1d, liq_conv_frac_1d, ice_conv_frac_1d, &
   liq_mmr_1d, ice_mmr_1d, liq_conv_mmr_1d, ice_conv_mmr_1d, &
@@ -79,15 +85,17 @@ real(RealK), intent(in), dimension(:), optional :: &
 !   Liquid and ice cloud fractions, gridbox mean mixing ratios,
 !   and relative standard deviation of condensate input as 1d fields
 
-real(RealK), intent(in), optional :: cloud_vertical_decorr
+real(RealExt), intent(in), optional :: cloud_vertical_decorr
 !   Decorrelation pressure scale for cloud vertical overlap
-real(RealK), intent(in), optional :: conv_vertical_decorr
+real(RealExt), intent(in), optional :: conv_vertical_decorr
 !   Decorrelation pressure scale for convective cloud vertical overlap
-real(RealK), intent(in), optional :: cloud_horizontal_rsd
+real(RealExt), intent(in), optional :: cloud_horizontal_rsd
 !   Relative standard deviation of sub-grid cloud condensate
 
 logical, intent(in), optional :: l_invert
 !   Flag to invert fields in the vertical
+logical, intent(in), optional :: l_profile_last
+!   Loop over profiles is last in input fields
 
 logical, intent(in), optional :: l_debug
 integer, intent(in), optional :: i_profile_debug
@@ -95,16 +103,17 @@ integer, intent(in), optional :: i_profile_debug
 
 
 ! Local variables
-integer :: i, j, k, l
+integer :: i, j, k, kk, l, ll, list(dimen%nd_profile)
 !   Loop variables
 integer :: i_phase, i_param_type, n_cloud_parameter, i_thin, i_thick
+integer :: layer_offset, stride_layer
 !   Working variables
 real(RealK), dimension(dimen%nd_profile, dimen%id_cloud_top:dimen%nd_layer) :: &
   cond_mmr, cond_rsd, frac, frac_liq, frac_ice, frac_thin, ratio_thin
 !   Working arrays
 
-logical :: l_inv
-!   Local flag to invert fields in the vertical
+logical :: l_last
+!   Local flag to loop over profiles last in 1d fields
 logical :: l_combine
 !   Combine stratiform and convective cloud
 logical :: l_split
@@ -130,10 +139,33 @@ if (.not.control%l_cloud) then
   return
 end if
 
-if (present(l_invert)) then
-  l_inv = l_invert
+if (present(profile_list)) then
+  list(1:atm%n_profile) = profile_list(1:atm%n_profile)
 else
-  l_inv = .false.
+  do l=1, atm%n_profile
+    list(l) = l
+  end do
+end if
+
+layer_offset = 0
+if (present(l_invert)) then
+  if (l_invert) then
+    ! The layer is indexed using an inverted loop counter
+    layer_offset = atm%n_layer + 1
+  end if
+end if
+
+if (present(l_profile_last)) then
+  l_last = l_profile_last
+else
+  l_last = .false.
+end if
+
+! Set the number of layers in the 1d arrays
+if (present(n_layer_stride)) then
+  stride_layer = n_layer_stride
+else
+  stride_layer = atm%n_layer
 end if
 
 !------------------------------------------------------------------------------
@@ -272,7 +304,7 @@ do i=1, cld%n_condensed
           ! Set the relative standard deviation (RSD)
           call set_cld_field(cond_rsd, liq_rsd, liq_rsd_1d)
         else if (present(cloud_horizontal_rsd)) then
-          cond_rsd = cloud_horizontal_rsd
+          cond_rsd = real(cloud_horizontal_rsd, RealK)
         else
           cond_rsd = 0.0_RealK
         end if
@@ -299,7 +331,7 @@ do i=1, cld%n_condensed
           ! Set the relative standard deviation (RSD)
           call set_cld_field(cond_rsd, liq_conv_rsd, liq_conv_rsd_1d)
         else if (present(cloud_horizontal_rsd)) then
-          cond_rsd = cloud_horizontal_rsd
+          cond_rsd = real(cloud_horizontal_rsd, RealK)
         else
           cond_rsd = 0.0_RealK
         end if
@@ -361,7 +393,7 @@ do i=1, cld%n_condensed
           ! Set the relative standard deviation (RSD)
           call set_cld_field(cond_rsd, ice_rsd, ice_rsd_1d)
         else if (present(cloud_horizontal_rsd)) then
-          cond_rsd = cloud_horizontal_rsd
+          cond_rsd = real(cloud_horizontal_rsd, RealK)
         else
           cond_rsd = 0.0_RealK
         end if
@@ -388,7 +420,7 @@ do i=1, cld%n_condensed
           ! Set the relative standard deviation (RSD)
           call set_cld_field(cond_rsd, ice_conv_rsd, ice_conv_rsd_1d)
         else if (present(cloud_horizontal_rsd)) then
-          cond_rsd = cloud_horizontal_rsd
+          cond_rsd = real(cloud_horizontal_rsd, RealK)
         else
           cond_rsd = 0.0_RealK
         end if
@@ -424,12 +456,12 @@ end do ! over condensed components
 
 ! Set the decorrelation scalings for cloud vertical overlap
 if (present(cloud_vertical_decorr)) then
-  cld%dp_corr_strat = cloud_vertical_decorr
+  cld%dp_corr_strat = real(cloud_vertical_decorr, RealK)
 else
   cld%dp_corr_strat = 0.0_RealK
 end if
 if (present(conv_vertical_decorr)) then
-  cld%dp_corr_conv  = conv_vertical_decorr
+  cld%dp_corr_conv  = real(conv_vertical_decorr, RealK)
 else
   cld%dp_corr_conv = 0.0_RealK
 end if
@@ -823,36 +855,42 @@ contains
 
     real(RealK), intent(inout) :: out_field(:, dimen%id_cloud_top:)
 !     Output field
-    real(RealK), intent(in), optional :: full_field(:, :)
+    real(RealExt), intent(in), optional :: full_field(:, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     if (present(full_field)) then
-      if (l_inv) then
+      if (l_last) then
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = full_field(l, atm%n_layer+1-k)
+            out_field(l, k) = real(full_field(kk, list(l)), RealK)
           end do
         end do
       else
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = full_field(l, k)
+            out_field(l, k) = real(full_field(list(l), kk), RealK)
           end do
         end do
       end if
     else if (present(oned_field)) then
-      if (l_inv) then
+      if (l_last) then
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = oned_field(atm%n_layer+1-k)
+            ll = stride_layer*(list(l)-1) + kk
+            out_field(l, k) = real(oned_field(ll), RealK)
           end do
         end do
       else
         do k = dimen%id_cloud_top, atm%n_layer
+          kk = abs(layer_offset-k)
           do l=1, atm%n_profile
-            out_field(l, k) = oned_field(k)
+            ll = atm%n_profile*(kk-1) + list(l)
+            out_field(l, k) = real(oned_field(ll), RealK)
           end do
         end do
       end if

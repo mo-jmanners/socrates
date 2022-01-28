@@ -13,7 +13,7 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_AER'
 contains
 
 subroutine set_aer(aer, control, dimen, spectrum, &
-  n_profile, n_layer, n_aer_mode, n_aer_layer, &
+  n_profile, n_layer, n_aer_mode, profile_list, n_layer_stride, n_aer_layer, &
   aer_mix_ratio, aer_absorption, aer_scattering, aer_asymmetry, &
   aer_mix_ratio_1d, aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d, &
   mean_rel_humidity, mean_rel_humidity_1d, &
@@ -48,13 +48,13 @@ subroutine set_aer(aer, control, dimen, spectrum, &
   l_nitrate, nitrate, nitrate_1d, &
   l_twobindust_1, twobindust_1, twobindust_1_1d, &
   l_twobindust_2, twobindust_2, twobindust_2_1d, &
-  l_invert)
+  l_invert, l_profile_last)
 
 use def_aer,      only: StrAer, allocate_aer, allocate_aer_prsc
 use def_control,  only: StrCtrl
 use def_dimen,    only: StrDim
 use def_spectrum, only: StrSpecData
-use realtype_rd,  only: RealK
+use realtype_rd,  only: RealK, RealExt
 use rad_pcf,      only: ip_aersrc_classic_ron, ip_aersrc_classic_roff, &
   ip_water_soluble, ip_dust_like, ip_oceanic, ip_soot, ip_ash, ip_sulphuric, &
   ip_ammonium_sulphate, ip_saharan_dust, &
@@ -91,25 +91,31 @@ integer, intent(in) :: n_layer
 integer, intent(in), optional :: n_aer_mode
 !   Number of aerosol modes
 
-integer, intent(in), optional :: n_aer_layer
-!   Number of aerosol layers in 1d arrays
+integer, intent(in), optional :: profile_list(:)
+!   List of profiles to use from input fields
 
-real(RealK), intent(in), optional :: aer_mix_ratio(:, :, :)
+integer, intent(in), optional :: n_layer_stride
+!   Number of layers in input 1d arrays
+
+integer, intent(in), optional :: n_aer_layer
+!   Number of aerosol layers in 1d arrays (if different to other 1D fields)
+
+real(RealExt), intent(in), optional :: aer_mix_ratio(:, :, :)
 !   MODE aerosol mass-mixing ratio (n_profile, n_layer, n_mode)
 
-real(RealK), intent(in), optional :: aer_mix_ratio_1d(:)
+real(RealExt), intent(in), optional :: aer_mix_ratio_1d(:)
 !   1d MODE aerosol mass-mixing ratio (n_aer_layer*n_mode)
 
-real(RealK), intent(in), dimension(:, :, :, :), optional :: &
+real(RealExt), intent(in), dimension(:, :, :, :), optional :: &
   aer_absorption, aer_scattering, aer_asymmetry
 !   MODE aerosol optical properties (n_profile, n_layer, n_mode, n_band)
 
-real(RealK), intent(in), dimension(:), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d
 !   1d MODE aerosol optical properties (n_aer_layer*n_mode*n_band)
 
-real(RealK), intent(in), optional :: mean_rel_humidity(n_profile, n_layer)
-real(RealK), intent(in), optional :: mean_rel_humidity_1d(n_layer)
+real(RealExt), intent(in), optional :: mean_rel_humidity(:, :)
+real(RealExt), intent(in), optional :: mean_rel_humidity_1d(:)
 !   Mean relative humidity applicable for CLASSIC aerosols (clear-sky)
 
 logical, intent(in), optional :: &
@@ -128,7 +134,7 @@ logical, intent(in), optional :: &
   l_twobindust_1, l_twobindust_2
 ! Flags to include CLASSIC aerosols
 
-real(RealK), intent(in), dimension(n_profile, n_layer), optional :: &
+real(RealExt), intent(in), dimension(:, :), optional :: &
   water_soluble, dust_like, oceanic, soot, ash, sulphuric, &
   ammonium_sulphate, saharan_dust, &
   accum_sulphate, aitken_sulphate, &
@@ -144,7 +150,7 @@ real(RealK), intent(in), dimension(n_profile, n_layer), optional :: &
   twobindust_1, twobindust_2
 ! CLASSIC aerosol mass mixing ratios
 
-real(RealK), intent(in), dimension(n_layer), optional :: &
+real(RealExt), intent(in), dimension(:), optional :: &
   water_soluble_1d, dust_like_1d, oceanic_1d, soot_1d, ash_1d, sulphuric_1d, &
   ammonium_sulphate_1d, saharan_dust_1d, &
   accum_sulphate_1d, aitken_sulphate_1d, &
@@ -162,27 +168,47 @@ real(RealK), intent(in), dimension(n_layer), optional :: &
 
 logical, intent(in), optional :: l_invert
 !   Flag to invert fields in the vertical
+logical, intent(in), optional :: l_profile_last
+!   Loop over profiles is last in input fields
 
 
 ! Local variables.
-integer :: i, j, jj, l, ll
-integer :: stride_layer
-logical :: l_inv
+integer :: i, ii, j, l, ll, list(n_profile)
+integer :: layer_offset, stride_layer
+logical :: l_last
 
 
 ! Allocate structure for the core radiation code interface
 call allocate_aer(aer, dimen, spectrum)
 call allocate_aer_prsc(aer, dimen, spectrum)
 
-if (present(l_invert)) then
-  l_inv = l_invert
+if (present(profile_list)) then
+  list = profile_list(1:n_profile)
 else
-  l_inv = .false.
+  do l=1, n_profile
+    list(l) = l
+  end do
+end if
+
+layer_offset = 0
+if (present(l_invert)) then
+  if (l_invert) then
+    ! The layer is indexed using an inverted loop counter
+    layer_offset = n_layer + 1
+  end if
+end if
+
+if (present(l_profile_last)) then
+  l_last = l_profile_last
+else
+  l_last = .false.
 end if
 
 ! Set the number of layers in the 1d aerosol arrays
 if (present(n_aer_layer)) then
   stride_layer = n_aer_layer
+else if (present(n_layer_stride)) then
+  stride_layer = n_layer_stride
 else
   stride_layer = n_layer
 end if
@@ -291,36 +317,42 @@ contains
 
     real(RealK), intent(inout) :: out_field(:, :)
 !     Output field
-    real(RealK), intent(in), optional :: full_field(:, :)
+    real(RealExt), intent(in), optional :: full_field(:, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     if (present(full_field)) then
-      if (l_inv) then
+      if (l_last) then
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = full_field(l, n_layer+1-i)
+            out_field(l, i) = real(full_field(ii, list(l)), RealK)
           end do
         end do
       else
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = full_field(l, i)
+            out_field(l, i) = real(full_field(list(l), ii), RealK)
           end do
         end do
       end if
     else if (present(oned_field)) then
-      if (l_inv) then
+      if (l_last) then
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = oned_field(n_layer+1-i)
+            ll = stride_layer*(list(l)-1) + ii
+            out_field(l, i) = real(oned_field(ll), RealK)
           end do
         end do
       else
         do i=1, n_layer
+          ii = abs(layer_offset-i)
           do l=1, n_profile
-            out_field(l, i) = oned_field(i)
+            ll = n_profile*(ii-1) + list(l)
+            out_field(l, i) = real(oned_field(ll), RealK)
           end do
         end do
       end if
@@ -336,9 +368,9 @@ contains
 
     logical, intent(in), optional :: l_field
 !     Flag to use this aerosol
-    real(RealK), intent(in), optional :: full_field(:, :)
+    real(RealExt), intent(in), optional :: full_field(:, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     logical :: l_use_field
@@ -353,30 +385,36 @@ contains
       ! Indicate this aerosol is radiatively active
       aer%mr_source(j) = ip_aersrc_classic_ron
       if (present(full_field)) then
-        if (l_inv) then
+        if (l_last) then
           do i=1, n_layer
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              aer%mix_ratio(l, i, j) = full_field(l, n_layer+1-i)
+              aer%mix_ratio(l, i, j) = real(full_field(ii, list(l)), RealK)
             end do
           end do
         else
           do i=1, n_layer
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              aer%mix_ratio(l, i, j) = full_field(l, i)
+              aer%mix_ratio(l, i, j) = real(full_field(list(l), ii), RealK)
             end do
           end do
         end if
       else if (present(oned_field)) then
-        if (l_inv) then
+        if (l_last) then
           do i=1, n_layer
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              aer%mix_ratio(l, i, j) = oned_field(n_layer+1-i)
+              ll = stride_layer*(list(l)-1) + ii
+              aer%mix_ratio(l, i, j) = real(oned_field(ll), RealK)
             end do
           end do
         else
           do i=1, n_layer
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              aer%mix_ratio(l, i, j) = oned_field(i)
+              ll = n_profile*(ii-1) + list(l)
+              aer%mix_ratio(l, i, j) = real(oned_field(ll), RealK)
             end do
           end do
         end if
@@ -397,45 +435,51 @@ contains
 
     real(RealK), intent(inout) :: out_field(:, :, :)
 !     Output field
-    real(RealK), intent(in), optional :: full_field(:, :, :)
+    real(RealExt), intent(in), optional :: full_field(:, :, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     if (present(full_field)) then
-      if (l_inv) then
+      if (l_last) then
         do j=1, aer%n_mode
           do i=1, n_layer
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              out_field(l, i, j) = full_field(l, n_layer+1-i, j)
+              out_field(l, i, j) = real(full_field(ii, j, list(l)), RealK)
             end do
           end do
         end do
       else
         do j=1, aer%n_mode
           do i=1, n_layer
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              out_field(l, i, j) = full_field(l, i, j)
+              out_field(l, i, j) = real(full_field(list(l), ii, j), RealK)
             end do
           end do
         end do
       end if
     else if (present(oned_field)) then
-      if (l_inv) then
+      if (l_last) then
         do j=1, aer%n_mode
           do i=1, n_layer
-            ll = stride_layer*(j-1) + n_layer+1-i
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              out_field(l, i, j) = oned_field(ll)
+              ll = aer%n_mode*stride_layer*(list(l)-1) &
+                 + stride_layer*(j-1) + ii
+              out_field(l, i, j) = real(oned_field(ll), RealK)
             end do
           end do
         end do
       else
         do j=1, aer%n_mode
           do i=1, n_layer
-            ll = stride_layer*(j-1) + i
+            ii = abs(layer_offset-i)
             do l=1, n_profile
-              out_field(l, i, j) = oned_field(ll)
+              ll = n_profile*stride_layer*(j-1) &
+                 + n_profile*(ii-1) + list(l)
+              out_field(l, i, j) = real(oned_field(ll), RealK)
             end do
           end do
         end do
@@ -452,20 +496,22 @@ contains
 
     real(RealK), intent(inout) :: out_field(:, :, :, :)
 !     Output field
-    real(RealK), intent(in), optional :: full_field(:, :, :, :)
+    real(RealExt), intent(in), optional :: full_field(:, :, :, :)
 !     Full field variable
-    real(RealK), intent(in), optional :: oned_field(:)
+    real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
     integer :: band
 
     if (present(full_field)) then
-      if (l_inv) then
+      if (l_last) then
         do band=control%first_band, control%last_band
           do j=1, aer%n_mode
             do i=1, n_layer
+              ii = abs(layer_offset-i)
               do l=1, n_profile
-                out_field(l, i, j, band) = full_field(l, n_layer+1-i, j, band)
+                out_field(l, i, j, band) &
+                  = real(full_field(ii, j, band, list(l)), RealK)
               end do
             end do
           end do
@@ -474,23 +520,26 @@ contains
         do band=control%first_band, control%last_band
           do j=1, aer%n_mode
             do i=1, n_layer
+              ii = abs(layer_offset-i)
               do l=1, n_profile
-                out_field(l, i, j, band) = full_field(l, i, j, band)
+                out_field(l, i, j, band) &
+                  = real(full_field(list(l), ii, j, band), RealK)
               end do
             end do
           end do
         end do
       end if
     else if (present(oned_field)) then
-      jj = 0
-      if (l_inv) then
+      if (l_last) then
         do band=control%first_band, control%last_band
           do j=1, aer%n_mode
-            jj = jj + 1
             do i=1, n_layer
-              ll = stride_layer*(jj-1) + n_layer+1-i
+              ii = abs(layer_offset-i)
               do l=1, n_profile
-                out_field(l, i, j, band) = oned_field(ll)
+                ll = spectrum%basic%n_band*aer%n_mode*stride_layer*(list(l)-1) &
+                   + aer%n_mode*stride_layer*(band-1) &
+                   + stride_layer*(j-1) + ii
+                out_field(l, i, j, band) = real(oned_field(ll), RealK)
               end do
             end do
           end do
@@ -498,11 +547,13 @@ contains
       else
         do band=control%first_band, control%last_band
           do j=1, aer%n_mode
-            jj = jj + 1
             do i=1, n_layer
-              ll = stride_layer*(jj-1) + i
+              ii = abs(layer_offset-i)
               do l=1, n_profile
-                out_field(l, i, j, band) = oned_field(ll)
+                ll = aer%n_mode*stride_layer*n_profile*(band-1) &
+                   + stride_layer*n_profile*(j-1) &
+                   + n_profile*(ii-1) + list(l)
+                out_field(l, i, j, band) = real(oned_field(ll), RealK)
               end do
             end do
           end do

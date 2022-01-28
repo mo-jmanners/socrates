@@ -35,7 +35,7 @@ subroutine set_spectrum(n_instances, spectrum, spectrum_name, spectral_file, &
 use errormessagelength_mod, only: errormessagelength
 use ereport_mod, only: ereport
 use rad_pcf, only: i_normal, i_err_fatal
-use realtype_rd, only: RealK
+use realtype_rd, only: RealK, RealExt
 use missing_data_mod, only: rmdi
 use map_sub_bands_mod, only: map_sub_bands
 use yomhook,  only: lhook, dr_hook
@@ -57,7 +57,7 @@ logical, intent(in), optional :: &
   l_cfc113, l_cfc114, l_hcfc22, l_hfc125, l_hfc134a, l_co, l_nh3, &
   l_tio, l_vo, l_h2, l_he, l_na, l_k, l_li, l_rb, l_cs, l_all_gases
 
-real (RealK), intent(in), optional :: wavelength_blue
+real(RealExt), intent(in), optional :: wavelength_blue
 
 ! Local variables
 type(StrSpecData), pointer :: spec => null()
@@ -220,18 +220,18 @@ end subroutine compress_spectrum
 
 subroutine set_weight_blue(spec, wavelength_blue)
 
-use realtype_rd, only: RealK
+use realtype_rd, only: RealK, RealExt
 
 implicit none
 
 type(StrSpecData), intent(inout) :: spec
-real (RealK), intent(in), optional :: wavelength_blue
+real(RealExt), intent(in), optional :: wavelength_blue
 
 integer :: i, j, i_exclude
-real (RealK) :: total_energy_range, blue_energy_range, wl_blue
+real(RealK) :: total_energy_range, blue_energy_range, wl_blue
 
 if (present(wavelength_blue)) then
-  wl_blue = wavelength_blue
+  wl_blue = real(wavelength_blue, RealK)
 else
   wl_blue = 6.9e-07_RealK
 end if
@@ -275,7 +275,7 @@ subroutine get_spectrum(spectrum_name, spectrum, &
   n_band, n_band_exclude, index_exclude, &
   wavelength_short, wavelength_long, weight_blue)
 
-use realtype_rd, only: RealK
+use realtype_rd, only: RealK, RealExt
 use errormessagelength_mod, only: errormessagelength
 use ereport_mod, only: ereport
 use rad_pcf, only: i_normal, i_err_fatal
@@ -288,9 +288,9 @@ type (StrSpecData), intent(out), optional :: spectrum
 integer, optional, intent(out) :: n_band
 integer, allocatable, optional, intent(out) :: n_band_exclude(:)
 integer, allocatable, optional, intent(out) :: index_exclude(:, :)
-real (RealK), allocatable, optional, intent(out) :: wavelength_short(:)
-real (RealK), allocatable, optional, intent(out) :: wavelength_long(:)
-real (RealK), allocatable, optional, intent(out) :: weight_blue(:)
+real(RealExt), allocatable, optional, intent(out) :: wavelength_short(:)
+real(RealExt), allocatable, optional, intent(out) :: wavelength_long(:)
+real(RealExt), allocatable, optional, intent(out) :: weight_blue(:)
 
 ! Local variables
 type(StrSpecData), pointer :: spec => null()
@@ -325,17 +325,17 @@ end if
 if (present(wavelength_short)) then
   if (allocated(wavelength_short)) deallocate(wavelength_short)
   allocate(wavelength_short(spec%dim%nd_band))
-  wavelength_short = spec%basic%wavelength_short
+  wavelength_short = real(spec%basic%wavelength_short, RealExt)
 end if
 if (present(wavelength_long)) then
   if (allocated(wavelength_long)) deallocate(wavelength_long)
   allocate(wavelength_long(spec%dim%nd_band))
-  wavelength_long = spec%basic%wavelength_long
+  wavelength_long = real(spec%basic%wavelength_long, RealExt)
 end if
 if (present(weight_blue)) then
   if (allocated(weight_blue)) deallocate(weight_blue)
   allocate(weight_blue(spec%dim%nd_band))
-  weight_blue = spec%solar%weight_blue
+  weight_blue = real(spec%solar%weight_blue, RealExt)
 end if
 
 end subroutine get_spectrum

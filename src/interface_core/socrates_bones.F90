@@ -16,12 +16,12 @@ contains
 ! when oracle bones were heated. Not particularly accurate, but simple
 ! and cheap.
 
-subroutine bones(n_profile, n_layer, n_tile, &
+subroutine bones(n_profile, n_layer, n_layer_stride, n_tile, &
   l_cos_zen_correction, cos_zen_rts, lit_frac_rts, cos_zen_mts, lit_frac_mts, &
   l_trans_zen_correction, l_orog_corr_rts, orog_corr_rts, &
   l_grey_emis_correction, grey_albedo_tile, frac_tile, t_tile, &
   grey_albedo_tile_1d, frac_tile_1d, t_tile_1d, &
-  l_debug, i_profile_debug, &
+  l_profile_last, l_debug, i_profile_debug, &
   heating_rate_rts, flux_up_tile_rts, flux_up_blue_tile_rts, &
   flux_direct_toa_rts, flux_up_toa_rts, &
   flux_direct_surf_rts, flux_down_surf_rts, flux_up_surf_rts, &
@@ -33,7 +33,7 @@ subroutine bones(n_profile, n_layer, n_tile, &
   flux_direct_blue_surf_mts, flux_down_blue_surf_mts, &
   heating_rate_1d_mts, flux_up_tile_1d_mts, flux_up_blue_tile_1d_mts)
 
-use realtype_rd, only: RealK
+use realtype_rd, only: RealExt
 use rad_ccf, only: stefan_boltzmann
 
 implicit none
@@ -42,102 +42,122 @@ integer, intent(in) :: n_profile
 !   Number of columns to operate on
 integer, intent(in) :: n_layer
 !   Number of layers for radiation
+integer, intent(in), optional :: n_layer_stride
+!   Number of layers in 1d arrays
 integer, intent(in), optional :: n_tile
 !   Number of surface tiles
 
 logical, intent(in), optional :: l_cos_zen_correction
 !   Apply simple solar zenith angle correction
-real(RealK), intent(in), optional :: cos_zen_rts(n_profile)
+real(RealExt), intent(in), optional :: cos_zen_rts(n_profile)
 !   Mean cosine of solar zenith angle over lit fraction of radiation timestep
-real(RealK), intent(in), optional :: lit_frac_rts(n_profile)
+real(RealExt), intent(in), optional :: lit_frac_rts(n_profile)
 !   Lit fraction of radiation timestep
-real(RealK), intent(in), optional :: cos_zen_mts(n_profile)
+real(RealExt), intent(in), optional :: cos_zen_mts(n_profile)
 !   Mean cosine of solar zenith angle over lit fraction of model timestep
-real(RealK), intent(in), optional :: lit_frac_mts(n_profile)
+real(RealExt), intent(in), optional :: lit_frac_mts(n_profile)
 !   Lit fraction of model timestep
 
 logical, intent(in), optional :: l_trans_zen_correction
 !   Apply transmission based solar zenith angle correction, DOI 10.1002/qj.385
 logical, intent(in), optional :: l_orog_corr_rts
 !   Orographic correction applied for the radiation timestep
-real(RealK), intent(in), optional :: orog_corr_rts(n_profile)
+real(RealExt), intent(in), optional :: orog_corr_rts(n_profile)
 !   Orographic correction factor for the radiation timestep, DOI 10.1002/qj.956
 
 logical, intent(in), optional :: l_grey_emis_correction
 !   Apply surface temperature correction with grey emissivity per tile
-real(RealK), intent(in), optional :: grey_albedo_tile(:, :)
+real(RealExt), intent(in), optional :: grey_albedo_tile(:, :)
 !   Grey albedo of tiles (n_profile, n_tile)
-real(RealK), intent(in), optional :: frac_tile(:, :)
+real(RealExt), intent(in), optional :: frac_tile(:, :)
 !   Tile fractions (n_profile, n_tile)
-real(RealK), intent(in), optional :: t_tile(:, :)
+real(RealExt), intent(in), optional :: t_tile(:, :)
 !   Tile temperatures (n_profile, n_tile)
-real(RealK), intent(in), optional :: grey_albedo_tile_1d(:)
+real(RealExt), intent(in), optional :: grey_albedo_tile_1d(:)
 !   1d grey albedo of tiles (n_tile)
-real(RealK), intent(in), optional :: frac_tile_1d(:)
+real(RealExt), intent(in), optional :: frac_tile_1d(:)
 !   1d tile fractions (n_tile)
-real(RealK), intent(in), optional :: t_tile_1d(:)
+real(RealExt), intent(in), optional :: t_tile_1d(:)
 !   1d tile temperatures (n_tile)
+
+logical, intent(in), optional :: l_profile_last
+!   Loop over profiles is last in 1d fields
 
 logical, intent(in), optional :: l_debug
 integer, intent(in), optional :: i_profile_debug
 !   Options for outputting debugging information
 
 ! Input radiation timestep fields:
-real(RealK), intent(in), optional :: heating_rate_rts(n_profile, n_layer)
-real(RealK), intent(in), optional :: heating_rate_1d_rts(n_layer)
+real(RealExt), intent(in), optional :: heating_rate_rts(n_profile, n_layer)
+real(RealExt), intent(in), optional :: heating_rate_1d_rts(:)
 !   Heating rate (Ks-1)
-real(RealK), intent(in), optional :: flux_up_tile_rts(:, :)
-real(RealK), intent(in), optional :: flux_up_tile_1d_rts(:)
+real(RealExt), intent(in), optional :: flux_up_tile_rts(:, :)
+real(RealExt), intent(in), optional :: flux_up_tile_1d_rts(:)
 !   Upwards flux on tiles (Wm-2) (n_profile, n_tile) and (n_tile)
-real(RealK), intent(in), optional :: flux_up_blue_tile_rts(:, :)
-real(RealK), intent(in), optional :: flux_up_blue_tile_1d_rts(:)
+real(RealExt), intent(in), optional :: flux_up_blue_tile_rts(:, :)
+real(RealExt), intent(in), optional :: flux_up_blue_tile_1d_rts(:)
 !   Upwards blue flux on tiles (Wm-2)
-real(RealK), intent(in), optional :: flux_direct_toa_rts(n_profile)
+real(RealExt), intent(in), optional :: flux_direct_toa_rts(n_profile)
 !   Direct flux at top-of-atmosphere
-real(RealK), intent(in), optional :: flux_up_toa_rts(n_profile)
+real(RealExt), intent(in), optional :: flux_up_toa_rts(n_profile)
 !   Upward flux at top-of-atmosphere
-real(RealK), intent(in), optional :: flux_direct_surf_rts(n_profile)
+real(RealExt), intent(in), optional :: flux_direct_surf_rts(n_profile)
 !   Direct flux at the surface
-real(RealK), intent(in), optional :: flux_down_surf_rts(n_profile)
+real(RealExt), intent(in), optional :: flux_down_surf_rts(n_profile)
 !   Total downward flux at the surface
-real(RealK), intent(in), optional :: flux_up_surf_rts(n_profile)
+real(RealExt), intent(in), optional :: flux_up_surf_rts(n_profile)
 !   Upward flux at the surface
-real(RealK), intent(in), optional :: flux_direct_blue_surf_rts(n_profile)
+real(RealExt), intent(in), optional :: flux_direct_blue_surf_rts(n_profile)
 !   Direct blue flux at the surface
-real(RealK), intent(in), optional :: flux_down_blue_surf_rts(n_profile)
+real(RealExt), intent(in), optional :: flux_down_blue_surf_rts(n_profile)
 !   Total downward blue flux at the surface
 
 ! Output model timestep fields:
-real(RealK), intent(out), optional :: heating_rate_mts(n_profile, n_layer)
-real(RealK), intent(out), optional :: heating_rate_1d_mts(n_layer)
+real(RealExt), intent(out), optional :: heating_rate_mts(n_profile, n_layer)
+real(RealExt), intent(out), optional :: heating_rate_1d_mts(:)
 !   Heating rate (Ks-1)
-real(RealK), intent(out), optional :: flux_up_tile_mts(:, :)
-real(RealK), intent(out), optional :: flux_up_tile_1d_mts(:)
+real(RealExt), intent(out), optional :: flux_up_tile_mts(:, :)
+real(RealExt), intent(out), optional :: flux_up_tile_1d_mts(:)
 !   Upwards flux on tiles (Wm-2) (n_profile, n_tile) and (n_tile)
-real(RealK), intent(out), optional :: flux_up_blue_tile_mts(:, :)
-real(RealK), intent(out), optional :: flux_up_blue_tile_1d_mts(:)
+real(RealExt), intent(out), optional :: flux_up_blue_tile_mts(:, :)
+real(RealExt), intent(out), optional :: flux_up_blue_tile_1d_mts(:)
 !   Upwards blue flux on tiles (Wm-2)
-real(RealK), intent(out), optional :: flux_direct_toa_mts(n_profile)
+real(RealExt), intent(out), optional :: flux_direct_toa_mts(n_profile)
 !   Direct flux at top-of-atmosphere
-real(RealK), intent(out), optional :: flux_up_toa_mts(n_profile)
+real(RealExt), intent(out), optional :: flux_up_toa_mts(n_profile)
 !   Upward flux at top-of-atmosphere
-real(RealK), intent(out), optional :: flux_direct_surf_mts(n_profile)
+real(RealExt), intent(out), optional :: flux_direct_surf_mts(n_profile)
 !   Direct flux at the surface
-real(RealK), intent(out), optional :: flux_down_surf_mts(n_profile)
+real(RealExt), intent(out), optional :: flux_down_surf_mts(n_profile)
 !   Total downward flux at the surface
-real(RealK), intent(out), optional :: flux_up_surf_mts(n_profile)
+real(RealExt), intent(out), optional :: flux_up_surf_mts(n_profile)
 !   Upward flux at the surface
-real(RealK), intent(out), optional :: flux_direct_blue_surf_mts(n_profile)
+real(RealExt), intent(out), optional :: flux_direct_blue_surf_mts(n_profile)
 !   Direct blue flux at the surface
-real(RealK), intent(out), optional :: flux_down_blue_surf_mts(n_profile)
+real(RealExt), intent(out), optional :: flux_down_blue_surf_mts(n_profile)
 !   Total downward blue flux at the surface
 
 ! Local variables
-integer :: i
-real(RealK) :: cos_zen_scaling(n_profile), trans_zen_correction(n_profile)
-real(RealK) :: orog_corr(n_profile)
-real(RealK) :: scaling(n_profile)
-real(RealK) :: eps = epsilon(1.0_RealK)
+integer :: i, l, ll, stride_layer
+logical :: l_last
+real(RealExt) :: cos_zen_scaling(n_profile), trans_zen_correction(n_profile)
+real(RealExt) :: orog_corr(n_profile)
+real(RealExt) :: scaling(n_profile)
+real(RealExt) :: eps = epsilon(1.0_RealExt)
+
+
+if (present(l_profile_last)) then
+  l_last = l_profile_last
+else
+  l_last = .false.
+end if
+
+! Set the number of layers in the 1d arrays
+if (present(n_layer_stride)) then
+  stride_layer = n_layer_stride
+else
+  stride_layer = n_layer
+end if
 
 
 if (present(l_orog_corr_rts)) then
@@ -147,14 +167,14 @@ if (present(l_orog_corr_rts)) then
     ! angle correction.
     orog_corr = orog_corr_rts
   else
-    orog_corr = 1.0_RealK
+    orog_corr = 1.0_RealExt
   end if
 else
-  orog_corr = 1.0_RealK
+  orog_corr = 1.0_RealExt
 end if
 
 
-trans_zen_correction = 1.0_RealK
+trans_zen_correction = 1.0_RealExt
 if (present(l_trans_zen_correction)) then
 if (l_trans_zen_correction) then
   ! Transmission-based solar zenith angle correction for surface fluxes
@@ -163,8 +183,8 @@ if (l_trans_zen_correction) then
          flux_direct_surf_rts > eps .and. &
          orog_corr*flux_direct_toa_rts > flux_direct_surf_rts .and. &
          orog_corr > sqrt(eps))
-    trans_zen_correction = 1.0_RealK &
-      + (orog_corr - 0.5_RealK) * (flux_direct_toa_rts &
+    trans_zen_correction = 1.0_RealExt &
+      + (orog_corr - 0.5_RealExt) * (flux_direct_toa_rts &
       * (flux_direct_surf_rts/(orog_corr*flux_direct_toa_rts)) &
       **(cos_zen_rts/cos_zen_mts) &
       - flux_direct_surf_rts/orog_corr) / flux_down_surf_rts
@@ -180,12 +200,12 @@ if (l_cos_zen_correction) then
   where (cos_zen_rts*lit_frac_rts > eps)
     cos_zen_scaling = cos_zen_mts*lit_frac_mts / (cos_zen_rts*lit_frac_rts)
   elsewhere
-    cos_zen_scaling = 0.0_RealK
+    cos_zen_scaling = 0.0_RealExt
   end where
 
   scaling = cos_zen_scaling
   call scale_field( heating_rate_rts, heating_rate_mts )
-  call scale_field_1d( heating_rate_1d_rts, heating_rate_1d_mts )
+  call scale_field_1d_layer( heating_rate_1d_rts, heating_rate_1d_mts )
   call scale_field_surf( flux_direct_toa_rts, flux_direct_toa_mts )
   call scale_field_surf( flux_up_toa_rts, flux_up_toa_mts )
 
@@ -200,8 +220,8 @@ if (l_cos_zen_correction) then
   call scale_field( flux_up_tile_rts,      flux_up_tile_mts      )
   call scale_field( flux_up_blue_tile_rts, flux_up_blue_tile_mts )
 
-  call scale_field_1d( flux_up_tile_1d_rts,      flux_up_tile_1d_mts      )
-  call scale_field_1d( flux_up_blue_tile_1d_rts, flux_up_blue_tile_1d_mts )
+  call scale_field_1d_tile( flux_up_tile_1d_rts,      flux_up_tile_1d_mts      )
+  call scale_field_1d_tile( flux_up_blue_tile_1d_rts, flux_up_blue_tile_1d_mts )
 
   call scale_field_surf( flux_direct_surf_rts,      flux_direct_surf_mts      )
   call scale_field_surf( flux_down_surf_rts,        flux_down_surf_mts        )
@@ -214,8 +234,8 @@ if (l_cos_zen_correction) then
   if (present(flux_up_toa_mts) .and. &
       present(flux_down_surf_rts) .and. present(flux_up_surf_rts)) then
     do i=1, n_profile
-      flux_up_toa_mts(i) = max( 0.0_RealK, flux_up_toa_mts(i) &
-        - (trans_zen_correction(i) - 1.0_RealK) * cos_zen_scaling(i) &
+      flux_up_toa_mts(i) = max( 0.0_RealExt, flux_up_toa_mts(i) &
+        - (trans_zen_correction(i) - 1.0_RealExt) * cos_zen_scaling(i) &
         * (flux_down_surf_rts(i) - flux_up_surf_rts(i)) )
     end do
   end if
@@ -239,10 +259,10 @@ if (present(l_grey_emis_correction) .and. &
 if (l_grey_emis_correction) then
   ! A surface temperature correction with grey emissivity per tile.
   ! Only the upward fluxes are corrected.
-  scaling = 1.0_RealK
+  scaling = 1.0_RealExt
 
   call scale_field( heating_rate_rts, heating_rate_mts )
-  call scale_field_1d( heating_rate_1d_rts, heating_rate_1d_mts )
+  call scale_field_1d_layer( heating_rate_1d_rts, heating_rate_1d_mts )
   call scale_field_surf( flux_down_surf_rts, flux_down_surf_mts )
 
   if (present(flux_up_tile_mts) .and. present(n_tile) .and. &
@@ -250,8 +270,8 @@ if (l_grey_emis_correction) then
     do i=1, n_tile
       flux_up_tile_mts(1:n_profile, i) &
         = flux_down_surf_rts(:) * grey_albedo_tile(1:n_profile, i) &
-        + (1.0_RealK - grey_albedo_tile(1:n_profile, i)) &
-        * stefan_boltzmann * t_tile(1:n_profile, i)**4
+        + (1.0_RealExt - grey_albedo_tile(1:n_profile, i)) &
+        * real(stefan_boltzmann, RealExt) * t_tile(1:n_profile, i)**4
     end do
     if (present(flux_up_surf_mts) .and. present(frac_tile)) then
       flux_up_surf_mts = sum(flux_up_tile_mts(1:n_profile, 1:n_tile) &
@@ -260,15 +280,41 @@ if (l_grey_emis_correction) then
   end if
   if (present(flux_up_tile_1d_mts) .and. present(n_tile) .and. &
       present(grey_albedo_tile_1d) .and. present(t_tile_1d)) then
-    do i=1, n_tile
-      flux_up_tile_1d_mts(i) &
-        = flux_down_surf_rts(1) * grey_albedo_tile_1d(i) &
-        + (1.0_RealK - grey_albedo_tile_1d(i)) &
-        * stefan_boltzmann * t_tile_1d(i)**4
-    end do
+    if (l_last) then
+      do l=1, n_profile
+        do i=1, n_tile
+          ll = n_tile*(l-1) + i
+          flux_up_tile_1d_mts(ll) &
+            = flux_down_surf_rts(l) * grey_albedo_tile_1d(ll) &
+            + (1.0_RealExt - grey_albedo_tile_1d(ll)) &
+            * real(stefan_boltzmann, RealExt) * t_tile_1d(ll)**4
+        end do
+      end do
+    else
+      do i=1, n_tile
+        do l=1, n_profile
+          ll = n_profile*(i-1) + l
+          flux_up_tile_1d_mts(ll) &
+            = flux_down_surf_rts(l) * grey_albedo_tile_1d(ll) &
+            + (1.0_RealExt - grey_albedo_tile_1d(ll)) &
+            * real(stefan_boltzmann, RealExt) * t_tile_1d(ll)**4
+        end do
+      end do
+    end if
     if (present(flux_up_surf_mts) .and. present(frac_tile_1d)) then
-      flux_up_surf_mts(1) = sum(flux_up_tile_1d_mts(1:n_tile) &
-                          * frac_tile_1d(1:n_tile))
+      if (l_last) then
+        do l=1, n_profile
+          ll = n_tile*(l-1)
+          flux_up_surf_mts(l) = sum(flux_up_tile_1d_mts(ll+1:ll+n_tile) &
+                              * frac_tile_1d(ll+1:ll+n_tile))
+        end do
+      else
+        ll = n_profile * n_tile
+        do l=1, n_profile
+          flux_up_surf_mts(l) = sum(flux_up_tile_1d_mts(l:ll:n_profile) &
+                              * frac_tile_1d(l:ll:n_profile))
+        end do
+      end if
     end if
   end if
 
@@ -285,12 +331,12 @@ end if
 contains
 
 
-  subroutine scale_field(field_rts, field_mts)
+subroutine scale_field(field_rts, field_mts)
 
   implicit none
   
-  real(RealK), intent(in), optional :: field_rts(:, :)
-  real(RealK), intent(out), optional :: field_mts(:, :)
+  real(RealExt), intent(in), optional :: field_rts(:, :)
+  real(RealExt), intent(out), optional :: field_mts(:, :)
 
   if (present(field_rts).and.present(field_mts)) then
     do i=1, size(field_rts, 2)
@@ -298,35 +344,77 @@ contains
     end do
   end if
 
-  end subroutine scale_field
+end subroutine scale_field
 
 
-  subroutine scale_field_1d(field_rts, field_mts)
+subroutine scale_field_1d_layer(field_rts, field_mts)
 
   implicit none
   
-  real(RealK), intent(in), optional :: field_rts(:)
-  real(RealK), intent(out), optional :: field_mts(:)
+  real(RealExt), intent(in), optional :: field_rts(:)
+  real(RealExt), intent(out), optional :: field_mts(:)
 
   if (present(field_rts).and.present(field_mts)) then
-    field_mts(:) = field_rts(:) * scaling(1)
+    if (l_last) then
+      do l=1, n_profile
+        do i=1, n_layer
+          ll = stride_layer*(l-1) + i
+          field_mts(ll) = field_rts(ll) * scaling(l)
+        end do
+      end do
+    else
+      do i=1, n_layer
+        do l=1, n_profile
+          ll = n_profile*(i-1) + l
+          field_mts(ll) = field_rts(ll) * scaling(l)
+        end do
+      end do
+    end if
   end if
 
-  end subroutine scale_field_1d
+end subroutine scale_field_1d_layer
 
 
-  subroutine scale_field_surf(field_rts, field_mts)
+subroutine scale_field_1d_tile(field_rts, field_mts)
 
   implicit none
   
-  real(RealK), intent(in), optional :: field_rts(:)
-  real(RealK), intent(out), optional :: field_mts(:)
+  real(RealExt), intent(in), optional :: field_rts(:)
+  real(RealExt), intent(out), optional :: field_mts(:)
+
+  if (present(n_tile).and.present(field_rts).and.present(field_mts)) then
+    if (l_last) then
+      do l=1, n_profile
+        do i=1, n_tile
+          ll = n_tile*(l-1) + i
+          field_mts(ll) = field_rts(ll) * scaling(l)
+        end do
+      end do
+    else
+      do i=1, n_tile
+        do l=1, n_profile
+          ll = n_profile*(i-1) + l
+          field_mts(ll) = field_rts(ll) * scaling(l)
+        end do
+      end do
+    end if
+  end if
+
+end subroutine scale_field_1d_tile
+
+
+subroutine scale_field_surf(field_rts, field_mts)
+
+  implicit none
+  
+  real(RealExt), intent(in), optional :: field_rts(:)
+  real(RealExt), intent(out), optional :: field_mts(:)
 
   if (present(field_rts).and.present(field_mts)) then
     field_mts(:) = field_rts(:) * scaling(:)
   end if
 
-  end subroutine scale_field_surf
+end subroutine scale_field_surf
 
 
 end subroutine bones
