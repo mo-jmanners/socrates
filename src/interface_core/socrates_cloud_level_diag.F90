@@ -35,7 +35,7 @@ use ereport_mod, only: ereport
 use errormessagelength_mod, only: errormessagelength
 use rad_pcf, only: i_normal, i_err_fatal, &
   ip_cloud_homogen, ip_cloud_ice_water, ip_cloud_conv_strat, ip_cloud_csiw, &
-  ip_cloud_off, ip_cloud_combine_homogen, ip_cloud_combine_ice_water, &
+  ip_cloud_combine_homogen, ip_cloud_combine_ice_water, &
   ip_cloud_split_homogen, ip_cloud_split_ice_water, &
   ip_clcmp_st_water, ip_clcmp_cnv_water, ip_cloud_mix_random, &
   ip_cloud_type_water, ip_cloud_type_strat, ip_cloud_type_conv, &
@@ -125,6 +125,10 @@ do l=1, atm%n_profile
   sum_weight_diag(list(l))=0.0_RealExt
 end do
 
+if (.not.control%l_cloud) then
+  return
+end if
+
 ! Initialize the transmision above clouds
 do l=1, atm%n_profile
   trans_overlying_space(l)=1.0_RealK
@@ -162,9 +166,6 @@ do i=dimen%id_cloud_top, atm%n_layer
   end if
 
   select case (control%i_cloud_representation)
-  case (ip_cloud_off)
-    ! Diagnostics are not incremeted where the cloud representation is off
-
   case (ip_cloud_homogen, ip_cloud_combine_homogen)
     ! Only exposed cloud containing water is included
     do l = 1, atm%n_profile
