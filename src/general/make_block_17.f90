@@ -19,6 +19,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
   USE def_refract, ONLY: StrRefract
   USE def_inst_flt, ONLY: StrFiltResp
   USE missing_data_mod, ONLY: imdi
+  USE rad_pcf, ONLY: ip_rayleigh_total
 
   IMPLICIT NONE
 
@@ -197,6 +198,9 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
     WRITE(*, '(a)')  'Rayleigh coefficients per sub-band:'
     CALL make_block_3(SubSp, Sol, ierr)
     Sp%Var%rayleigh_coeff(:,0) = SubSp%Rayleigh%rayleigh_coeff
+  ELSE
+    ! Currently only Rayleigh coefficients for air are supported here
+    SubSp%Rayleigh%i_rayleigh_scheme = ip_rayleigh_total
   END IF
 
   DO

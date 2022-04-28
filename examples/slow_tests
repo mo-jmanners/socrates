@@ -16,9 +16,11 @@ cd sp_uv
 cd ../
 
 echo ---
-echo "Testing prep_spec for generating solar variability data:"
+echo "Testing prep_spec for generating CMIP5 solar variability data:"
 cd spectral_var
 ./run_me || err=1
+echo "Testing generation of CMIP6 solar variability data for GA9 files:"
+./run_cmip6 || err=1
 cd ../
 
 echo ---
