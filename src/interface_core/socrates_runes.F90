@@ -44,11 +44,13 @@ subroutine runes(n_profile, n_layer, diag, &
   co2_mix_ratio, n2o_mix_ratio, ch4_mix_ratio, &
   o2_mix_ratio, so2_mix_ratio, cfc11_mix_ratio, cfc12_mix_ratio, &
   cfc113_mix_ratio, hcfc22_mix_ratio, hfc134a_mix_ratio, &
-  t_ground, cos_zenith_angle, solar_irrad, orog_corr, &
+  l_flux_ground, t_ground, flux_ground, flux_ground_1d, &
+  cos_zenith_angle, solar_irrad, orog_corr, &
   l_grey_albedo, grey_albedo, albedo_diff, albedo_dir, &
   albedo_diff_1d, albedo_dir_1d, &
-  l_tile, frac_tile, t_tile, albedo_diff_tile, albedo_dir_tile, &
-  frac_tile_1d, t_tile_1d, albedo_diff_tile_1d, albedo_dir_tile_1d, &
+  l_tile, l_flux_tile, &
+  frac_tile, t_tile, flux_tile, albedo_diff_tile, albedo_dir_tile, &
+  frac_tile_1d, t_tile_1d, flux_tile_1d, albedo_diff_tile_1d, albedo_dir_tile_1d, &
   cloud_frac, conv_frac, &
   liq_frac, ice_frac, liq_conv_frac, ice_conv_frac, &
   liq_mmr, ice_mmr, liq_conv_mmr, ice_conv_mmr, &
@@ -193,8 +195,14 @@ real(RealExt), intent(in), optional :: &
   cfc113_mix_ratio, hcfc22_mix_ratio, hfc134a_mix_ratio
 !   Trace gas mass mixing ratios
 
+logical, intent(in), optional :: l_flux_ground
+!   Set effective surface emission over whole grid-box
 real(RealExt), intent(in), optional :: t_ground(:)
 !   Effective radiative temperature over whole grid-box
+real(RealExt), intent(in), optional :: flux_ground(:, :)
+!   Effective surface emission over whole grid-box (n_profile, n_band)
+real(RealExt), intent(in), optional :: flux_ground_1d(:)
+!   1d Effective surface emission over whole grid-box (n_band)
 real(RealExt), intent(in), optional :: cos_zenith_angle(:)
 !   Cosine of solar zenith angle
 real(RealExt), intent(in), optional :: solar_irrad(:)
@@ -218,10 +226,14 @@ real(RealExt), intent(in), optional :: albedo_dir_1d(:)
 
 logical, intent(in), optional :: l_tile
 !   Use tiled surface properties
+logical, intent(in), optional :: l_flux_tile(:)
+!   Set effective surface emission for selected tiles
 real(RealExt), intent(in), optional :: frac_tile(:, :)
 !   Tile fractions (n_profile, n_tile)
 real(RealExt), intent(in), optional :: t_tile(:, :)
 !   Tile temperatures (n_profile, n_tile)
+real(RealExt), intent(in), optional :: flux_tile(:, :, :)
+!   Tile emissions (n_profile, n_tile, n_band)
 real(RealExt), intent(in), optional :: albedo_diff_tile(:, :, :)
 !   Diffuse tile albedo (n_profile, n_tile, n_band)
 real(RealExt), intent(in), optional :: albedo_dir_tile(:, :, :)
@@ -230,6 +242,8 @@ real(RealExt), intent(in), optional :: frac_tile_1d(:)
 !   1d tile fractions (n_tile)
 real(RealExt), intent(in), optional :: t_tile_1d(:)
 !   1d tile temperatures (n_tile)
+real(RealExt), intent(in), optional :: flux_tile_1d(:)
+!   Tile emissions (n_tile*n_band)
 real(RealExt), intent(in), optional :: albedo_diff_tile_1d(:)
 !   1d diffuse tile albedo (n_tile*n_band)
 real(RealExt), intent(in), optional :: albedo_dir_tile_1d(:)
@@ -452,6 +466,8 @@ call set_control(control, diag, spec, &
   l_mixing_ratio         = l_mixing_ratio, &
   l_aerosol_mode         = l_aerosol_mode, &
   l_tile                 = l_tile, &
+  l_flux_ground          = l_flux_ground, &
+  l_flux_tile            = l_flux_tile, &
   n_tile                 = n_tile, &
   n_cloud_layer          = n_cloud_layer, &
   n_aer_mode             = n_aer_mode, &
@@ -509,6 +525,8 @@ call set_bound(bound, control, dimen, spec, n_profile, &
   profile_list        = profile_list, &
   n_tile              = n_tile, &
   t_ground            = t_ground, &
+  flux_ground         = flux_ground, &
+  flux_ground_1d      = flux_ground_1d, &
   cos_zenith_angle    = cos_zenith_angle, &
   solar_irrad         = solar_irrad, &
   orog_corr           = orog_corr, &
@@ -520,10 +538,12 @@ call set_bound(bound, control, dimen, spec, n_profile, &
   albedo_dir_1d       = albedo_dir_1d, &
   frac_tile           = frac_tile, &
   t_tile              = t_tile, &
+  flux_tile           = flux_tile, &
   albedo_diff_tile    = albedo_diff_tile, &
   albedo_dir_tile     = albedo_dir_tile, &
   frac_tile_1d        = frac_tile_1d, &
   t_tile_1d           = t_tile_1d, &
+  flux_tile_1d        = flux_tile_1d, &
   albedo_diff_tile_1d = albedo_diff_tile_1d, &
   albedo_dir_tile_1d  = albedo_dir_tile_1d, &
   l_profile_last      = l_profile_last, &

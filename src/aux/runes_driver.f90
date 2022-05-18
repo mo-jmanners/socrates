@@ -22,6 +22,8 @@ program runes_driver
 
   integer, parameter :: n_profile = 1
   integer, parameter :: n_layer = 32
+  integer, parameter :: n_tile = 2
+  integer, parameter :: n_band = 9
   type(StrDiag) :: sw_diag, lw_diag
   real(RealExt), target :: sw_heating_rate(n_profile, n_layer)
   real(RealExt), target :: lw_heating_rate(n_profile, n_layer)
@@ -112,6 +114,24 @@ program runes_driver
   real(RealExt), dimension(n_profile, n_layer) :: d_mass, density
   real(RealExt), dimension(n_profile, n_layer) :: layer_heat_capacity
 
+  real(RealExt) :: flux_ground(n_profile, n_band) = reshape( (/ &
+    73.2963808069209, 64.6414303936248, 38.2122009512303, 70.0893988698977, &
+    80.6311754660502, 32.9240397186344, 20.2722058346174, 17.8636270516774, &
+    25.5991662874702 /), (/ n_profile, n_band /) )
+
+  real(RealExt) :: flux_tile(n_profile, n_tile, n_band) = reshape( (/ &
+    73.2963808069209, 0.0, 64.6414303936248, 0.0, 38.2122009512303, 0.0, &
+    70.0893988698977, 0.0, 80.6311754660502, 0.0, 32.9240397186344, 0.0, &
+    20.2722058346174, 0.0, 17.8636270516774, 0.0, 25.5991662874702, 0.0 /), &
+    (/ n_profile, n_tile, n_band /) )
+
+  real(RealExt) :: frac_tile(n_profile, n_tile) = reshape( (/ &
+    0.2, 0.8 /), (/ n_profile, n_tile /) )
+
+  real(RealExt) :: t_tile(n_profile, n_tile) = 294.0
+
+  logical :: l_flux_tile(n_tile) = (/.true.,.false./)
+
   integer :: i, l
 
   do i=1, n_layer
@@ -195,6 +215,85 @@ program runes_driver
     l_invert = .false.)
 
   write(*,*)
+  write(*,'(a)') 'Supplying surface skin temperature'
+  write(*,'(a)') &
+    'LW: flux down (Wm-2) | flux up (Wm-2) | heating rate (K/day)'
+  do i=1, n_layer
+    write(*, '(2x, 3f17.8)') lw_flux_down(1, i), lw_flux_up(1, i), &
+      lw_heating_rate(1, i)*seconds_per_day
+  end do
+
+  ! LW call (clear-sky, gas absorption only)
+  ! Supplying emission per band for single gridpoint
+  lw_diag%heating_rate => lw_heating_rate
+  lw_diag%flux_up => lw_flux_up
+  lw_diag%flux_down => lw_flux_down
+  call runes( &
+    n_profile = n_profile, &
+    n_layer = n_layer, &
+    diag = lw_diag, &
+    spectrum_name = 'lw', &
+    i_source = ip_source_thermal, &
+    p_layer = p_layer, &
+    t_layer = t_layer, &
+    t_level = t_level, &
+    mass = d_mass, &
+    density = density, &
+    layer_heat_capacity = layer_heat_capacity, &
+    h2o = h2o, &
+    o3 = o3, &
+    co2_mix_ratio = co2_mix_ratio, &
+    n2o_mix_ratio = n2o_mix_ratio, &
+    ch4_mix_ratio = ch4_mix_ratio, &
+    l_grey_albedo = .true., &
+    grey_albedo = grey_albedo_lw, &
+    l_invert = .false., &
+    l_flux_ground = .true., &
+    flux_ground = flux_ground )
+
+  write(*,*)
+  write(*,'(a)') 'Supplying surface emission per band for single gridpoint'
+  write(*,'(a)') &
+    'LW: flux down (Wm-2) | flux up (Wm-2) | heating rate (K/day)'
+  do i=1, n_layer
+    write(*, '(2x, 3f17.8)') lw_flux_down(1, i), lw_flux_up(1, i), &
+      lw_heating_rate(1, i)*seconds_per_day
+  end do
+
+  ! LW call (clear-sky, gas absorption only)
+  ! Supplying mix of emission and skin temperature for tiles
+  lw_diag%heating_rate => lw_heating_rate
+  lw_diag%flux_up => lw_flux_up
+  lw_diag%flux_down => lw_flux_down
+  call runes( &
+    n_profile = n_profile, &
+    n_layer = n_layer, &
+    n_tile = n_tile, &
+    diag = lw_diag, &
+    spectrum_name = 'lw', &
+    i_source = ip_source_thermal, &
+    p_layer = p_layer, &
+    t_layer = t_layer, &
+    t_level = t_level, &
+    mass = d_mass, &
+    density = density, &
+    layer_heat_capacity = layer_heat_capacity, &
+    h2o = h2o, &
+    o3 = o3, &
+    co2_mix_ratio = co2_mix_ratio, &
+    n2o_mix_ratio = n2o_mix_ratio, &
+    ch4_mix_ratio = ch4_mix_ratio, &
+    l_grey_albedo = .true., &
+    grey_albedo = grey_albedo_lw, &
+    l_invert = .false., &
+    l_tile = .true., &
+    l_flux_tile = l_flux_tile, &
+    flux_tile = flux_tile, &
+    t_tile = t_tile, &
+    frac_tile = frac_tile )
+
+  write(*,*)
+  write(*,'(a)') 'Supplying mix of emission and skin temperature for tiles'
   write(*,'(a)') &
     'LW: flux down (Wm-2) | flux up (Wm-2) | heating rate (K/day)'
   do i=1, n_layer

@@ -73,6 +73,9 @@ SUBROUTINE diff_planck_source(control, dimen, spectrum, atm, bound, &
   REAL (RealK), PARAMETER :: frac_tile_tol = TINY(1.0_RealK)
 !     Tolerance for tile fraction when setting Planckian to zero
 
+  LOGICAL :: l_flux_tile = .FALSE.
+!     Local flag to use tile emission rather than temperature
+
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
   REAL(KIND=jprb)               :: zhook_handle
@@ -118,10 +121,19 @@ SUBROUTINE diff_planck_source(control, dimen, spectrum, atm, bound, &
   END IF
 
 ! Planckian flux at the surface.
-  DO l=1, atm%n_profile
-    planck%flux_ground(l) &
-      = planck_flux_band(spectrum, i_band, bound%t_ground(l))
-  END DO
+! Calculated from surface emission or skin temperature.
+  IF (control%l_flux_ground) THEN
+    DO l=1, atm%n_profile
+      planck%flux_ground(l) &
+        = bound%flux_ground(l, i_band) &
+        /(1.0_RealK - bound%rho_alb(l, ip_surf_alb_diff, i_band))
+    END DO
+  ELSE
+    DO l=1, atm%n_profile
+      planck%flux_ground(l) &
+        = planck_flux_band(spectrum, i_band, bound%t_ground(l))
+    END DO
+  END IF
 
 ! Local Planckian fluxes will be required on tiled surfaces.
 ! Furthermore, the overall Planckian will be calculated as a
@@ -130,9 +142,15 @@ SUBROUTINE diff_planck_source(control, dimen, spectrum, atm, bound, &
 ! satisfactorily than the use of an equivalent temperature can.
   IF (control%l_tile) THEN
 
+    ! Fluxes for tiles calculated from surface emission or skin temperature.
     DO k=1, bound%n_tile
+      IF (allocated(control%l_flux_tile)) l_flux_tile = control%l_flux_tile(k)
       DO l=1, bound%n_point_tile
-        IF (bound%frac_tile(l, k) > frac_tile_tol) THEN
+        IF (l_flux_tile .AND. bound%frac_tile(l, k) > frac_tile_tol) THEN
+          planck%flux_tile(l, k) &
+            = bound%flux_tile(l, k, i_band) &
+            /(1.0_RealK - bound%rho_alb_tile(l, ip_surf_alb_diff, k, i_band))
+        ELSE IF (bound%frac_tile(l, k) > frac_tile_tol) THEN
           planck%flux_tile(l, k) &
             = planck_flux_band(spectrum, i_band, bound%t_tile(l, k))
         ELSE

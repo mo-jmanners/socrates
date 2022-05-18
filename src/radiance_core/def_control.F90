@@ -248,6 +248,10 @@ TYPE StrCtrl
 !   Allow tiling of the surface
   LOGICAL :: l_tile_emissivity                                    = .FALSE.
 !   Use tile emissivities to calculate the ground source function
+  LOGICAL :: l_flux_ground                                        = .FALSE.
+!   Use emission from the surface
+  LOGICAL, ALLOCATABLE :: l_flux_tile(:)
+!   Use emission from selected tiles
   LOGICAL :: l_extra_top                                          = .FALSE.
 !   Flag to insert an extra layer into radiation above the
 !   top of the model (this is sometimes desirable to ensure
@@ -387,33 +391,47 @@ END TYPE StrCtrl
 
 CONTAINS
 !------------------------------------------------------------------------------
-SUBROUTINE allocate_control(control, sp)
+SUBROUTINE allocate_control(control, sp, n_tile)
 
 USE def_spectrum, ONLY: StrSpecData
 
 IMPLICIT NONE
 
 TYPE (StrCtrl),     INTENT(INOUT) :: control
-TYPE (StrSpecData), INTENT(IN)    :: sp
+TYPE (StrSpecData), INTENT(IN), OPTIONAL :: sp
+INTEGER,            INTENT(IN), OPTIONAL :: n_tile
 
-IF (.NOT. ALLOCATED(control%i_scatter_method_band))       &
-  ALLOCATE(control%i_scatter_method_band ( sp%dim%nd_band ))
+IF (PRESENT(sp)) THEN
 
-IF (.NOT. ALLOCATED(control%i_gas_overlap_band))          &
-  ALLOCATE(control%i_gas_overlap_band    ( sp%dim%nd_band ))
+  IF (.NOT. ALLOCATED(control%i_scatter_method_band))       &
+    ALLOCATE(control%i_scatter_method_band ( sp%dim%nd_band ))
 
-IF (.NOT. ALLOCATED(control%map_channel))                 &
-  ALLOCATE(control%map_channel ( MAX(sp%dim%nd_sub_band, sp%dim%nd_band) ))
+  IF (.NOT. ALLOCATED(control%i_gas_overlap_band))          &
+    ALLOCATE(control%i_gas_overlap_band    ( sp%dim%nd_band ))
 
-IF (.NOT. ALLOCATED(control%weight_band))                 &
-  ALLOCATE(control%weight_band           ( sp%dim%nd_band ))
+  IF (.NOT. ALLOCATED(control%map_channel))                 &
+    ALLOCATE(control%map_channel ( MAX(sp%dim%nd_sub_band, sp%dim%nd_band) ))
 
-IF (.NOT. ALLOCATED(control%weight_diag))                 &
-  ALLOCATE(control%weight_diag           ( sp%dim%nd_band ))
+  IF (.NOT. ALLOCATED(control%weight_band))                 &
+    ALLOCATE(control%weight_band           ( sp%dim%nd_band ))
 
-IF (.NOT. ALLOCATED(control%l_clear_band)) THEN
-  ALLOCATE(control%l_clear_band          ( sp%dim%nd_band ))
-  control%l_clear_band(1:sp%dim%nd_band) = .FALSE.
+  IF (.NOT. ALLOCATED(control%weight_diag))                 &
+    ALLOCATE(control%weight_diag           ( sp%dim%nd_band ))
+
+  IF (.NOT. ALLOCATED(control%l_clear_band)) THEN
+    ALLOCATE(control%l_clear_band          ( sp%dim%nd_band ))
+    control%l_clear_band(1:sp%dim%nd_band) = .FALSE.
+  END IF
+
+END IF
+
+IF (PRESENT(n_tile)) THEN
+
+  IF (.NOT. ALLOCATED(control%l_flux_tile)) THEN
+    ALLOCATE(control%l_flux_tile ( n_tile ))
+    control%l_flux_tile = .FALSE.
+  END IF
+
 END IF
 
 END SUBROUTINE allocate_control
@@ -424,6 +442,7 @@ IMPLICIT NONE
 
 TYPE (StrCtrl), INTENT(INOUT) :: control
 
+IF (ALLOCATED(control%l_flux_tile))  DEALLOCATE(control%l_flux_tile)
 IF (ALLOCATED(control%l_clear_band)) DEALLOCATE(control%l_clear_band)
 IF (ALLOCATED(control%weight_diag))  DEALLOCATE(control%weight_diag)
 IF (ALLOCATED(control%weight_band))  DEALLOCATE(control%weight_band)

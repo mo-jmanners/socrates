@@ -14,11 +14,12 @@ contains
 
 subroutine set_bound(bound, control, dimen, spectrum, &
   n_profile, profile_list, n_tile, &
-  t_ground, cos_zenith_angle, solar_irrad, orog_corr, &
+  t_ground, flux_ground, flux_ground_1d, &
+  cos_zenith_angle, solar_irrad, orog_corr, &
   l_grey_albedo, grey_albedo, albedo_diff, albedo_dir, &
   albedo_diff_1d, albedo_dir_1d, &
-  frac_tile, t_tile, albedo_diff_tile, albedo_dir_tile, &
-  frac_tile_1d, t_tile_1d, albedo_diff_tile_1d, albedo_dir_tile_1d, &
+  frac_tile, t_tile, flux_tile, albedo_diff_tile, albedo_dir_tile, &
+  frac_tile_1d, t_tile_1d, flux_tile_1d, albedo_diff_tile_1d, albedo_dir_tile_1d, &
   l_profile_last, l_debug, i_profile_debug)
 
 use def_bound,    only: StrBound, allocate_bound
@@ -53,6 +54,15 @@ integer, intent(in), optional :: n_tile
 
 real(RealExt), intent(in), optional :: t_ground(:)
 !   Effective radiative temperature over whole grid-box
+real(RealExt), intent(in), dimension(:,:), optional :: &
+  flux_ground
+!   Effective surface emission over whole grid-box
+!   (n_profile,n_band)
+real(RealExt), intent(in), dimension(:), optional :: &
+  flux_ground_1d
+!   Effective surface emission over whole grid-box
+!   (n_profile*n_band)
+
 real(RealExt), intent(in), optional :: cos_zenith_angle(:)
 !   Cosine of solar zenith angle
 real(RealExt), intent(in), optional :: solar_irrad(:)
@@ -78,12 +88,20 @@ real(RealExt), intent(in), dimension(:, :), optional :: &
 !   Tile fraction, temperature (n_profile, n_tile)
 
 real(RealExt), intent(in), dimension(:, :, :), optional :: &
+  flux_tile
+!   Tile emission (n_profile, n_tile, n_band)
+
+real(RealExt), intent(in), dimension(:, :, :), optional :: &
   albedo_diff_tile, albedo_dir_tile
 !   Tile albedos (n_profile, n_tile, n_band)
 
 real(RealExt), intent(in), dimension(:), optional :: &
   frac_tile_1d, t_tile_1d
 !   1d tile fraction, temperature (n_tile)
+
+real(RealExt), intent(in), dimension(:), optional :: &
+  flux_tile_1d
+!   Tile emission (n_profile*n_tile*n_band)
 
 real(RealExt), intent(in), dimension(:), optional :: &
   albedo_diff_tile_1d, albedo_dir_tile_1d
@@ -227,6 +245,51 @@ else
   do l=1, n_profile
     bound%t_ground(l) = 0.0_RealK
   end do
+end if
+
+! Surface emission
+if (control%l_flux_ground) then
+  if (present(flux_ground)) then
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          bound%flux_ground(l, i_band) &
+            = real(flux_ground(i_band, list(l)), RealK)
+        end do
+      end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          bound%flux_ground(l, i_band) &
+            = real(flux_ground(list(l), i_band), RealK)
+        end do
+      end do
+    end if
+  else if (present(flux_ground_1d)) then
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          ll = spectrum%basic%n_band*(list(l)-1) + i_band
+          bound%flux_ground(l, i_band) &
+            = real(flux_ground_1d(ll), RealK)
+        end do
+      end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do l=1, n_profile
+          ll = n_profile*(i_band-1) + list(l)
+          bound%flux_ground(l, i_band) &
+            = real(flux_ground_1d(ll), RealK)
+        end do
+      end do
+    end if
+  else
+    do i_band=1, spectrum%basic%n_band
+      do l=1, n_profile
+        bound%flux_ground(l, i_band) = 0.0_RealK
+      end do
+    end do
+  end if
 end if
 
 bound%n_point_tile=0
@@ -462,6 +525,71 @@ if (control%l_tile .and. present(n_tile) .and. &
       end do
     end do
   end if
+
+  if (present(flux_tile)) then
+    ! Set the tile fluxes (flux_ground will not be used on these points)
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do i_tile=1, n_tile
+          if (control%l_flux_tile(i_tile)) then
+            do l=1, n_profile
+              bound%flux_tile(l, i_tile, i_band) &
+                = real(flux_tile(i_tile, i_band, list(l)), RealK)
+            end do
+          end if
+        end do
+      end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do i_tile=1, n_tile
+          if (control%l_flux_tile(i_tile)) then
+            do l=1, n_profile
+              bound%flux_tile(l, i_tile, i_band) &
+                = real(flux_tile(list(l), i_tile, i_band), RealK)
+            end do
+          end if
+        end do
+      end do
+    end if
+  else if (present(flux_tile_1d)) then
+    if (l_last) then
+      do i_band=1, spectrum%basic%n_band
+        do i_tile=1, n_tile
+          if (control%l_flux_tile(i_tile)) then
+            do l=1, n_profile
+              ll = spectrum%basic%n_band*n_tile*(list(l)-1) &
+                 + n_tile*(i_band-1) + i_tile
+              bound%flux_tile(l, i_tile, i_band) &
+                = real(flux_tile_1d(ll), RealK)
+          end do
+          end if
+        end do
+      end do
+    else
+      do i_band=1, spectrum%basic%n_band
+        do i_tile=1, n_tile
+          if (control%l_flux_tile(i_tile)) then
+            do l=1, n_profile
+              ll = n_profile*n_tile*(i_band-1) &
+                 + n_profile*(i_tile-1) + list(l)
+              bound%flux_tile(l, i_tile, i_band) &
+                = real(flux_tile_1d(ll), RealK)
+            end do
+          end if
+        end do
+      end do
+    end if
+  else
+    ! When not present set to zero
+    do i_band=1, spectrum%basic%n_band
+      do i_tile=1, n_tile
+        do l=1, n_profile
+          bound%flux_tile(l, i_tile, i_band) = 0.0_RealK
+        end do
+      end do
+    end do
+  end if
+
 end if
 
 

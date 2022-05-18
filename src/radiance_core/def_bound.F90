@@ -27,9 +27,9 @@ TYPE StrBound
 !   Azimuthal solar angles
   REAL (RealK), ALLOCATABLE :: solar_irrad(:)
 !   Solar irradiance at the top of the atmosphere
-  REAL (RealK), ALLOCATABLE :: lit(:,:)
+  REAL (RealK), ALLOCATABLE :: lit(:, :)
 !   Lit fraction of timestep for each layer (using spherical geometry)
-  REAL (RealK), ALLOCATABLE :: cos_zen(:,:)
+  REAL (RealK), ALLOCATABLE :: cos_zen(:, :)
 !   Cosines of solar zenith angles for each layer (using spherical geometry)
 
 ! Surface properties
@@ -41,6 +41,8 @@ TYPE StrBound
 !   Array of BRDF basis terms
   REAL (RealK), ALLOCATABLE :: t_ground(:)
 !   Temperature of ground
+  REAL (RealK), ALLOCATABLE :: flux_ground(:, :)
+!   Emission of ground
   REAL (RealK), ALLOCATABLE :: orog_corr(:)
 !   Correction factor for the direct solar flux
 !   reaching the surface for sloping terrain.
@@ -58,6 +60,8 @@ TYPE StrBound
 !   Fraction of tiled grid-points occupied by each tile
   REAL (RealK), ALLOCATABLE :: t_tile(:, :)
 !   Local surface temperatures on individual tiles
+  REAL (RealK), ALLOCATABLE :: flux_tile(:, :, :)
+!   Local surface flux on individual tiles
 
 END TYPE StrBound
 
@@ -106,6 +110,10 @@ IF (.NOT. ALLOCATED(bound%f_brdf))                                             &
 IF (.NOT. ALLOCATED(bound%t_ground))                                           &
   ALLOCATE(bound%t_ground        ( dimen%nd_profile                          ))
 
+IF (.NOT. ALLOCATED(bound%flux_ground))                                        &
+  ALLOCATE(bound%flux_ground     ( dimen%nd_profile,                           &
+                                   sp%dim%nd_band                            ))
+
 IF (.NOT. ALLOCATED(bound%orog_corr))                                          &
   ALLOCATE(bound%orog_corr       ( dimen%nd_profile                          ))
 
@@ -126,6 +134,11 @@ IF (.NOT. ALLOCATED(bound%t_tile))                                             &
   ALLOCATE(bound%t_tile          ( dimen%nd_point_tile,                        &
                                    dimen%nd_tile                             ))
 
+IF (.NOT. ALLOCATED(bound%flux_tile))                                          &
+  ALLOCATE(bound%flux_tile       ( dimen%nd_point_tile,                        &
+                                   dimen%nd_tile,                              &
+                                   sp%dim%nd_band                            ))
+
 END SUBROUTINE allocate_bound
 !------------------------------------------------------------------------------
 SUBROUTINE deallocate_bound(bound)
@@ -134,11 +147,13 @@ IMPLICIT NONE
 
 TYPE (StrBound), INTENT(INOUT) :: bound
 
+IF (ALLOCATED(bound%flux_tile))    DEALLOCATE(bound%flux_tile)
 IF (ALLOCATED(bound%t_tile))       DEALLOCATE(bound%t_tile)
 IF (ALLOCATED(bound%frac_tile))    DEALLOCATE(bound%frac_tile)
 IF (ALLOCATED(bound%rho_alb_tile)) DEALLOCATE(bound%rho_alb_tile)
 IF (ALLOCATED(bound%list_tile))    DEALLOCATE(bound%list_tile)
 IF (ALLOCATED(bound%orog_corr))    DEALLOCATE(bound%orog_corr)
+IF (ALLOCATED(bound%flux_ground))  DEALLOCATE(bound%flux_ground)
 IF (ALLOCATED(bound%t_ground))     DEALLOCATE(bound%t_ground)
 IF (ALLOCATED(bound%f_brdf))       DEALLOCATE(bound%f_brdf)
 IF (ALLOCATED(bound%rho_alb))      DEALLOCATE(bound%rho_alb)
