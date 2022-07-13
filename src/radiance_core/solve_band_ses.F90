@@ -752,7 +752,7 @@ SUBROUTINE solve_band_ses(ierr                                          &
       weight_blue_incr = spectrum%solar%weight_blue(i_band)             &
                        * w_esft(iex, i_band)
 ! DEPENDS ON: augment_radiance
-    CALL augment_radiance(control, spectrum, atm, radout                &
+    CALL augment_radiance(control, spectrum, atm, bound, radout         &
       , i_band, iex, iex_minor                                          &
       , n_profile, n_layer, n_viewing_level, n_direction                &
       , l_clear, l_initial, l_initial_band, l_initial_channel           &

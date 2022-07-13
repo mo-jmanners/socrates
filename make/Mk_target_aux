@@ -3,7 +3,7 @@
 #
 
 AUX_CDF: l_run_cdf cdf2cdl cdl2cdf dentomix_cdf interp_cdf \
-		cdf2samson samson2cdf
+		cdf2samson samson2cdf calc_horizon_angles
 
 AUX_CDL: l_run_cdl run_mono assign_subcols dentomix dentoq format_size \
 		fval gen_horiz_cdl gen_null gen_surf_cdl \
@@ -146,3 +146,6 @@ vert_int: vert_int.o radlib.$(LIBSUFFIX)
 wadd: wadd.o radlib.$(LIBSUFFIX)
 	$(LINK) -o wadd wadd.o radlib.$(LIBSUFFIX)
 
+calc_horizon_angles: calc_horizon_angles.o radlib.$(LIBSUFFIX)
+	$(LINK) -L$(LIBCDF_PATH) -o calc_horizon_angles  \
+	   calc_horizon_angles.o $(CDF_OBJ) radlib.$(LIBSUFFIX) -l$(LIBCDF_NAME)

@@ -136,16 +136,26 @@ end if
 ! Heating rates
 !------------------------------------------------------------------------------
 if (associated(diag%heating_rate)) then
-  do i=1, n_layer
-    ii = abs(layer_offset-i)
-    do l=1, n_profile
-      flux_divergence(l, ii) = real( &
-        sum(radout%flux_down(l, i-1, 1:control%n_channel)) - &
-        sum(radout%flux_down(l, i,   1:control%n_channel)) + &
-        sum(radout%flux_up(  l, i,   1:control%n_channel)) - &
-        sum(radout%flux_up(  l, i-1, 1:control%n_channel)), RealExt)
+  if (control%l_flux_div) then
+    do i=1, n_layer
+      ii = abs(layer_offset-i)
+      do l=1, n_profile
+        flux_divergence(l, ii) = real( &
+          sum(radout%flux_div(l, i, 1:control%n_channel)), RealExt)
+      end do
     end do
-  end do
+  else
+    do i=1, n_layer
+      ii = abs(layer_offset-i)
+      do l=1, n_profile
+        flux_divergence(l, ii) = real( &
+          sum(radout%flux_down(l, i-1, 1:control%n_channel)) - &
+          sum(radout%flux_down(l, i,   1:control%n_channel)) + &
+          sum(radout%flux_up(  l, i,   1:control%n_channel)) - &
+          sum(radout%flux_up(  l, i-1, 1:control%n_channel)), RealExt)
+      end do
+    end do
+  end if
   if (present(layer_heat_capacity)) then
     if (l_last) then
       do i=1, n_layer

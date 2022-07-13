@@ -61,6 +61,8 @@ TYPE StrCtrl
 !   Flag for adding solar tail flux to LW ragion
   LOGICAL :: l_orog                                               = .FALSE.
 !   Correct the direct solar flux at the surface for sloping terrain
+  LOGICAL :: l_orog_fix                                           = .FALSE.
+!   Fix a bug in the orographic correction for the column solver
   LOGICAL :: l_solvar                                             = .FALSE.
 !   Time variation of the solar spectrum
 

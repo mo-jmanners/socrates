@@ -45,7 +45,7 @@ subroutine runes(n_profile, n_layer, diag, &
   o2_mix_ratio, so2_mix_ratio, cfc11_mix_ratio, cfc12_mix_ratio, &
   cfc113_mix_ratio, hcfc22_mix_ratio, hfc134a_mix_ratio, &
   l_flux_ground, t_ground, flux_ground, flux_ground_1d, &
-  cos_zenith_angle, solar_irrad, orog_corr, &
+  cos_zenith_angle, solar_irrad, l_orog, orog_corr, &
   l_grey_albedo, grey_albedo, albedo_diff, albedo_dir, &
   albedo_diff_1d, albedo_dir_1d, &
   l_tile, l_flux_tile, &
@@ -207,6 +207,9 @@ real(RealExt), intent(in), optional :: cos_zenith_angle(:)
 !   Cosine of solar zenith angle
 real(RealExt), intent(in), optional :: solar_irrad(:)
 !   Solar irradiance at top-of-atmosphere (mean over timestep)
+
+logical, intent(in), optional :: l_orog
+!   Apply orographic correction
 real(RealExt), intent(in), optional :: orog_corr(:)
 !   Orographic correction factor
 
@@ -463,6 +466,7 @@ end if
 call set_control(control, diag, spec, &
   isolir                 = i_source, &
   l_rayleigh             = l_rayleigh, &
+  l_orog                 = l_orog, &
   l_mixing_ratio         = l_mixing_ratio, &
   l_aerosol_mode         = l_aerosol_mode, &
   l_tile                 = l_tile, &

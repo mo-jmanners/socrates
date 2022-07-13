@@ -573,7 +573,7 @@ SUBROUTINE solve_band_without_gas(ierr                                  &
   iex_minor = 0
 
 ! DEPENDS ON: augment_radiance
-  CALL augment_radiance(control, spectrum, atm, radout                  &
+  CALL augment_radiance(control, spectrum, atm, bound, radout           &
     , i_band, iex, iex_minor                                            &
     , n_profile, n_layer, n_viewing_level, n_direction                  &
     , l_clear, l_initial, l_initial_band, l_initial_channel             &

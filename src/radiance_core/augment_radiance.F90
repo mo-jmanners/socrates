@@ -13,7 +13,7 @@
 !   incremented.
 !
 !- ---------------------------------------------------------------------
-SUBROUTINE augment_radiance(control, sp, atm, radout                    &
+SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
     , i_band, iex, iex_minor                                            &
     , n_profile, n_layer, n_viewing_level, n_direction                  &
     , l_clear, l_initial, l_initial_band, l_initial_channel             &
@@ -37,6 +37,7 @@ SUBROUTINE augment_radiance(control, sp, atm, radout                    &
   USE def_control, ONLY: StrCtrl
   USE def_spectrum, ONLY: StrSpecData
   USE def_atm, ONLY: StrAtm
+  USE def_bound, ONLY: StrBound
   USE def_out, ONLY: StrOut
   USE def_spherical_geometry, ONLY: StrSphGeo
   USE rad_pcf, ONLY: ip_solar, ip_spherical_harmonic, ip_two_stream,    &
@@ -56,6 +57,9 @@ SUBROUTINE augment_radiance(control, sp, atm, radout                    &
 
 ! Atmospheric properties:
   TYPE(StrAtm), INTENT(IN)      :: atm
+
+! Boundary conditions:
+  TYPE(StrBound), INTENT(IN)    :: bound
 
 ! Output fields:
   TYPE(StrOut), INTENT(INOUT)   :: radout
@@ -454,6 +458,15 @@ SUBROUTINE augment_radiance(control, sp, atm, radout                    &
           END DO
         END DO
       END IF
+      IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+        .NOT. control%l_spherical_solar) THEN
+        DO l=1, n_profile
+          radout%flux_div_band(l, n_layer, i_band) &
+            = radout%flux_div_band(l, n_layer, i_band) &
+            + weight_incr*flux_direct_incr(l, n_layer) &
+            * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
+        END DO
+      END IF
       DO i_path=1, sp%photol%n_pathway
         DO i=1, n_layer
           DO l=1, n_profile
@@ -550,6 +563,15 @@ SUBROUTINE augment_radiance(control, sp, atm, radout                    &
                 + flux_total_incr_clear(l, 2*i) &
                 - flux_total_incr_clear(l, 2*i+2) )
             END DO
+          END DO
+        END IF
+        IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+          .NOT. control%l_spherical_solar) THEN
+          DO l=1, n_profile
+            radout%flux_div_clear_band(l, n_layer, i_band) &
+              = radout%flux_div_clear_band(l, n_layer, i_band) &
+              + weight_incr*flux_direct_incr_clear(l, n_layer) &
+              * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
           END DO
         END IF
         DO i_path=1, sp%photol%n_pathway
@@ -721,6 +743,15 @@ SUBROUTINE augment_radiance(control, sp, atm, radout                    &
           END DO
         END DO
       END IF
+      IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+        .NOT. control%l_spherical_solar) THEN
+        DO l=1, n_profile
+          radout%flux_div_band(l, n_layer, i_band) &
+            = radout%flux_div_band(l, n_layer, i_band) &
+            + weight_incr*flux_direct_incr(l, n_layer) &
+            * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
+        END DO
+      END IF
       DO i_path=1, sp%photol%n_pathway
         DO i=1, n_layer
           DO l=1, n_profile
@@ -824,6 +855,15 @@ SUBROUTINE augment_radiance(control, sp, atm, radout                    &
             END DO
           END DO
         END IF
+        IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+          .NOT. control%l_spherical_solar) THEN
+          DO l=1, n_profile
+            radout%flux_div_clear_band(l, n_layer, i_band) &
+              = radout%flux_div_clear_band(l, n_layer, i_band) &
+              + weight_incr*flux_direct_incr_clear(l, n_layer) &
+              * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
+          END DO
+        END IF
         DO i_path=1, sp%photol%n_pathway
           DO i=1, n_layer
             DO l=1, n_profile
@@ -898,6 +938,15 @@ SUBROUTINE augment_channel()
                 ( flux_total_incr(l, 2*i+1) - flux_total_incr(l, 2*i-1) &
                 + flux_total_incr(l, 2*i)   - flux_total_incr(l, 2*i+2) )
             END DO
+          END DO
+        END IF
+        IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+          .NOT. control%l_spherical_solar) THEN
+          DO l=1, n_profile
+            radout%flux_div(l, n_layer, i_channel) &
+              = radout%flux_div(l, n_layer, i_channel) &
+              + weight_channel_incr*flux_direct_incr(l, n_layer) &
+              * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
           END DO
         END IF
         DO i_path=1, sp%photol%n_pathway
@@ -994,6 +1043,15 @@ SUBROUTINE augment_channel()
                   + flux_total_incr_clear(l, 2*i) &
                   - flux_total_incr_clear(l, 2*i+2) )
               END DO
+            END DO
+          END IF
+          IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+            .NOT. control%l_spherical_solar) THEN
+            DO l=1, n_profile
+              radout%flux_div_clear(l, n_layer, i_channel) &
+                = radout%flux_div_clear(l, n_layer, i_channel) &
+                + weight_channel_incr*flux_direct_incr_clear(l, n_layer) &
+                * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
             END DO
           END IF
           DO i_path=1, sp%photol%n_pathway
@@ -1153,6 +1211,15 @@ SUBROUTINE augment_channel()
             END DO
           END DO
         END IF
+        IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+          .NOT. control%l_spherical_solar) THEN
+          DO l=1, n_profile
+            radout%flux_div(l, n_layer, i_channel) &
+              = radout%flux_div(l, n_layer, i_channel) &
+              + weight_channel_incr*flux_direct_incr(l, n_layer) &
+              * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
+          END DO
+        END IF
         DO i_path=1, sp%photol%n_pathway
           DO i=1, n_layer
             DO l=1, n_profile
@@ -1257,6 +1324,15 @@ SUBROUTINE augment_channel()
                   + flux_total_incr_clear(l, 2*i) &
                   - flux_total_incr_clear(l, 2*i+2) )
               END DO
+            END DO
+          END IF
+          IF (control%isolir == ip_solar .AND. control%l_orog .AND. &
+            .NOT. control%l_spherical_solar) THEN
+            DO l=1, n_profile
+              radout%flux_div_clear(l, n_layer, i_channel) &
+                = radout%flux_div_clear(l, n_layer, i_channel) &
+                + weight_channel_incr*flux_direct_incr_clear(l, n_layer) &
+                * (bound%orog_corr(l) - 1.0_RealK)/bound%orog_corr(l)
             END DO
           END IF
           DO i_path=1, sp%photol%n_pathway

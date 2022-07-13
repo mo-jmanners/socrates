@@ -79,7 +79,11 @@ if (present(l_rayleigh)) control%l_rayleigh = l_rayleigh
 if (present(l_gas)) control%l_gas = l_gas
 if (present(l_continuum)) control%l_continuum = l_continuum
 if (present(l_cont_gen)) control%l_cont_gen = l_cont_gen
-if (present(l_orog)) control%l_orog = l_orog
+if (present(l_orog)) then
+  control%l_orog = l_orog
+  control%l_orog_fix = l_orog
+  if (l_orog) control%l_flux_div = .true.
+end if
 if (present(l_solvar)) control%l_solvar = l_solvar
 if (present(l_rescale)) control%l_rescale = l_rescale
 if (present(l_ir_source_quad)) control%l_ir_source_quad = l_ir_source_quad

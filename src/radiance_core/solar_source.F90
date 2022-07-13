@@ -174,16 +174,29 @@ SUBROUTINE solar_source(control, bound, n_profile, n_layer              &
 
 ! Correct the direct flux at the ground for sloping terrain
   IF (control%l_orog) THEN
-     flux_direct(1:n_profile, n_layer) =                                &
+    IF (control%l_orog_fix) THEN
+!     The total flux at the surface must also add the correction made
+!     to the direct flux.
+      s_down(1:n_profile, n_layer) =                                    &
+        s_down(1:n_profile, n_layer) +                                  &
+        flux_direct(1:n_profile, n_layer) *                             &
+        (bound%orog_corr(1:n_profile) - 1.0_RealK)
+
+      flux_direct(1:n_profile, n_layer) =                               &
+        flux_direct(1:n_profile, n_layer) *                             &
+        bound%orog_corr(1:n_profile)
+    ELSE
+      flux_direct(1:n_profile, n_layer) =                               &
         flux_direct(1:n_profile, n_layer) *                             &
         bound%orog_corr(1:n_profile)
 
-!    The total flux at the surface must also add the correction made
-!    to the direct flux.
-     s_down(1:n_profile, n_layer) =                                     &
-           s_down(1:n_profile, n_layer) +                               &
-           flux_direct(1:n_profile, n_layer) *                          &
-           (bound%orog_corr(1:n_profile) - 1.0_RealK)
+!     The total flux at the surface must also add the correction made
+!     to the direct flux.
+      s_down(1:n_profile, n_layer) =                                    &
+        s_down(1:n_profile, n_layer) +                                  &
+        flux_direct(1:n_profile, n_layer) *                             &
+        (bound%orog_corr(1:n_profile) - 1.0_RealK)
+    END IF
   END IF
 
 

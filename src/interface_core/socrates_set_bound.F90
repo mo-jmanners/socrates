@@ -602,7 +602,7 @@ bound%f_brdf(1, 0, 0, 0)=4.0_RealK
 ! Orographic correction factor
 if (present(orog_corr)) then
   do l=1, n_profile
-    bound%orog_corr(l) = real(orog_corr(list(l)), RealK)
+    bound%orog_corr(l) = max(real(orog_corr(list(l)),RealK), epsilon(1.0_RealK))
   end do
 end if
 
