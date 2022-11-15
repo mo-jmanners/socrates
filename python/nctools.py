@@ -226,7 +226,7 @@ def ncout_opt_prop(file, lon, lat, p, bands, absp, scat, phf):
             for j in np.arange(n_lat):
                 scat_vals[:, :, j, i] = scat
     elif (nvals == n_lon * n_lat * levels * bands):
-        scat_vals = absp.reshape(bands, levels, n_lat, n_lon)
+        scat_vals = scat.reshape(bands, levels, n_lat, n_lon)
     else:
         raise RuntimeError(' Error in ncout_opt_prop: scat arrays dont match'
                            , nvals, n_lon * n_lat * levels * bands)
@@ -244,7 +244,7 @@ def ncout_opt_prop(file, lon, lat, p, bands, absp, scat, phf):
             for j in np.arange(n_lat):
                 temp[:, :, j, i] = phf
     elif (nvals == n_lon * n_lat * levels * bands):
-        phf_vals = absp.reshape(bands, 1, levels, n_lat, n_lon)
+        phf_vals = phf.reshape(bands, 1, levels, n_lat, n_lon)
     else:
         raise RuntimeError(' Error in ncout_opt_prop: phf arrays dont match'
                            , nvals, n_lon * n_lat * levels * bands)
