@@ -181,6 +181,7 @@ if (l_trans_zen_correction) then
   ! as described in Manners et al 2009, section 3.3 (DOI: 10.1002/qj.385).
   where (cos_zen_rts > eps .and. cos_zen_mts > eps .and. &
          flux_direct_surf_rts > eps .and. &
+         flux_down_surf_rts > eps .and. &
          orog_corr*flux_direct_toa_rts > flux_direct_surf_rts .and. &
          orog_corr > sqrt(eps))
     trans_zen_correction = 1.0_RealExt &
@@ -334,7 +335,7 @@ contains
 subroutine scale_field(field_rts, field_mts)
 
   implicit none
-  
+
   real(RealExt), intent(in), optional :: field_rts(:, :)
   real(RealExt), intent(out), optional :: field_mts(:, :)
 
@@ -350,7 +351,7 @@ end subroutine scale_field
 subroutine scale_field_1d_layer(field_rts, field_mts)
 
   implicit none
-  
+
   real(RealExt), intent(in), optional :: field_rts(:)
   real(RealExt), intent(out), optional :: field_mts(:)
 
@@ -378,7 +379,7 @@ end subroutine scale_field_1d_layer
 subroutine scale_field_1d_tile(field_rts, field_mts)
 
   implicit none
-  
+
   real(RealExt), intent(in), optional :: field_rts(:)
   real(RealExt), intent(out), optional :: field_mts(:)
 
@@ -406,7 +407,7 @@ end subroutine scale_field_1d_tile
 subroutine scale_field_surf(field_rts, field_mts)
 
   implicit none
-  
+
   real(RealExt), intent(in), optional :: field_rts(:)
   real(RealExt), intent(out), optional :: field_mts(:)
 
