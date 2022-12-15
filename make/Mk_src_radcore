@@ -1,5 +1,6 @@
 SOURCE_RADCORE=	adjust_ir_radiance.f90 \
 		aggregate_cloud.f90 \
+		augment_channel_mod.f90 \
 		augment_radiance.f90 \
 		augment_tiled_radiance.f90 \
 		band_solver.f90 \
@@ -10,6 +11,7 @@ SOURCE_RADCORE=	adjust_ir_radiance.f90 \
                 calc_contrib_func.f90 \
 		calc_flux_ipa.f90 \
 		calc_gauss_weight_90.f90 \
+		calc_photolysis_incr_mod.f90 \
 		calc_radiance_ipa.f90 \
 		calc_surf_rad.f90 \
 		calc_top_rad.f90 \
@@ -30,6 +32,7 @@ SOURCE_RADCORE=	adjust_ir_radiance.f90 \
 		eig_sys.f90 \
 		eigenvalue_tri.f90 \
 		eval_uplm.f90 \
+		finalise_photol_incr_mod.f90 \
 		gas_optical_properties.f90 \
 		gauss_angle.f90 \
 		gaussian_weight_pcf.f90 \
