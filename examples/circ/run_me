@@ -22,8 +22,8 @@ rm ${basename}* 2> /dev/null
 
 
 # Retrieve atmospheric profiles and reference data from CIRC website
-curl -o case${case}_input.zip https://earth.gsfc.nasa.gov/sites/default/files/lab_climate/case${case}_input.zip
-curl -o case${case}_output.zip https://earth.gsfc.nasa.gov/sites/default/files/lab_climate/case${case}_output.zip
+curl -k -o case${case}_input.zip https://earth.gsfc.nasa.gov/sites/default/files/lab_climate/case${case}_input.zip
+curl -k -o case${case}_output.zip https://earth.gsfc.nasa.gov/sites/default/files/lab_climate/case${case}_output.zip
 unzip case${case}_input.zip
 unzip case${case}_output.zip
 rm *.zip

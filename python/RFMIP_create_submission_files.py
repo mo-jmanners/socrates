@@ -18,9 +18,9 @@ def copyVar(nc_in, nc_out, name, newname=None) :
 #
 # Check that source_id is valid 
 #   Use source_id to obtain other text
-#
+#   https://raw.githubusercontent.com/PCMDI/cmip6-cmor-tables/master/Tables/CMIP6_CV.json
 def create_attributes(args):
-    with urllib.request.urlopen("https://raw.githubusercontent.com/PCMDI/cmip6-cmor-tables/master/Tables/CMIP6_CV.json") as url:
+    with urllib.request.urlopen("file:CMIP6_CV.json") as url:
         cmip6 = json.loads(url.read().decode())
 
 
