@@ -184,10 +184,11 @@ SUBROUTINE prsc_opt_prop(ierr                                           &
     )
 ! Prescribed optical properties are not given as volume extinction
 ! coefficients, so they must be scaled by the density.
+! Limit to positive values in case the spline fit returns negatives.
   DO i=i_first_layer, i_last_layer
     DO l=1, n_profile
-      k_ext_scat(l, i)=k_ext_scat(l, i)/density(l, i)
-      k_ext_tot(l, i)=k_ext_tot(l, i)/density(l, i)
+      k_ext_scat(l, i)=MAX(0.0_RealK, k_ext_scat(l, i)/density(l, i))
+      k_ext_tot(l, i)=MAX(0.0_RealK, k_ext_tot(l, i)/density(l, i))
     END DO
   END DO
 

@@ -382,13 +382,13 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
     , cloud_absorptivity(nd_profile, nd_layer)                          &
 !       Mean cloud absorptivity
     , ls_cloud_extinction(nd_profile, nd_layer)                         &
-!       Mean cloud extinction
+!       Mean large-scale cloud extinction
     , ls_cloud_absorptivity(nd_profile, nd_layer)                       &
-!       Mean cloud absorptivity
+!       Mean large-scale cloud absorptivity
     , cnv_cloud_extinction(nd_profile, nd_layer)                        &
-!       Mean cloud extinction
+!       Mean convective cloud extinction
     , cnv_cloud_absorptivity(nd_profile, nd_layer)
-!       Mean cloud absorptivity
+!       Mean convective cloud absorptivity
 
 
 

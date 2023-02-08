@@ -24,6 +24,7 @@ use rad_pcf, only: &
   ip_inhom_cairns                           => ip_cairns, &
   ip_inhom_tripleclouds_2019                => ip_tripleclouds_2019, &
   ip_droplet_re_external                    => ip_re_external, &
+  ip_droplet_re_constant                    => ip_re_constant, &
   ip_droplet_re_liu                         => ip_re_liu, &
   ip_droplet_re_default                     => ip_re_default
 
@@ -36,7 +37,7 @@ contains
 subroutine runes(n_profile, n_layer, diag, &
   spectrum, spectrum_name, mcica_data, &
   profile_list, n_layer_stride, n_level_stride, &
-  n_cloud_layer, n_aer_mode, n_aer_layer, n_tile, &
+  n_cloud_layer, n_aer_mode, n_aer_layer, n_tile, n_subcol_gen, &
   p_layer, t_layer, t_level, mass, density, &
   h2o, o3, &
   p_layer_1d, t_layer_1d, t_level_1d, mass_1d, density_1d, &
@@ -64,6 +65,7 @@ subroutine runes(n_profile, n_layer, diag, &
   liq_dim_1d, ice_dim_1d, liq_conv_dim_1d, ice_conv_dim_1d, &
   liq_rsd_1d, ice_rsd_1d, liq_conv_rsd_1d, ice_conv_rsd_1d, &
   liq_nc_1d, ice_nc_1d, liq_conv_nc_1d, ice_conv_nc_1d, &
+  liq_dim_constant, liq_conv_dim_constant, &
   cloud_vertical_decorr, conv_vertical_decorr, &
   cloud_horizontal_rsd, &
   liq_dim_aparam, liq_dim_bparam, &
@@ -168,6 +170,8 @@ integer, intent(in), optional :: n_aer_mode
 !   Number of aerosol modes
 integer, intent(in), optional :: n_aer_layer
 !   Number of aerosol layers in 1d arrays
+integer, intent(in), optional :: n_subcol_gen
+!   Number of sub-columns to generate for cloud sampling
 
 real(RealExt), intent(in), optional :: p_layer(:, :)
 real(RealExt), intent(in), optional :: p_layer_1d(:)
@@ -268,6 +272,8 @@ real(RealExt), intent(in), dimension (:), optional :: &
   liq_dim_1d, ice_dim_1d, liq_conv_dim_1d, ice_conv_dim_1d, &
   liq_rsd_1d, ice_rsd_1d, liq_conv_rsd_1d, ice_conv_rsd_1d, &
   liq_nc_1d, ice_nc_1d, liq_conv_nc_1d, ice_conv_nc_1d
+real(RealExt), intent(in), optional :: &
+  liq_dim_constant, liq_conv_dim_constant
 !   Liquid and ice cloud fractions, gridbox mean mixing ratios,
 !   effective dimensions, relative standard deviation of condensate,
 !   and number concentration
@@ -495,7 +501,8 @@ call set_dimen(dimen, control, n_profile, n_layer, &
   mcica_data    = mcica, &
   n_tile        = n_tile, &
   n_cloud_layer = n_cloud_layer, &
-  n_aer_mode    = n_aer_mode )
+  n_aer_mode    = n_aer_mode, &
+  n_subcol_gen  = n_subcol_gen )
 
 call set_atm(atm, dimen, spec, n_profile, n_layer, &
   profile_list      = profile_list, &
@@ -599,30 +606,32 @@ call set_cld(cld, control, dimen, spec, atm, &
   i_profile_debug       = i_profile_debug )
 
 call set_cld_dim(cld, control, dimen, spec, atm, &
-  profile_list    = profile_list, &
-  n_layer_stride  = n_layer_stride, &
-  liq_nc          = liq_nc, &
-  ice_nc          = ice_nc, &
-  liq_conv_nc     = liq_conv_nc, &
-  ice_conv_nc     = ice_conv_nc, &
-  liq_dim         = liq_dim, &
-  ice_dim         = ice_dim, &
-  liq_conv_dim    = liq_conv_dim, &
-  ice_conv_dim    = ice_conv_dim, &
-  liq_nc_1d       = liq_nc_1d, &
-  ice_nc_1d       = ice_nc_1d, &
-  liq_conv_nc_1d  = liq_conv_nc_1d, &
-  ice_conv_nc_1d  = ice_conv_nc_1d, &
-  liq_dim_1d      = liq_dim_1d, &
-  ice_dim_1d      = ice_dim_1d, &
-  liq_conv_dim_1d = liq_conv_dim_1d, &
-  ice_conv_dim_1d = ice_conv_dim_1d, &
-  liq_dim_aparam  = liq_dim_aparam, &
-  liq_dim_bparam  = liq_dim_bparam, &
-  l_invert        = l_invert, &
-  l_profile_last  = l_profile_last, &
-  l_debug         = l_debug, &
-  i_profile_debug = i_profile_debug )
+  profile_list          = profile_list, &
+  n_layer_stride        = n_layer_stride, &
+  liq_nc                = liq_nc, &
+  ice_nc                = ice_nc, &
+  liq_conv_nc           = liq_conv_nc, &
+  ice_conv_nc           = ice_conv_nc, &
+  liq_dim               = liq_dim, &
+  ice_dim               = ice_dim, &
+  liq_conv_dim          = liq_conv_dim, &
+  ice_conv_dim          = ice_conv_dim, &
+  liq_nc_1d             = liq_nc_1d, &
+  ice_nc_1d             = ice_nc_1d, &
+  liq_conv_nc_1d        = liq_conv_nc_1d, &
+  ice_conv_nc_1d        = ice_conv_nc_1d, &
+  liq_dim_1d            = liq_dim_1d, &
+  ice_dim_1d            = ice_dim_1d, &
+  liq_conv_dim_1d       = liq_conv_dim_1d, &
+  ice_conv_dim_1d       = ice_conv_dim_1d, &
+  liq_dim_constant      = liq_dim_constant, &
+  liq_conv_dim_constant = liq_conv_dim_constant, &
+  liq_dim_aparam        = liq_dim_aparam, &
+  liq_dim_bparam        = liq_dim_bparam, &
+  l_invert              = l_invert, &
+  l_profile_last        = l_profile_last, &
+  l_debug               = l_debug, &
+  i_profile_debug       = i_profile_debug )
 
 call set_cld_mcica(cld, mcica, control, dimen, spec, atm, &
   profile_list = profile_list, &
@@ -667,7 +676,20 @@ call set_aer(aer, control, dimen, spec, &
   l_invert, l_profile_last)
 
 ! DEPENDS ON: radiance_calc
-call radiance_calc(control, dimen, spec, atm, cld, aer, bound, radout)
+if (associated(diag%heating_rate) .or. &
+    associated(diag%flux_direct) .or. &
+    associated(diag%flux_down) .or. &
+    associated(diag%flux_up) .or. &
+    associated(diag%flux_up_tile) .or. &
+    control%l_clear .or. &
+    control%l_blue_flux_surf .or. &
+    control%l_aerosol_absorption_band .or. &
+    control%l_aerosol_scattering_band .or. &
+    control%l_aerosol_asymmetry_band .or. &
+    control%l_cloud_absorptivity .or. &
+    control%l_cloud_extinction) then
+  call radiance_calc(control, dimen, spec, atm, cld, aer, bound, radout)
+end if
 
 call set_diag(diag, &
   control, dimen, spec, atm, cld, mcica, aer, bound, radout, &

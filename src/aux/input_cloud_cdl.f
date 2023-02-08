@@ -18,8 +18,10 @@
      &  , n_band
      &  , l_drop_type, i_drop_parametrization
      &  , n_drop_phf_term, drop_parameter_list
+     &  , drop_min_dim, drop_max_dim
      &  , l_ice_type, i_ice_parametrization
      &  , n_ice_phf_term, ice_parameter_list
+     &  , ice_min_dim, ice_max_dim
      &  , base_name, length_name
      &  , l_drop, l_ice
      &  , i_cloud, l_cloud, i_cloud_representation
@@ -167,7 +169,10 @@
      &  , ice_parameter_list(nd_cloud_parameter
      &      , nd_band, nd_ice_type)
 !           Parameters for ice crystals
-!
+     &  , drop_min_dim(nd_drop_type), drop_max_dim(nd_drop_type)
+!           Range of allowed dimensions for spectral file droplet fit
+     &  , ice_min_dim(nd_ice_type), ice_max_dim(nd_ice_type)
+!           Range of allowed dimensions for spectral file ice crystal fit
 !
       LOGICAL, Intent(IN) ::
      &    l_drop
@@ -638,7 +643,27 @@
      &        , nd_cdl_data, nd_cdl_var
      &        )
             IF (ierr /= i_normal) RETURN
-!
+
+            IF (i_phase == IP_phase_water) THEN
+              DO k = 1, n_layer
+                DO l = 1, n_profile
+                  condensed_dim_char(l, k, i) = MIN( MAX( 
+     &              condensed_dim_char(l, k, i),
+     &              drop_min_dim(i_parametrization_type) ),
+     &              drop_max_dim(i_parametrization_type) )
+                END DO
+              END DO
+            ELSE IF (i_phase == IP_phase_ice) THEN
+              DO k = 1, n_layer
+                DO l = 1, n_profile
+                  condensed_dim_char(l, k, i) = MIN( MAX( 
+     &              condensed_dim_char(l, k, i),
+     &              ice_min_dim(i_parametrization_type) ),
+     &              ice_max_dim(i_parametrization_type) )
+                END DO
+              END DO
+            END IF
+
           ENDIF
 !
         ENDDO

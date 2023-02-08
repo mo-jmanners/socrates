@@ -349,6 +349,8 @@ INTEGER, PARAMETER :: ip_re_external = 2
 !   Use input values of effective radius
 INTEGER, PARAMETER :: ip_re_liu      = 3
 !   Liu spectral dispersion
+INTEGER, PARAMETER :: ip_re_constant = 4
+!   Use input scalar value of effective radius
 
 ! ------------------------------------------------------------------
 ! continuum_pcf, cntuum3a

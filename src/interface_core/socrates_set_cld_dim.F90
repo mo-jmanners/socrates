@@ -18,6 +18,7 @@ subroutine set_cld_dim(cld, control, dimen, spectrum, atm, &
   liq_dim, ice_dim, liq_conv_dim, ice_conv_dim, &
   liq_nc_1d, ice_nc_1d, liq_conv_nc_1d, ice_conv_nc_1d, &
   liq_dim_1d, ice_dim_1d, liq_conv_dim_1d, ice_conv_dim_1d, &
+  liq_dim_constant, liq_conv_dim_constant, &
   liq_dim_aparam, liq_dim_bparam, &
   l_invert, l_profile_last, l_debug, i_profile_debug)
 
@@ -30,7 +31,7 @@ use realtype_rd,  only: RealK, RealExt
 use rad_pcf,      only: &
   ip_cloud_split_homogen, ip_cloud_split_ice_water, &
   ip_clcmp_st_water, ip_clcmp_st_ice, ip_clcmp_cnv_water, ip_clcmp_cnv_ice, &
-  ip_re_external, &
+  ip_re_external, ip_re_constant, &
   i_normal, i_err_fatal
 use ereport_mod,  only: ereport
 use errormessagelength_mod, only: errormessagelength
@@ -65,6 +66,8 @@ real(RealExt), intent(in), dimension(:, :), optional :: &
 real(RealExt), intent(in), dimension(:), optional :: &
   liq_nc_1d, ice_nc_1d, liq_conv_nc_1d, ice_conv_nc_1d, &
   liq_dim_1d, ice_dim_1d, liq_conv_dim_1d, ice_conv_dim_1d
+real(RealExt), intent(in), optional :: &
+  liq_dim_constant, liq_conv_dim_constant
 !   Liquid and ice number concentration and effective dimensions
 
 real(RealExt), intent(in), optional :: liq_dim_aparam
@@ -148,6 +151,10 @@ do i=1, cld%n_condensed
       ! Set the droplet effective radius
       call set_cld_field(cld%condensed_dim_char(:, :, i), &
                          liq_dim, liq_dim_1d)
+    else if (control%i_drop_re == ip_re_constant .and. &
+             present(liq_dim_constant)) then
+      ! Set the droplet effective radius to a constant
+      cld%condensed_dim_char(:, :, i) = real(liq_dim_constant, RealK)
     else
       call set_liq_dim(liq_nc, liq_nc_1d)
     end if
@@ -158,6 +165,9 @@ do i=1, cld%n_condensed
         (present(liq_conv_dim).or.present(liq_conv_dim_1d))) then
       call set_cld_field(cld%condensed_dim_char(:, :, i), &
                          liq_conv_dim, liq_conv_dim_1d)
+    else if (control%i_drop_re == ip_re_constant .and. &
+             present(liq_conv_dim_constant)) then
+      cld%condensed_dim_char(:, :, i) = real(liq_conv_dim_constant, RealK)
     else
       call set_liq_dim(liq_conv_nc, liq_conv_nc_1d)
     end if
@@ -324,7 +334,8 @@ contains
   subroutine set_ice_dim(full_nc, oned_nc)
 
     use rad_pcf, only: &
-      ip_ice_adt, ip_ice_agg_de, ip_ice_agg_de_sun, ip_ice_pade_2_phf
+      ip_ice_adt, ip_ice_agg_de, ip_ice_agg_de_sun, ip_ice_baran, &
+      ip_ice_pade_2_phf
     use rad_ccf, only: pi
     implicit none
 
@@ -350,6 +361,11 @@ contains
     real (RealK), parameter :: s0_agg      = 0.05_RealK
     real (RealK), parameter :: dge2de      = &
       (3.0_RealK/2.0_RealK)*(3.0_RealK/(2.0_RealK*sqrt(3.0_RealK)))
+
+    ! Parameters for Baran's diagnostic parametrisation of effective size.
+    ! m and n are the slope and intercept (positive sign) in units of metres.
+    real (RealK), parameter :: m_ice_baran = 1.868e-6_RealK
+    real (RealK), parameter :: n_ice_baran = 353.613e-6_RealK
 
     ! Parameters for the calculation of equivalent spherical radius
     real (RealK), parameter :: rho_ice = 9.17e+02_RealK
@@ -395,6 +411,22 @@ contains
           ! Limit and convert to De.
           cld%condensed_dim_char(l, k, i) = dge2de * min( 1.24e-04_RealK, &
             max(8.0e-06_RealK, cld%condensed_dim_char(l, k, i)) )
+        end do
+      end do
+
+    case (ip_ice_baran)
+      ! Diagnostic De=De(T) parameterisation developed by A. Baran.
+      ! Fit to data based on Field et al., JAS, 2007, 10.1175/2007JAS2344.1.
+      ! The weighting of the ensemble model follows that assumed in
+      ! experiment 4 of Baran et al. (2014 and 2016). The weights applied
+      ! at each size bin are 0.50,0.20,0.30, 0.0, 0.0, 0.0 (that is
+      ! hexagons+rosettes account for 70% of the mass at each size bin).
+      ! De is defined as 1.50*(mass of PSD/area of PSD).
+      ! The size is limited to its value at the freezing level.
+      do k = dimen%id_cloud_top, atm%n_layer
+        do l = 1, atm%n_profile
+          cld%condensed_dim_char(l, k, i) &
+            = m_ice_baran * atm%t(l, k) - n_ice_baran
         end do
       end do
 

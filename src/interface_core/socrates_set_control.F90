@@ -133,7 +133,14 @@ end if
 if (associated(diag%aerosol_asymmetry_scat)) then
   control%l_aerosol_asymmetry_band = .true.
 end if
-
+if (associated(diag%cloud_absorptivity) .or. &
+    associated(diag%cloud_weight_absorptivity)) then
+  control%l_cloud_absorptivity = .true.
+end if
+if (associated(diag%cloud_extinction) .or. &
+    associated(diag%cloud_weight_extinction)) then
+  control%l_cloud_extinction = .true.
+end if
 
 ! Defaults and checking
 if (present(l_set_defaults)) then

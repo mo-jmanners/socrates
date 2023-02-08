@@ -96,7 +96,7 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
   ! Set the number of sub-columns to be sampled by each k-term
   select case (control%i_mcica_sampling)
   case (ip_mcica_full_sampling)
-    cld%subcol_k = mcica_data%n_subcol_gen
+    cld%subcol_k = dimen%nd_subcol_gen
   case (ip_mcica_single_sampling)
     cld%subcol_k = 1
   case (ip_mcica_optimal_sampling)
@@ -134,7 +134,7 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
   ! Set order of sub-columns to balance SW and LW effect
   if (control%isolir == ip_solar) then
     do l=1, dimen%nd_subcol_req
-      cld%subcol_reorder(l) = mod(l, mcica_data%n_subcol_gen)
+      cld%subcol_reorder(l) = mod(l, dimen%nd_subcol_gen)
     end do
   else
     select case (control%i_mcica_sampling)
@@ -145,16 +145,16 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
     case (ip_mcica_single_sampling)
       do l=1, dimen%nd_subcol_req
         cld%subcol_reorder(l) = mod(mcica_data%lw_subcol_reorder_single(l), &
-                                    mcica_data%n_subcol_gen)
+                                    dimen%nd_subcol_gen)
       end do
     case (ip_mcica_optimal_sampling)
       do l=1, dimen%nd_subcol_req
         cld%subcol_reorder(l) = mod(mcica_data%lw_subcol_reorder_optimal(l), &
-                                    mcica_data%n_subcol_gen)
+                                    dimen%nd_subcol_gen)
       end do
     end select
   end if
-  where (cld%subcol_reorder == 0) cld%subcol_reorder=mcica_data%n_subcol_gen
+  where (cld%subcol_reorder == 0) cld%subcol_reorder=dimen%nd_subcol_gen
 
   if (present(rand_seed)) then
     do i=1, atm%n_profile
@@ -185,7 +185,7 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
   ! Call the cloud generator
   call cloud_gen(dimen%nd_layer, dimen%id_cloud_top, atm%n_layer, &
     dimen%nd_profile, 1, atm%n_profile, &
-    mcica_data%n_subcol_gen, mcica_data%n1, mcica_data%n2, &
+    dimen%nd_subcol_gen, mcica_data%n1, mcica_data%n2, &
     mcica_data%ipph, control%i_overlap, rnd_seed, &
     dp_corr_cloud, dp_corr_cond, &
     cond_rsd, cld%w_cloud, cld%c_cloud, cld%c_ratio, atm%p, &
@@ -206,7 +206,7 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
   case default
     ! Otherwise, where there are less cloudy subcolumns than required,
     ! the cloudy sub-columns are copied to all sampled sub-columns.
-    n_subcol_fill = min(dimen%nd_subcol_req, mcica_data%n_subcol_gen)
+    n_subcol_fill = min(dimen%nd_subcol_req, dimen%nd_subcol_gen)
     do i=1, atm%n_profile
       if (cld%n_subcol_cld(i) < n_subcol_fill .and. &
           cld%n_subcol_cld(i) > 0) then
@@ -220,7 +220,7 @@ if (control%i_cloud_representation /= ip_cloud_off .and. &
     end do
     ! The total cloud cover is set to the correct fraction.
     cld%frac_cloudy = real(cld%n_subcol_cld, RealK) &
-                    / real(mcica_data%n_subcol_gen, RealK)
+                    / real(dimen%nd_subcol_gen, RealK)
   end select
 
 end if

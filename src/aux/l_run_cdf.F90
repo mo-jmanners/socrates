@@ -922,8 +922,10 @@ PROGRAM l_run_cdf
     Spectrum%Basic%n_band,                                              &
     Spectrum%Drop%l_drop_type, Spectrum%Drop%i_drop_parm,               &
     Spectrum%Drop%n_phf, Spectrum%Drop%parm_list,                       &
+    Spectrum%Drop%parm_min_dim, Spectrum%Drop%parm_max_dim,             &
     Spectrum%Ice%l_ice_type, Spectrum%Ice%i_ice_parm,                   &
     Spectrum%Ice%n_phf, Spectrum%Ice%parm_list,                         &
+    Spectrum%Ice%parm_min_dim, Spectrum%Ice%parm_max_dim,               &
     base_name, length_name,                                             &
     control%l_drop, control%l_ice,                                      &
     control%i_cloud, control%l_cloud, control%i_cloud_representation,   &

@@ -58,6 +58,12 @@ real(RealExt), pointer :: liq_frac(:,:) => null()
 real(RealExt), pointer :: liq_conv_frac(:,:) => null()
 ! Liquid convective cloud fraction (n_profile, n_layer)
 
+real(RealExt), pointer :: liq_part_frac(:,:) => null()
+! Liquid cloud fraction of the total cloud (n_profile, n_layer)
+
+real(RealExt), pointer :: liq_conv_part_frac(:,:) => null()
+! Liquid convective cloud fraction of the total cloud (n_profile, n_layer)
+
 real(RealExt), pointer :: liq_incloud_mmr(:,:) => null()
 ! Liquid in-cloud mean mixing ratio (n_profile, n_layer)
 
@@ -76,6 +82,12 @@ real(RealExt), pointer :: ice_frac(:,:) => null()
 real(RealExt), pointer :: ice_conv_frac(:,:) => null()
 ! Ice convective cloud fraction (n_profile, n_layer)
 
+real(RealExt), pointer :: ice_part_frac(:,:) => null()
+! Ice cloud fraction of the total cloud (n_profile, n_layer)
+
+real(RealExt), pointer :: ice_conv_part_frac(:,:) => null()
+! Ice convective cloud fraction of the total cloud (n_profile, n_layer)
+
 real(RealExt), pointer :: ice_incloud_mmr(:,:) => null()
 ! Ice in-cloud mean mixing ratio (n_profile, n_layer)
 
@@ -88,6 +100,12 @@ real(RealExt), pointer :: ice_dim(:,:) => null()
 real(RealExt), pointer :: ice_conv_dim(:,:) => null()
 ! Convective cloud ice-crystal effective dimension (n_profile, n_layer)
 
+real(RealExt), pointer :: ice_re(:,:) => null()
+! Cloud ice-crystal effective radius (n_profile, n_layer)
+
+real(RealExt), pointer :: ice_conv_re(:,:) => null()
+! Convective cloud ice-crystal effective radius (n_profile, n_layer)
+
 real(RealExt), pointer :: cloud_top_liq_dim(:) => null()
 ! Cloud droplet effective radius at cloud top weighted by cloud fraction
 
@@ -99,6 +117,33 @@ real(RealExt), pointer :: cloud_top_warm_liq_dim(:) => null()
 
 real(RealExt), pointer :: cloud_top_warm_liq_weight(:) => null()
 ! Weight for warm liquid cloud fraction at cloud top
+
+integer, pointer :: n_subcol_cloud(:) => null()
+! Number of generated sub-columns containing cloud
+
+real(RealExt), pointer :: liq_subcol_scaling(:,:,:) => null()
+! Scaling factor for liquid condensate in each sub-column
+! (n_profile, n_layer, n_subcol_gen)
+
+real(RealExt), pointer :: ice_subcol_scaling(:,:,:) => null()
+! Scaling factor for ice condensate in each sub-column
+! (n_profile, n_layer, n_subcol_gen)
+
+real(RealExt), pointer :: cloud_absorptivity(:, :) => null()
+! Absorptivity of cloud weighted by cloud fraction
+! and upward clear-sky infra-red flux
+
+real(RealExt), pointer :: cloud_weight_absorptivity(:, :) => null()
+! Weight for cloud_absorptivity:
+! cloud fraction * upward clear-sky infra-red flux
+
+real(RealExt), pointer :: cloud_extinction(:, :) => null()
+! Cloud extinction weighted by cloud fraction
+! and downward clear-sky solar flux
+
+real(RealExt), pointer :: cloud_weight_extinction(:, :) => null()
+! Weight for cloud_extinction:
+! cloud fraction * downward clear-sky solar flux
 
 real(RealExt), pointer :: aerosol_optical_depth(:,:,:) => null()
 ! Total aerosol optical depth (n_profile, n_layer, n_band)

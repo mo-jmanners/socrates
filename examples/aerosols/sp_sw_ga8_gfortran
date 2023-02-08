@@ -2277,7 +2277,7 @@ Parametrized scattering data for ice crystals.
  Type number of ice crystals =    11
 Index of parametrization scheme =    19:   number of parameters =     5
 Number of moments of the phase function =     1
-Range of validity of parametrization =  0.00000E+00 --  0.00000E+00
+Range of validity of parametrization =  7.00000E-06 --  1.56631E-04
 Band =     1     Fitting parameters:
      1.64000E+11     1.00000E+00     6.54900E-15     7.55700E-01
      3.78100E-02

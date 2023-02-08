@@ -356,15 +356,15 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
       cloud_absorptivity_band(dimen%nd_profile, dimen%nd_layer)                &
 !       Absorptivity of cloud in a particular band
     , cloud_extinction_band(dimen%nd_profile, dimen%nd_layer)                  &
-!       Absorptivity of cloud in a particular band
+!       Extinction of cloud in a particular band
     , ls_cloud_absorptivity_band(dimen%nd_profile, dimen%nd_layer)             &
-!       Absorptivity of cloud in a particular band
+!       Absorptivity of large-scale cloud in a particular band
     , ls_cloud_extinction_band(dimen%nd_profile, dimen%nd_layer)               &
-!       Absorptivity of cloud in a particular band
+!       Extinction of large-scale cloud in a particular band
     , cnv_cloud_absorptivity_band(dimen%nd_profile, dimen%nd_layer)            &
-!       Absorptivity of cloud in a particular band
+!       Absorptivity of convective cloud in a particular band
     , cnv_cloud_extinction_band(dimen%nd_profile, dimen%nd_layer)
-!       Absorptivity of cloud in a particular band
+!       Extinction of convective cloud in a particular band
 
   INTEGER ::                                                                   &
       jp(dimen%nd_profile, dimen%nd_layer), jp1                                &

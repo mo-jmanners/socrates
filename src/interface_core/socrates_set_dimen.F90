@@ -13,7 +13,7 @@ character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_DIMEN'
 contains
 
 subroutine set_dimen(dimen, control, n_profile, n_layer, mcica_data, &
-  n_channel, n_tile, n_cloud_layer, n_aer_mode, &
+  n_channel, n_tile, n_cloud_layer, n_aer_mode, n_subcol_gen, &
   n_direction, n_viewing_level, n_brdf_basis_fnc, n_brdf_trunc, &
   n_profile_aerosol_prsc, n_profile_cloud_prsc, &
   n_opt_level_aerosol_prsc, n_opt_level_cloud_prsc)
@@ -49,6 +49,7 @@ integer, intent(in) :: n_profile
 integer, intent(in) :: n_layer
 integer, intent(in), optional :: n_channel, n_tile
 integer, intent(in), optional :: n_cloud_layer, n_aer_mode
+integer, intent(in), optional :: n_subcol_gen
 integer, intent(in), optional :: n_direction, n_viewing_level
 integer, intent(in), optional :: n_brdf_basis_fnc, n_brdf_trunc
 integer, intent(in), optional :: n_profile_aerosol_prsc
@@ -96,10 +97,14 @@ case default
   dimen%nd_column = 1
 end select
 if (present(mcica_data)) then
-  dimen%nd_subcol_gen = mcica_data%n_subcol_gen
+  if (present(n_subcol_gen)) then
+    dimen%nd_subcol_gen = n_subcol_gen
+  else
+    dimen%nd_subcol_gen = mcica_data%n_subcol_gen
+  end if
   select case (control%i_mcica_sampling)
   case (ip_mcica_full_sampling)
-    dimen%nd_subcol_req = mcica_data%n_subcol_gen
+    dimen%nd_subcol_req = dimen%nd_subcol_gen
   case (ip_mcica_single_sampling)
     dimen%nd_subcol_req = mcica_data%n_subcol_req_single
   case (ip_mcica_optimal_sampling)

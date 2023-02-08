@@ -32,8 +32,8 @@ use def_out,      only: StrOut
 
 use realtype_rd, only: RealK, RealExt
 use rad_pcf, only: ip_cloud_off, ip_mcica, &
-                   ip_clcmp_st_water, ip_clcmp_st_ice, &
-                   ip_clcmp_cnv_water, ip_clcmp_cnv_ice
+  ip_clcmp_st_water, ip_clcmp_st_ice, ip_clcmp_cnv_water, ip_clcmp_cnv_ice, &
+  ip_ice_adt, ip_ice_agg_de, ip_ice_agg_de_sun, ip_ice_baran
 
 use socrates_cloud_level_diag, only: cloud_level_diag
 
@@ -247,7 +247,7 @@ if (associated(diag%total_cloud_cover)) then
       do l=1, n_profile
         diag%total_cloud_cover(list(l)) &
           = real(cld%n_subcol_cld(l), RealExt) &
-          / real(mcica_data%n_subcol_gen, RealExt)
+          / real(dimen%nd_subcol_gen, RealExt)
       end do
     else
       do l=1, n_profile
@@ -255,6 +255,18 @@ if (associated(diag%total_cloud_cover)) then
           = real(radout%tot_cloud_cover(l), RealExt)
       end do
     end if
+  end if
+end if
+
+if (associated(diag%n_subcol_cloud)) then
+  if (control%i_inhom == ip_mcica) then
+    do l=1, n_profile
+      diag%n_subcol_cloud(list(l)) = cld%n_subcol_cld(l)
+    end do
+  else
+    do l=1, n_profile
+      diag%n_subcol_cloud(list(l)) = 0
+    end do
   end if
 end if
 
@@ -278,18 +290,26 @@ if (associated(diag%total_cloud_fraction)) then
 end if
 
 ! Cloud component diagnostics
-if (associated(diag%liq_dim))         diag%liq_dim         = 0.0_RealExt
-if (associated(diag%liq_incloud_mmr)) diag%liq_incloud_mmr = 0.0_RealExt
-if (associated(diag%liq_frac))        diag%liq_frac        = 0.0_RealExt
-if (associated(diag%ice_dim))         diag%ice_dim         = 0.0_RealExt
-if (associated(diag%ice_incloud_mmr)) diag%ice_incloud_mmr = 0.0_RealExt
-if (associated(diag%ice_frac))        diag%ice_frac        = 0.0_RealExt
-if (associated(diag%liq_conv_dim))    diag%liq_conv_dim    = 0.0_RealExt
-if (associated(diag%liq_inconv_mmr))  diag%liq_inconv_mmr  = 0.0_RealExt
-if (associated(diag%liq_conv_frac))   diag%liq_conv_frac   = 0.0_RealExt
-if (associated(diag%ice_conv_dim))    diag%ice_conv_dim    = 0.0_RealExt
-if (associated(diag%ice_inconv_mmr))  diag%ice_inconv_mmr  = 0.0_RealExt
-if (associated(diag%ice_conv_frac))   diag%ice_conv_frac   = 0.0_RealExt
+if (associated(diag%liq_dim))            diag%liq_dim            = 0.0_RealExt
+if (associated(diag%liq_incloud_mmr))    diag%liq_incloud_mmr    = 0.0_RealExt
+if (associated(diag%liq_frac))           diag%liq_frac           = 0.0_RealExt
+if (associated(diag%liq_part_frac))      diag%liq_part_frac      = 0.0_RealExt
+if (associated(diag%ice_dim))            diag%ice_dim            = 0.0_RealExt
+if (associated(diag%ice_re))             diag%ice_re             = 0.0_RealExt
+if (associated(diag%ice_incloud_mmr))    diag%ice_incloud_mmr    = 0.0_RealExt
+if (associated(diag%ice_frac))           diag%ice_frac           = 0.0_RealExt
+if (associated(diag%ice_part_frac))      diag%ice_part_frac      = 0.0_RealExt
+if (associated(diag%liq_conv_dim))       diag%liq_conv_dim       = 0.0_RealExt
+if (associated(diag%liq_inconv_mmr))     diag%liq_inconv_mmr     = 0.0_RealExt
+if (associated(diag%liq_conv_frac))      diag%liq_conv_frac      = 0.0_RealExt
+if (associated(diag%liq_conv_part_frac)) diag%liq_conv_part_frac = 0.0_RealExt
+if (associated(diag%ice_conv_dim))       diag%ice_conv_dim       = 0.0_RealExt
+if (associated(diag%ice_conv_re))        diag%ice_conv_re        = 0.0_RealExt
+if (associated(diag%ice_inconv_mmr))     diag%ice_inconv_mmr     = 0.0_RealExt
+if (associated(diag%ice_conv_frac))      diag%ice_conv_frac      = 0.0_RealExt
+if (associated(diag%ice_conv_part_frac)) diag%ice_conv_part_frac = 0.0_RealExt
+if (associated(diag%liq_subcol_scaling)) diag%liq_subcol_scaling = 0.0_RealExt
+if (associated(diag%ice_subcol_scaling)) diag%ice_subcol_scaling = 0.0_RealExt
 if (control%i_cloud_representation /= ip_cloud_off) then
   do k=1, cld%n_condensed
     select case (cld%type_condensed(k))
@@ -298,21 +318,51 @@ if (control%i_cloud_representation /= ip_cloud_off) then
       call set_cloud_prop(diag%liq_incloud_mmr, cld%condensed_mix_ratio(:,:,k))
       call set_cloud_prop(diag%liq_frac, cld%w_cloud, &
                           cld%frac_cloud(:, :, cld%i_cloud_type(k)))
+      call set_cloud_prop(diag%liq_part_frac, &
+                          cld%frac_cloud(:, :, cld%i_cloud_type(k)))
+      if (control%i_inhom == ip_mcica) &
+        call set_cloud_subcol(diag%liq_subcol_scaling, &
+                              cld%c_sub(:, :, :, cld%i_cloud_type(k)))
     case (ip_clcmp_st_ice)
       call set_cloud_prop(diag%ice_dim, cld%condensed_dim_char(:,:,k))
       call set_cloud_prop(diag%ice_incloud_mmr, cld%condensed_mix_ratio(:,:,k))
       call set_cloud_prop(diag%ice_frac, cld%w_cloud, &
                           cld%frac_cloud(:, :, cld%i_cloud_type(k)))
+      call set_cloud_prop(diag%ice_part_frac, &
+                          cld%frac_cloud(:, :, cld%i_cloud_type(k)))
+      if (control%i_inhom == ip_mcica) &
+        call set_cloud_subcol(diag%ice_subcol_scaling, &
+                              cld%c_sub(:, :, :, cld%i_cloud_type(k)))
+      if (associated(diag%ice_re)) then
+        call set_cloud_prop(diag%ice_re, cld%condensed_dim_char(:,:,k))
+        select case (cld%i_condensed_param(ip_clcmp_st_ice))
+        case (ip_ice_adt, ip_ice_agg_de, ip_ice_agg_de_sun, ip_ice_baran)
+          ! Here the effective dimension represents the diameter
+          diag%ice_re = 0.5_RealExt * diag%ice_re
+        end select
+      end if
     case (ip_clcmp_cnv_water)
       call set_cloud_prop(diag%liq_conv_dim, cld%condensed_dim_char(:,:,k))
       call set_cloud_prop(diag%liq_inconv_mmr, cld%condensed_mix_ratio(:,:,k))
       call set_cloud_prop(diag%liq_conv_frac, cld%w_cloud, &
+                          cld%frac_cloud(:, :, cld%i_cloud_type(k)))
+      call set_cloud_prop(diag%liq_conv_part_frac, &
                           cld%frac_cloud(:, :, cld%i_cloud_type(k)))
     case (ip_clcmp_cnv_ice)
       call set_cloud_prop(diag%ice_conv_dim, cld%condensed_dim_char(:,:,k))
       call set_cloud_prop(diag%ice_inconv_mmr, cld%condensed_mix_ratio(:,:,k))
       call set_cloud_prop(diag%ice_conv_frac, cld%w_cloud, &
                           cld%frac_cloud(:, :, cld%i_cloud_type(k)))
+      call set_cloud_prop(diag%ice_conv_part_frac, &
+                          cld%frac_cloud(:, :, cld%i_cloud_type(k)))
+      if (associated(diag%ice_conv_re)) then
+        call set_cloud_prop(diag%ice_conv_re, cld%condensed_dim_char(:,:,k))
+        select case (cld%i_condensed_param(ip_clcmp_cnv_ice))
+        case (ip_ice_adt, ip_ice_agg_de, ip_ice_agg_de_sun, ip_ice_baran)
+          ! Here the effective dimension represents the diameter
+          diag%ice_conv_re = 0.5_RealExt * diag%ice_conv_re
+        end select
+      end if
     end select
   end do
 end if
@@ -328,6 +378,21 @@ if (associated(diag%cloud_top_warm_liq_dim) .and. &
   call cloud_level_diag(control, dimen, atm, cld, .false., &
     list, diag%cloud_top_warm_liq_dim, diag%cloud_top_warm_liq_weight)
 end if
+
+! Mean cloud absorptivity and extinction diagnostics
+if (associated(diag%cloud_absorptivity)) &
+  call set_layer_prop(diag%cloud_absorptivity, radout%cloud_absorptivity)
+
+if (associated(diag%cloud_weight_absorptivity)) &
+  call set_layer_prop(diag%cloud_weight_absorptivity, &
+                      radout%cloud_weight_absorptivity)
+
+if (associated(diag%cloud_extinction)) &
+  call set_layer_prop(diag%cloud_extinction, radout%cloud_extinction)
+
+if (associated(diag%cloud_weight_extinction)) &
+  call set_layer_prop(diag%cloud_weight_extinction, &
+                      radout%cloud_weight_extinction)
 
 !------------------------------------------------------------------------------
 ! Aerosol diagnostics
@@ -472,6 +537,97 @@ subroutine set_cloud_prop(field, cld_field1, cld_field2)
   end if
 
 end subroutine set_cloud_prop
+
+
+!------------------------------------------------------------------------------
+subroutine set_cloud_subcol(field, cld_field)
+
+  implicit none
+
+  real(RealExt), intent(inout), pointer :: field(:, :, :)
+  real(RealK), intent(in) :: cld_field(:, dimen%id_cloud_top:, :)
+  integer :: k_lower, k_upper, k_dim
+  integer :: i_lower, i_upper, i_dim
+
+  if (associated(field)) then
+    if (l_last) then
+      i_dim = 1
+      k_dim = 2
+    else
+      i_dim = 2
+      k_dim = 3
+    end if
+    k_lower = max(lbound(field, k_dim), 1)
+    k_upper = min(ubound(field, k_dim), dimen%nd_subcol_gen)
+    if (layer_offset == n_layer + 1) then
+      ! Field output is inverted
+      i_lower = max(n_layer + 1 - ubound(field, i_dim), dimen%id_cloud_top)
+      i_upper = min(n_layer + 1 - lbound(field, i_dim), n_layer)
+    else
+      i_lower = max(lbound(field, i_dim), dimen%id_cloud_top)
+      i_upper = min(ubound(field, i_dim), n_layer)
+    end if
+    ! Fill diagnostic between requested layers
+    if (l_last) then
+      do k=k_lower, k_upper
+        do i=i_lower, i_upper
+          ii = abs(layer_offset-i)
+          do l=1, n_profile
+            field(ii, k, list(l)) = real(cld_field(l, i, k), RealExt)
+          end do
+        end do
+      end do
+    else
+      do k=k_lower, k_upper
+        do i=i_lower, i_upper
+          ii = abs(layer_offset-i)
+          do l=1, n_profile
+            field(list(l), ii, k) = real(cld_field(l, i, k), RealExt)
+          end do
+        end do
+      end do
+    end if
+  end if
+
+end subroutine set_cloud_subcol
+
+
+!------------------------------------------------------------------------------
+subroutine set_layer_prop(field, field_in)
+
+  implicit none
+
+  real(RealExt), intent(inout), pointer :: field(:, :)
+  real(RealK), intent(in), allocatable :: field_in(:, :)
+  integer :: i_lower, i_upper, i_dim
+
+  if (associated(field)) then
+    if (l_last) then
+      i_dim = 1
+    else
+      i_dim = 2
+    end if
+    i_lower = max(lbound(field, i_dim), 1)
+    i_upper = min(ubound(field, i_dim), n_layer)
+    ! Fill diagnostic between requested layers
+    if (l_last) then
+      do i=i_lower, i_upper
+        ii = abs(layer_offset-i)
+        do l=1, n_profile
+          field(i, list(l)) = real(field_in(l, ii), RealExt)
+        end do
+      end do
+    else
+      do i=i_lower, i_upper
+        ii = abs(layer_offset-i)
+        do l=1, n_profile
+          field(list(l), i) = real(field_in(l, ii), RealExt)
+        end do
+      end do
+    end if
+  end if
+
+end subroutine set_layer_prop
 
 
 !------------------------------------------------------------------------------

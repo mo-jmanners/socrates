@@ -126,27 +126,27 @@ TYPE StrOut
 !   Absorptivity of layer cloud weighted by cloud fraction
 !   and upward clear-sky infra-red flux.
   REAL (RealK), ALLOCATABLE :: ls_cloud_weight_absorptivity(:, :)
-!   Weights to be applied to layer cld. absorptivies.
+!   Weights to be applied to layer cloud absorptivies.
   REAL (RealK), ALLOCATABLE :: cnv_cloud_absorptivity(:, :)
-!   Absorptivity of conv.cloud weighted by cloud fraction
+!   Absorptivity of convective cloud weighted by cloud fraction
 !   and upward clear-sky infra-red flux.
   REAL (RealK), ALLOCATABLE :: cnv_cloud_weight_absorptivity(:, :)
-!   Weights to be applied to conv.cld absorptivies.
+!   Weights to be applied to convective cloud absorptivies.
   REAL (RealK), ALLOCATABLE :: cloud_extinction(:, :)
-!   Absorptivity of cloud weighted by cloud fraction
+!   Extinction of cloud weighted by cloud fraction
 !   and downward clear-sky solar flux.
   REAL (RealK), ALLOCATABLE :: cloud_weight_extinction(:, :)
 !   Weights to be applied to extinctions.
   REAL (RealK), ALLOCATABLE :: ls_cloud_extinction(:, :)
-!   Absorptivity of layer cloud weighted by cloud fraction
+!   Extinction of layer cloud weighted by cloud fraction
 !   and downward clear-sky solar flux.
   REAL (RealK), ALLOCATABLE :: ls_cloud_weight_extinction(:, :)
-!   Weights to be applied to layer cld. extinctions.
+!   Weights to be applied to layer cloud extinctions.
   REAL (RealK), ALLOCATABLE :: cnv_cloud_extinction(:, :)
-!   Absorptivity of conv.cloud weighted by cloud fraction
+!   Extinction of convective cloud weighted by cloud fraction
 !   and downward clear-sky solar flux.
   REAL (RealK), ALLOCATABLE :: cnv_cloud_weight_extinction(:, :)
-!   Weights to be applied to conv. cld. extinctions.
+!   Weights to be applied to convective cloud extinctions.
 
 ! Aerosol diagnostics
   REAL (RealK), ALLOCATABLE :: aerosol_absorption_band(:, :, :)
