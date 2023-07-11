@@ -61,7 +61,7 @@ C-calcule l'albedo de ce qui remonte
       CALL morel(SNGL(wavelength), rmorel)
 C-somme les contributions
       albedo = (1.0d0-DBLE(ww))*
-     &		(DBLE(rfresnel+rmorel))+DBLE(ww)*DBLE(rmousse)
+     &      (DBLE(rfresnel+rmorel))+DBLE(ww)*DBLE(rmousse)
       albedo = MIN(albedo, 1.0d0)
       
       RETURN

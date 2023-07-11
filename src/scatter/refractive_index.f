@@ -7,8 +7,8 @@
 !+ Subroutine to return the complex refractive index.
 !
 ! Method:
-!	The real and imaginary parts of the refractive index are
-!	represented as cubic splines.
+!   The real and imaginary parts of the refractive index are
+!   represented as cubic splines.
 !
 !- ---------------------------------------------------------------------
       FUNCTION refractive_index(ierr, nd_refract

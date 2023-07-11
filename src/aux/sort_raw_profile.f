@@ -7,10 +7,10 @@
 !+ Subroutine to sort the elements of a profile in increasing pressure.
 !
 ! Method:
-!	The profile is searched to find the pressure or height on
-!	which to sort. A shell sorting algorithm is called to find
-!	the correct order. Using the key thus defined the columns
-!	os the profile are re-ordered.
+!   The profile is searched to find the pressure or height on
+!   which to sort. A shell sorting algorithm is called to find
+!   the correct order. Using the key thus defined the columns
+!   os the profile are re-ordered.
 !
 !- ---------------------------------------------------------------------
       SUBROUTINE sort_raw_profile(ierr

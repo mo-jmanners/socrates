@@ -43,10 +43,10 @@ SUBROUTINE interpolate_p(n, p, a, x, y, y2, pp, aa, i_mode, l_splined)
 ! Subroutine to interpolate to the value of a field at a point.
 !
 ! Method:
-!	The field to be evaluated is passed to the routine, together
-!	with its second derivatives if a splined fit is used. Its
-!	value at the pressure supplied is evaluated according to the
-!	type of interpolation prescribed. The result is returned.
+!   The field to be evaluated is passed to the routine, together
+!   with its second derivatives if a splined fit is used. Its
+!   value at the pressure supplied is evaluated according to the
+!   type of interpolation prescribed. The result is returned.
 
 ! Modules to set types of variables:
   USE realtype_rd, ONLY: RealK

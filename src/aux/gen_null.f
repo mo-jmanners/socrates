@@ -7,8 +7,8 @@
 !+ Program to generate a null CDL-file.
 !
 ! Method:
-!	Pressure levels are read in and a CDL-file with
-!	a null field at these levels is written.
+!   Pressure levels are read in and a CDL-file with
+!   a null field at these levels is written.
 !
 !- ---------------------------------------------------------------------
       PROGRAM gen_null

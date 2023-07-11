@@ -223,7 +223,7 @@ Subroutine particle_size_90 &
         DO
           READ(iu_input, '(A)', IOSTAT=ios) line
           IF (line(1:4) == '*END') EXIT
-	  BACKSPACE(iu_input)
+          BACKSPACE(iu_input)
 !         Read the dimension into a temporary variable and decide
 !         whether it is sufficiently distinct from the previous
 !         value not to cause problems with interpolation.
@@ -300,7 +300,7 @@ Subroutine particle_size_90 &
 !         is not clear, as shapes are not specified. An undefined
 !         shape is assumed at the moment. Whether this should be 
 !         made more explicit is for future thought.
-	  SizeDist%i_shape_particle = ip_shape_db_undefined
+          SizeDist%i_shape_particle = ip_shape_db_undefined
         ENDIF
 !
       ENDIF
