@@ -17,7 +17,8 @@ subroutine set_control(control, diag, spectrum, l_set_defaults, &
   l_rescale, l_ir_source_quad, l_mixing_ratio, &
   l_aerosol, l_aerosol_mode, l_aerosol_ccn, &
   l_tile, l_flux_ground, l_flux_tile, n_tile, n_cloud_layer, n_aer_mode, &
-  isolir, i_cloud_representation, i_overlap, i_inhom, i_mcica_sampling, &
+  isolir, i_scatter_method, &
+  i_cloud_representation, i_overlap, i_inhom, i_mcica_sampling, &
   i_st_water, i_cnv_water, i_st_ice, i_cnv_ice, i_drop_re )
 
 use def_control, only: StrCtrl, allocate_control
@@ -63,7 +64,7 @@ logical, intent(in), optional :: l_set_defaults, &
 
 integer, intent(in), optional :: n_tile, n_cloud_layer, n_aer_mode
 
-integer, intent(in), optional :: isolir, &
+integer, intent(in), optional :: isolir, i_scatter_method, &
   i_cloud_representation, i_overlap, i_inhom, i_mcica_sampling, &
   i_st_water, i_cnv_water, i_st_ice, i_cnv_ice, i_drop_re
 
@@ -93,13 +94,14 @@ if (present(l_aerosol_mode)) control%l_aerosol_mode = l_aerosol_mode
 if (present(l_aerosol_ccn)) control%l_aerosol_ccn = l_aerosol_ccn
 if (present(l_tile)) then
   control%l_tile = l_tile
-! control%l_tile_emissivity = l_tile
+  control%l_tile_emissivity = l_tile
 end if
 if (present(l_flux_ground)) control%l_flux_ground = l_flux_ground
 
 
 ! Integer options
 if (present(isolir)) control%isolir = isolir
+if (present(i_scatter_method)) control%i_scatter_method = i_scatter_method
 if (present(i_cloud_representation)) &
   control%i_cloud_representation = i_cloud_representation
 if (present(i_overlap)) control%i_overlap = i_overlap
@@ -187,8 +189,19 @@ if (present(l_set_defaults)) then
       call set_int_default(control%n_order_forward, 2)
       call set_int_default(control%i_gas_overlap, ip_overlap_k_eqv_scl)
 
+      ! Prevent unnecessary calculation of equivalent extinction when
+      ! there is only one term in the LW
+      if (control%i_scatter_method /= ip_scatter_full) then
+        ! Not done for full scattering to maintain LFRic KGO
+        control%l_grey_single = .true.
+      end if
+
       ! Consistent tiling options
-      if (.not.present(l_tile)) control%l_tile = .true.
+      if (.not.present(l_tile)) then
+        control%l_tile = .true.
+        ! Bug-fix changes KGO:
+        ! control%l_tile_emissivity = .true.
+      end if
       if (present(n_tile)) then
         if (n_tile < 1) control%l_tile = .false.
       else

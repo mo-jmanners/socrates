@@ -925,7 +925,7 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
     DO j=2, n_abs
 
       i_abs_band=index_abs(j)
-      IF (n_abs_esft(i_abs_band) == 1 .AND. control%l_spherical_diffuse) THEN
+      IF (n_abs_esft(i_abs_band) == 1 .AND. control%l_grey_single) THEN
         ! If there is only 1 k-term for this absorber there is no need to
         ! calculate an equivalent extinction: the single absorption coefficient
         ! is added directly to the grey absorption.

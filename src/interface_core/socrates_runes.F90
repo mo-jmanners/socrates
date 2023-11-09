@@ -26,7 +26,11 @@ use rad_pcf, only: &
   ip_droplet_re_external                    => ip_re_external, &
   ip_droplet_re_constant                    => ip_re_constant, &
   ip_droplet_re_liu                         => ip_re_liu, &
-  ip_droplet_re_default                     => ip_re_default
+  ip_droplet_re_default                     => ip_re_default, &
+  ip_scatter_full, &
+  ip_scatter_none                           => ip_no_scatter_abs, &
+  ip_scatter_approx, &
+  ip_scatter_hybrid
 
 use socrates_def_diag, only: StrDiag
 
@@ -103,7 +107,7 @@ subroutine runes(n_profile, n_layer, diag, &
   cloud_horizontal_rsd, &
   liq_dim_aparam, liq_dim_bparam, &
   layer_heat_capacity, layer_heat_capacity_1d, &
-  i_source, i_cloud_representation, i_overlap, i_inhom, &
+  i_source, i_scatter_method, i_cloud_representation, i_overlap, i_inhom, &
   i_mcica_sampling, i_st_water, i_cnv_water, i_st_ice, i_cnv_ice, i_drop_re, &
   rand_seed, &
   l_rayleigh, l_mixing_ratio, l_aerosol_mode, &
@@ -510,6 +514,8 @@ real(RealExt), intent(in), optional :: layer_heat_capacity_1d(:)
 
 integer, intent(in), optional :: i_source
 !   Select source of radiation
+integer, intent(in), optional :: i_scatter_method
+!   Select scattering parametrisation
 integer, intent(in), optional :: &
   i_cloud_representation, i_overlap, i_inhom, &
   i_mcica_sampling, i_st_water, i_st_ice, i_cnv_water, i_cnv_ice, i_drop_re
@@ -702,6 +708,7 @@ call set_control(control, diag, spec, &
   n_tile                 = n_tile, &
   n_cloud_layer          = n_cloud_layer, &
   n_aer_mode             = n_aer_mode, &
+  i_scatter_method       = i_scatter_method, &
   i_cloud_representation = i_cloud_representation, &
   i_overlap              = i_overlap, &
   i_inhom                = i_inhom, &

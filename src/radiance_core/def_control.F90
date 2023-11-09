@@ -268,8 +268,8 @@ TYPE StrCtrl
 !   Flag for rescaling
   LOGICAL :: l_spherical_solar                                    = .FALSE.
 !   Flag to use spherical geometry for the direct beam path
-  LOGICAL :: l_spherical_diffuse                                  = .FALSE.
-!   Flag to use spherical geometry for the diffuse source terms
+  LOGICAL :: l_grey_single                                        = .FALSE.
+!   Prevent unnecessary calculation of equivalent extinction with one term
   LOGICAL :: l_henyey_greenstein_pf                               = .FALSE.
 !   Flag to use Henyey-Greenstein phase functions
   LOGICAL :: l_lanczos                                            = .FALSE.
