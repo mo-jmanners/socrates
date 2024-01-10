@@ -4,12 +4,9 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-!+ Function to calculate the Rayleigh scattering coefficient at S.T.P.
+! Function to calculate the Rayleigh scattering coefficient at S.T.P.
 !
-! Method:
-!   Straightforward.
-!
-!- ---------------------------------------------------------------------
+!-----------------------------------------------------------------------
       FUNCTION rayleigh_scatter_air(lambda)
 
       USE realtype_rd
@@ -25,7 +22,7 @@
       REAL  (RealK), Intent(IN) ::
      &    lambda
 !           Wavelength
-!
+
 !     Local variables.
       REAL  (RealK) ::
      &    refract_index_m1
@@ -34,16 +31,16 @@
 !           Reciprocal of wavelength squared
      &  , lambda_m2_limit
 !           Reciprocal of wavelength squared limited to lambda > 175nm
-!
-!
+
+
 !     Calculate the refractive index using Edlen's formula converted to
 !     apply at 273.16K. (Limit at short wavelengths where error in fit
 !     becomes large.)
-      lambda_m2_limit=1.0_RealK/(MAX(lambda,0.175e-6)**2)
+      lambda_m2_limit=1.0_RealK/(MAX(lambda,0.175e-6_RealK)**2)
       refract_index_m1=6.78606e-05_RealK+3.11180e+10_RealK
      &   /(1.46e+14_RealK-lambda_m2_limit)
      &   +2.69425e+08_RealK/(4.1e+13_RealK-lambda_m2_limit)
-!
+
 !     Use the standard expression for the Rayleigh scattering
 !     coefficient, but include an extra density factor to give it
 !     in units of mass.

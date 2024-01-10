@@ -3295,7 +3295,7 @@ CONTAINS
 
     ELSE
       CALL nf(nf90_create(TRIM(file_map), &
-                          OR(NF90_NOCLOBBER, NF90_64BIT_OFFSET), &
+                          IOR(NF90_NOCLOBBER, NF90_64BIT_OFFSET), &
                           ncidout_map))
 
 !     Create dimensions

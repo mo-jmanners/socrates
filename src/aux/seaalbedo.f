@@ -18,9 +18,9 @@
       !
       !  albedo     -- ocean albedo
       !
-      REAL*8 zenith
-      REAL*8 wavelength
-      REAL*8 albedo
+      REAL(RealK) zenith
+      REAL(RealK) wavelength
+      REAL(RealK) albedo
 
       REAL(RealK) n_pure_water
       REAL n_sea_water
@@ -204,7 +204,7 @@ C----------------------------------------------------
       f_ef=wp*f_ef_p + ws*f_ef_s
       CALL spline_evaluate(ierr, nwvmax, wv, whitlock, whitlock2,
      .                     wavelength, reflec)
-      reflec=MAX(0.0, reflec)
+      reflec=MAX(0.0_RealK, reflec)
       reflectance=f_ef*reflec
       ww=ww*(1.+sp)/(1.+xx*sp)
       RETURN
@@ -259,17 +259,14 @@ c--------------------------
       END
 C--------------------------------------------------------------
       SUBROUTINE eos(temperature, salinity, WKZ)
-      REAL temperature, salinity
+      IMPLICIT NONE
+      REAL :: temperature, salinity, WKZ
 CC  EOS80 IS VALID FOR S= 0 TO 42 PSU ; T= -2 TO 40 CELCIUS ; P= 0
 CC  TO 10000 DECIBARS. CHECK VALUE: RHO = 1059.8204 KG/M**3 FOR
 CC  P=10000 DBAR, T = 40 DEG CELCIUS, S=40 PSU
-
-      FSATG(PS,PT,PHP)
-     $     = (((-2.1687E-16*PT+1.8676E-14)*PT-4.6206E-13)*PHP
-     $+((2.7759E-12*PT-1.1351E-10)*(PS-35.)+((-5.4481E-14*PT
-     $+8.733E-12)*PT-6.7795E-10)*PT+1.8741E-8))*PHP
-     $+(-4.2393E-8*PT+1.8932E-6)*(PS-35.)
-     $+((6.6228E-10*PT-6.836E-8)*PT+8.5258E-6)*PT+3.5803E-5
+      REAL :: WKX, WKY
+      REAL :: ZA, ZAW, ZA1, ZB,ZBW, ZB1, ZC, ZD, ZE, ZH, ZKW, ZK0, ZP
+      REAL :: ZQ, ZR1, ZR2, ZR3, ZR4, ZS, ZSR, ZT, ZXK
 
       ZP = 0.0
       ZH = 0.0
@@ -323,7 +320,17 @@ C
       ZK0= (ZB1*ZSR + ZA1)*ZS + ZKW
 C ...   evaluate pressure polynomial
       WKZ=WKZ/(1.0-ZH/(ZK0+ZH*(ZA+ZB*ZH)))
-      RETURN
+
+      CONTAINS
+        REAL FUNCTION FSATG(PS,PT,PHP)
+          IMPLICIT NONE
+          REAL :: PS,PT,PHP
+          FSATG = (((-2.1687E-16*PT+1.8676E-14)*PT-4.6206E-13)*PHP
+     &      +((2.7759E-12*PT-1.1351E-10)*(PS-35.)+((-5.4481E-14*PT
+     &      +8.733E-12)*PT-6.7795E-10)*PT+1.8741E-8))*PHP
+     &      +(-4.2393E-8*PT+1.8932E-6)*(PS-35.)
+     &      +((6.6228E-10*PT-6.836E-8)*PT+8.5258E-6)*PT+3.5803E-5
+        END FUNCTION
       END
 C--------------------------------------------------------
       SUBROUTINE fresnel(psi, m, W, rfresnel)

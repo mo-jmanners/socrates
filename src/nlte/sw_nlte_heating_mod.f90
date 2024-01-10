@@ -269,7 +269,7 @@ SUBROUTINE nlte_heating_sw(trop_co2_mmr, coszin, p, heat_rate, &
      ! Adding the O3 to the CO2 heating
      DO i = 1, n_layer
         heat_rate_nlte(j, i) = heat_rate_nlte_temp(j, i) &
-          + MAX(heat_rate_nlte(j, i), 0.0)
+          + MAX(heat_rate_nlte(j, i), 0.0_RealK)
      END DO
 
      ! Blend the heating rates with the LTE rates (use the same level as LW)

@@ -4,12 +4,9 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-!+ Function to calculate the Rayleigh scattering coefficient at S.T.P.
+! Function to calculate the Rayleigh scattering coefficient at S.T.P.
 !
-! Method:
-!   Straightforward.
-!
-!- ---------------------------------------------------------------------
+!-----------------------------------------------------------------------
 FUNCTION rayleigh_scatter_h2he(lambda, wavelength_refract_index_H2,            &
   refract_index_H2, n_points)
 
@@ -21,7 +18,10 @@ FUNCTION rayleigh_scatter_h2he(lambda, wavelength_refract_index_H2,            &
   IMPLICIT NONE
 
 
-!     Dummy variables.
+! Dummy variables.
+  INTEGER, Intent(IN) :: &
+      n_points
+
   REAL  (RealK) :: &
       rayleigh_scatter_h2he
 !           Name of function
@@ -34,10 +34,8 @@ FUNCTION rayleigh_scatter_h2he(lambda, wavelength_refract_index_H2,            &
   REAL (RealK), Intent(IN) :: &
       refract_index_H2(1:n_points)
 !           Refractive index of H2
-  INTEGER, Intent(IN) :: &
-      n_points
-!
-!     Local variables.
+
+! Local variables.
   REAL  (RealK) :: &
       refract_index_m1
 !           Refractive index at 0C less 1.
@@ -61,7 +59,7 @@ FUNCTION rayleigh_scatter_h2he(lambda, wavelength_refract_index_H2,            &
     refract_index_H2, lambda, n_points)
   refract_index_He_lambda = 1.0_RealK + &
     0.01470091_RealK/(423.98_RealK-(lambda*1e+6_RealK)**(-2.0_RealK))
-!
+
 ! Calculate refractive index of mixture using the Lorentz-Lorentz equation
   temp = (A_H/2.0_RealK)/(A_H/2.0_RealK + A_He)* &
     (refract_index_H2_lambda**2.0_RealK - 1.0_RealK)/ &
@@ -71,7 +69,7 @@ FUNCTION rayleigh_scatter_h2he(lambda, wavelength_refract_index_H2,            &
     (refract_index_He_lambda**2.0_RealK + 2.0_RealK)
   refract_index_m1 = &
     sqrt((2.0_RealK*temp + 1.0_RealK)/(1_RealK - temp)) - 1.0_RealK
-! 
+
 ! Alternative, simplified way of calculating the refractive index
 !  refract_index_m1 = &
 !      refract_index_H2_lambda*(A_H/2.0_RealK)/(A_H/2.0_RealK + A_He) + &
@@ -80,7 +78,7 @@ FUNCTION rayleigh_scatter_h2he(lambda, wavelength_refract_index_H2,            &
 !     Use the standard expression for the Rayleigh scattering
 !     coefficient, but include an extra density factor to give it
 !     in units of mass.
-! 
+
   rayleigh_scatter_h2he &
      =(8.0_RealK*pi**3/3.0_RealK) &
      *(((refract_index_m1+2.0_RealK) &
@@ -88,9 +86,5 @@ FUNCTION rayleigh_scatter_h2he(lambda, wavelength_refract_index_H2,            &
      *((6.0_RealK+3.0_RealK*rho_n_h2he) &
      /(6.0_RealK-7.0_RealK*rho_n_h2he)) &
      *(mol_weight_h2he/rho_h2he_stp**2)
-!
-!
-!
-  RETURN
-  
-END
+
+END FUNCTION rayleigh_scatter_h2he
