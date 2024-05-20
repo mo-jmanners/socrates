@@ -47,7 +47,7 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
 !                   Tiling of the surface
     , l_tile, n_point_tile, n_tile, list_tile, rho_alb_tile &
 !                   Optical properties
-    , ss_prop &
+    , ss_prop, photol &
 !                   Cloudy properties
     , l_cloud, i_cloud &
 !                   Cloud geometry
@@ -92,6 +92,7 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
   USE def_out,      ONLY: StrOut
   USE def_planck,   ONLY: StrPlanck
   USE def_ss_prop,  ONLY: str_ss_prop
+  USE def_qy,       ONLY: StrQy
   USE def_spherical_geometry, ONLY: StrSphGeo
   USE rad_pcf, ONLY: ip_solar, ip_infra_red, ip_spherical_harmonic,     &
                      ip_two_stream, ip_surf_alb_diff, ip_ir_gauss,      &
@@ -322,6 +323,9 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
 !                   Optical properties
   TYPE(str_ss_prop), INTENT(INOUT) :: ss_prop
 !   Single scattering properties of the atmosphere
+
+  TYPE(StrQy), INTENT(IN) :: photol(spectrum%photol%n_pathway)
+!   Photolysis quantum yields interpolated to model grid temperatures
 
 !                   Cloudy properties
   LOGICAL, INTENT(IN) :: &
@@ -1273,7 +1277,7 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
       , i_direct_part, radiance_part, photolysis_part &
       , flux_direct_clear_part, flux_total_clear_part &
       , actinic_flux_clear_part, k_abs_layer &
-      , sph, contrib_funci_part, contrib_funcf_part &
+      , photol, sph, contrib_funci_part, contrib_funcf_part &
 !                   Dimensions
       , nd_profile, nd_flux_profile, nd_radiance_profile, nd_j_profile &
       , nd_layer, nd_viewing_level, nd_direction, dimen%nd_channel &

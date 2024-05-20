@@ -25,6 +25,7 @@ SOURCE_RADCORE=	adjust_ir_radiance.f90 \
 		copy_clr_full.f90 \
 		copy_clr_sol.f90 \
 		def_planck.f90 \
+		def_qy.f90 \
 		def_ss_prop.f90 \
 		def_spherical_geometry.f90 \
 		diff_albedo_basis.f90 \

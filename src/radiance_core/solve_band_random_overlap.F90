@@ -47,7 +47,7 @@ SUBROUTINE solve_band_random_overlap(ierr                               &
 !                 Tiling of the surface
     , l_tile, n_point_tile, n_tile, list_tile, rho_alb_tile             &
 !                 Optical Properties
-    , ss_prop                                                           &
+    , ss_prop, photol                                                   &
 !                 Cloudy Properties
     , l_cloud, i_cloud                                                  &
 !                 Cloud Geometry
@@ -93,6 +93,7 @@ SUBROUTINE solve_band_random_overlap(ierr                               &
   USE def_out,      ONLY: StrOut
   USE def_planck,   ONLY: StrPlanck
   USE def_ss_prop,  ONLY: str_ss_prop
+  USE def_qy,       ONLY: StrQy
   USE def_spherical_geometry, ONLY: StrSphGeo
   USE rad_pcf, ONLY: ip_solar, ip_infra_red, ip_two_stream, ip_ir_gauss,&
                      ip_overlap_exact_major, ip_spherical_harmonic,     &
@@ -320,6 +321,9 @@ SUBROUTINE solve_band_random_overlap(ierr                               &
 !                 Optical properties
   TYPE(STR_ss_prop), INTENT(INOUT) :: ss_prop
 !       Single scattering properties of the atmosphere
+
+  TYPE(StrQy), INTENT(IN) :: photol(spectrum%photol%n_pathway)
+!   Photolysis quantum yields interpolated to model grid temperatures
 
 !                 Cloudy properties
   LOGICAL, INTENT(IN) ::                                                &
@@ -801,7 +805,7 @@ SUBROUTINE solve_band_random_overlap(ierr                               &
         , flux_direct_clear_part(:,:,k_inner)                             &
         , flux_total_clear_part(:,:,k_inner)                              &
         , actinic_flux_clear_part(:,:,k_inner), k_abs_layer               &
-        , sph, contrib_funci_part(:,:,k_inner)                            &
+        , photol, sph, contrib_funci_part(:,:,k_inner)                    &
         , contrib_funcf_part(:,:,k_inner)                                 &
 !                   Dimensions
         , nd_profile, nd_flux_profile, nd_radiance_profile, nd_j_profile  &

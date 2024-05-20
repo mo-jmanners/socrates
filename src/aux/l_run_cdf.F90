@@ -117,6 +117,8 @@ PROGRAM l_run_cdf
 !       Flag for vertical coordinate on levels
   LOGICAL :: l_nlte = .FALSE.
 !       Flag for NLTE radiation scheme
+  LOGICAL :: l_photol_absorber = .FALSE.
+!       Flag to indicate if gas is required for photolysis
 
 ! Physical processes included
   CHARACTER  (LEN=10) :: process_flag
@@ -828,7 +830,16 @@ PROGRAM l_run_cdf
         npd_cdl_data, npd_cdl_var )
       IF (ierr /= i_normal) STOP
     ELSE
-      atm%gas_mix_ratio(:, :, i_gas) = 0.0_RealK
+      l_photol_absorber = .false.
+      DO i = 1, spectrum%photol%n_pathway
+        IF (spectrum%photol%pathway_absorber(i) == i_gas) &
+          l_photol_absorber = .true.
+      END DO
+      IF (l_photol_absorber) THEN
+        atm%gas_mix_ratio(:, :, i_gas) = 1.0E-12_RealK
+      ELSE
+        atm%gas_mix_ratio(:, :, i_gas) = 0.0_RealK
+      END IF
     ENDIF
 
 !   Water vapour may be required for other elsewhere (as in

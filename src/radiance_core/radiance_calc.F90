@@ -37,6 +37,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
   USE def_bound,    ONLY: StrBound
   USE def_out,      ONLY: StrOut, allocate_out
   USE def_ss_prop,  ONLY: str_ss_prop, allocate_ss_prop, deallocate_ss_prop
+  USE def_qy,       ONLY: StrQy, allocate_qy
   USE gas_list_pcf, ONLY: ip_h2o, ip_air, molar_weight
   USE rad_ccf,      ONLY: mol_weight_air
   USE errormessagelength_mod, ONLY: errormessagelength
@@ -80,7 +81,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
   USE solve_band_ses_mod, ONLY: solve_band_ses
   USE solve_band_without_gas_mod, ONLY: solve_band_without_gas
   USE sum_k_mod, ONLY: sum_k
-  
+
   IMPLICIT NONE
 
 
@@ -136,9 +137,13 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 !       Local index of absorber, including continuum
     , n_abs                                                                    &
 !       Total number of absorbers, including continua
-    , i_gas_overlap
+    , i_gas_overlap                                                            &
 !       Gas overlap method for band
-  
+    , i_path                                                                   &
+!       Photolysis pathway
+    , i_wl
+!       Wavelength subscript
+
 ! Dimensions:
   INTEGER                                                                      &
       nd_abs                                                                   &
@@ -276,7 +281,10 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 
   TYPE(StrSphGeo) :: sph
 !   Spherical geometry fields
-  
+
+  TYPE(StrQy), ALLOCATABLE :: photol(:)
+!   Photolysis quantum yields interpolated to model grid temperatures
+
   REAL (RealK) ::                                                              &
       k_esft_layer(dimen%nd_profile, dimen%nd_layer, spectrum%dim%nd_k_term,   &
                    spectrum%dim%nd_species)                                    &
@@ -354,7 +362,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 !       Initialise rather than increment channel diagnostics
     , l_initial_channel_tile(dimen%nd_channel)
 !       Initialise rather than increment channel diagnostics on tiles
-  
+
 
 ! Coefficients for the transfer of energy between
 ! Partially cloudy layers:
@@ -403,7 +411,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 !       Index for pressure interpolation of absorption coefficient
     , jph2oc(dimen%nd_profile, dimen%nd_layer)                                 &
 !       Same as JP but for water vapour pressure
-    , jt(dimen%nd_profile,dimen%nd_layer), jt1                                 &
+    , jt(dimen%nd_profile, dimen%nd_layer), jt1                                &
 !       Index for temperature interpolation of absorption coeff
     , jtt(dimen%nd_profile, dimen%nd_layer), jtt1                              &
 !       Index of reference temperature at level i+1
@@ -413,7 +421,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 !       such that the actual temperature is between JTO2C and JTO2C+1
     , jtswo3(dimen%nd_profile, dimen%nd_layer)                                 &
 !       Index of sw o3 reference temp
-    , jt_ct(dimen%nd_profile,dimen%nd_layer)                                   &
+    , jt_ct(dimen%nd_profile, dimen%nd_layer)                                  &
 !       Index for temperature interpolation of generalised continuum
     , jgf(dimen%nd_profile, dimen%nd_layer, spectrum%dim%nd_species_sb)        &
 !       Index of reference gas fraction such that the actual gas
@@ -439,12 +447,20 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
       facc01(dimen%nd_profile, dimen%nd_layer),                                &
 !       Multiplication factors for O2 continuum T interpolation
       wt_ct(dimen%nd_profile, dimen%nd_layer),                                 &
-!       Weight of jt_ct-term in generalised continuum interpolation
+!       Weight of jt_ct-term in generalised continuum T interpolation
       fgf(dimen%nd_profile, dimen%nd_layer, spectrum%dim%nd_species_sb)
 !       Multiplication factors for gas fraction interpolation
 
+! Temperature dependent quantum yield interpolation
+  INTEGER :: n_t_lookup
+!   Number of temperatures in look-up table
+  INTEGER, ALLOCATABLE :: jt_qy(:, :)
+!   Index for temperature interpolation of quantum yields
+  REAL (RealK), ALLOCATABLE :: wt_qy(:, :)
+!   Weight of jt_qy term in quantum yield temperature interpolation
+
   LOGICAL :: l_grey_cont
-!       Flag to add continuum in grey_opt_prop
+!   Flag to add continuum in grey_opt_prop
 
   INTEGER :: nd_esft_max
 !   Maximum number of ESFT terms needed in each band (for
@@ -691,7 +707,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
   END IF
 
 
-! Calculate temperature and pressure interpolation factor for ESFT
+! Calculate temperature and pressure interpolation factor for gas k-terms
   IF ( ANY(spectrum%gas%i_scale_fnc(                                           &
     control%first_band : control%last_band, 1) == ip_scale_ses2) ) THEN
     CALL inter_pt(dimen%nd_profile, dimen%nd_layer                             &
@@ -712,7 +728,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
       , fac00, fac01, fac10, fac11, jp, jt, jtt, fgf, jgf, jgfp1)
   END IF
 
-! Calculate temperature interpolation factor for continuum ESFT terms
+! Calculate temperature interpolation factor for continuum k-terms
   IF (ANY(spectrum%contgen%i_band_k_cont(                                      &
             control%first_band : control%last_band, :) > 0)) THEN
     CALL inter_t_lookup(dimen%nd_profile, dimen%nd_layer &
@@ -720,6 +736,34 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
         , spectrum%contgen%t_lookup_cont                                       &
         , wt_ct, jt_ct)
   END IF
+
+! Interpolate quantum yields to model temperatures
+  ALLOCATE(photol(spectrum%photol%n_pathway))
+  DO i_path=1, spectrum%photol%n_pathway
+    n_t_lookup = spectrum%photol%n_t_lookup_photol(i_path)
+    IF (n_t_lookup > 1) THEN
+      CALL allocate_qy(photol(i_path), atm%n_profile, atm%n_layer, &
+                       spectrum%photol%n_wl_lookup_photol(i_path))
+      ALLOCATE (jt_qy(atm%n_profile, atm%n_layer))
+      ALLOCATE (wt_qy(atm%n_profile, atm%n_layer))
+      CALL inter_t_lookup(atm%n_profile, atm%n_layer, &
+        n_t_lookup, atm%n_profile, atm%n_layer, atm%t, &
+        spectrum%photol%t_lookup_photol(1:n_t_lookup, i_path), &
+        wt_qy, jt_qy)
+      DO i_wl=1, spectrum%photol%n_wl_lookup_photol(i_path)
+        DO i=1, atm%n_layer
+          DO l=1, atm%n_profile
+            photol(i_path)%qy(l, i, i_wl) = wt_qy(l, i) &
+              * spectrum%photol%quantum_yield(jt_qy(l, i), i_wl, i_path) &
+              + (1.0_RealK - wt_qy(l, i)) &
+              * spectrum%photol%quantum_yield(jt_qy(l, i)+1, i_wl, i_path)
+          END DO
+        END DO
+      END DO
+      DEALLOCATE (wt_qy)
+      DEALLOCATE (jt_qy)
+    END IF
+  END DO
 
 ! Initialise solar_tail_flux if necessary
   IF (control%l_solar_tail_flux) radout%solar_tail_flux=0.0
@@ -1244,7 +1288,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
         IF (i_gas_overlap == ip_overlap_single) THEN
 !         Only the selected gas is active in the band.
           i_gas_band=control%i_gas
-        END IF      
+        END IF
         DO j_cont=1, n_cont
           i_cont_band=spectrum%contgen%index_cont(j_cont, i_band)
           IF (spectrum%contgen%i_cont_overlap_band(i_band, i_cont_band) ==     &
@@ -1286,7 +1330,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
         IF (i_gas_overlap == ip_overlap_single) THEN
 !         Only the selected gas is active in the band.
           i_gas_band=control%i_gas
-        END IF          
+        END IF
 
         index_abs(j)=j
         n_abs_esft(j)=spectrum%gas%i_band_k(i_band, i_gas_band)
@@ -1415,7 +1459,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 
 !   Get generalised continuum absorption data for this band.
     IF (l_cont_band) THEN
-!     Scale the continuum ESFT/k-terms 
+!     Scale the continuum ESFT/k-terms
       i_abs=n_gas
       DO j=1, n_cont
         i_cont_band=spectrum%contgen%index_cont(j, i_band)
@@ -1502,7 +1546,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
         , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile    &
         , bound%rho_alb_tile(1, 1, 1, i_band)                                  &
 !                 Optical Properties
-        , ss_prop                                                              &
+        , ss_prop, photol                                                      &
 !                 Cloudy properties
         , control%l_cloud, control%i_cloud                                     &
 !                 Cloudy geometry
@@ -1576,7 +1620,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile  &
           , bound%rho_alb_tile(1, 1, 1, i_band)                                &
 !                 Optical Properties
-          , ss_prop                                                            &
+          , ss_prop, photol                                                    &
 !                 Cloudy properties
           , control%l_cloud, control%i_cloud                                   &
 !                 Cloud geometry
@@ -1644,7 +1688,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile  &
           , bound%rho_alb_tile(1, 1, 1, i_band)                                &
 !                 Optical Properties
-          , ss_prop                                                            &
+          , ss_prop, photol                                                    &
 !                 Cloudy properties
           , control%l_cloud, control%i_cloud                                   &
 !                 Cloud geometry
@@ -1680,7 +1724,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , dimen%nd_viewing_level, dimen%nd_direction                         &
           , dimen%nd_source_coeff, dimen%nd_point_tile, dimen%nd_tile          &
           )
-          
+
       CASE (ip_overlap_random_resort_rebin)
 !       Set maximum number of ESFT terms needed
         nd_esft_max = MAX(control%n_esft_red, nd_k_term)
@@ -1719,7 +1763,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile  &
           , bound%rho_alb_tile(1, 1, 1, i_band)                                &
 !                 Optical Properties
-          , ss_prop                                                            &
+          , ss_prop, photol                                                    &
 !                 Cloudy properties
           , control%l_cloud, control%i_cloud                                   &
 !                 Cloud geometry
@@ -1787,7 +1831,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile  &
           , bound%rho_alb_tile(1, 1, 1, i_band)                                &
 !                 Optical Properties
-          , ss_prop                                                            &
+          , ss_prop, photol                                                    &
 !                 Cloudy properties
           , control%l_cloud, control%i_cloud                                   &
 !                 Cloud geometry
@@ -1866,7 +1910,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile  &
           , bound%rho_alb_tile(1, 1, 1, i_band)                                &
 !                 Optical Properties
-          , ss_prop                                                            &
+          , ss_prop, photol                                                    &
 !                 Cloudy properties
           , control%l_cloud, control%i_cloud                                   &
 !                 Cloud geometry
@@ -1944,7 +1988,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
           , control%l_tile, bound%n_point_tile, bound%n_tile, bound%list_tile  &
           , bound%rho_alb_tile(1, 1, 1, i_band)                                &
 !                 Optical Properties
-          , ss_prop                                                            &
+          , ss_prop, photol                                                    &
 !                 Cloudy properties
           , control%l_cloud, control%i_cloud                                   &
 !                 Cloud geometry
@@ -2188,7 +2232,8 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
   END DO ! i_band
 
   CALL deallocate_sph(sph)
-  
+  DEALLOCATE(photol)
+
   9999 CONTINUE
   IF (ierr /= i_normal) THEN
     CALL ereport(RoutineName, ierr, cmessage)
