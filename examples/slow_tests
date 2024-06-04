@@ -10,6 +10,12 @@ fi
 err=0
 
 echo ---
+echo "Checking calc_horizon_angles utility:"
+cd orog
+./run_me || err=1
+cd ../
+
+echo ---
 echo "Checking HITRAN Total Internal Partition Sums:"
 cd tips
 ./run_me || err=1

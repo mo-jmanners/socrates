@@ -186,3 +186,35 @@ ncplot, file
 \end{description}
 
 Input and output netCDF files can be modified using standard netCDF utilities, and viewed using, for example, {\tt ncview}.
+
+\section{Calculating horizon angles for LFRic}
+
+\begin{figure}[bht]
+\begin{center}
+\includegraphics[width=14cm]{interp_halo.pdf}
+\caption{\label{fig:interp_halo} Representation of adjacent cubed-sphere panels with poles at points A and B. Angles depicted are used to interpolate to point C in the halo of the right-hand panel.
+}
+\end{center}
+\end{figure}
+
+The utility {\tt calc\_horizon\_angles} can be used to calculate horizon angles in 16 directions for an LFRic orographic ancillary file. This works with UGRID data for both local-area and global cubed-sphere meshes.
+
+A supplied netCDF orography ancillary is read to provide unfiltered surface altitude (or filtered surface altitude data as a fallback). Also read from the file are the longitudes and latitudes of faces and nodes and face-node connectivity variables. The face-node connectivity is used to construct a simple 2D grid for local area models or six separate 2D grids for each panel of a cubed-sphere.
+
+For the case of a cubed-sphere, the 2D grids for each panel are extended into a halo using interpolated data from surrounding panels. The points in the halo follow a grid that continues the great circles of the 2D grid for the given panel. The halo points therefore fall between the grid points of the adjacent panel. Figure \ref{fig:interp_halo} demonstrates the spherical geometry for interpolation to an example point $C$ in the halo for the right hand panel centred on $A$.
+
+It should be noted that the grid lines for the cubed sphere all follow great circles. For the two panels displayed in figure \ref{fig:interp_halo}, the vertical grid lines are all equally spaced great circles converging on poles in the panels above and below (that are not shown). The horizontal grid lines of the right-hand panel converge to a pole ($B$) at the centre of the left hand panel, while the grid lines of the left-hand panel converge to a pole ($A$) at the centre of the right-hand panel.
+
+The angle $i$ is 1.5 regularly-spaced grid points from $A$ and easily determined from the global model resolution (which determines the total number of grid-points around the great circle). The angle $i'$ represents the number of grid-points of the left-hand panel that $C$ will be from the centre line. Spherical trigonometry shows that:
+\begin{equation}
+\tan{i'} = \tan{i} / \tan{j}
+\end{equation}
+The angle $i'$ is converted back to model grid points again using the fact that the grid is spaced evenly around a great circle from the point $B$. This provides weighting factors to interpolate the surface altitude at point $C$ from the two adjacent grid points in this line of the halo. The latitude and longitude at point $C$ should ideally be calculated by following a great circle between the latitude and longitude of the two adjacent grid points, but given the angles are small in this case (just the grid resolution) it is sufficient to simply interpolate them here.
+
+The horizon angles and aspects are then calculated for 16 directions aligned with the 2D grid as described in Manners et. al. (2012) Radiative transfer over resolved topographic features for high-resolution weather prediction, DOI:10.1002/qj.956. For a cubed-sphere the directions perpendicular to the grid are exact great circles as required when considering shadows from incoming solar irradiance. The diagonals will introduce some minor curvature but this is less severe than for a latitude-longitude grid at high latitudes and the error introduced in the direction of shadows is not significant. 
+
+Horizon angles and aspects on the 2D grid (for each panel in the case of the cubed-sphere) are mapped back to the original mesh and written to the orography ancillary file.
+
+Man page follows formatted using {\tt man -t}.
+
+\includepdf[pages=-]{calc_horizon_angles.pdf}
