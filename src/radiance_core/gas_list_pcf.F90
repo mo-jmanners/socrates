@@ -413,6 +413,7 @@ REAL (RealK), PARAMETER :: depolarization_factor(npd_gases) = (/ &
 
 ! Maximum number of photolysis products for a given absorber
 INTEGER, PARAMETER :: npd_products = 9
+INTEGER, PARAMETER :: npd_pathway = npd_gases * (npd_products + 1)
 
 CHARACTER(LEN=56), PARAMETER :: blank = ""
 ! Description of photolysis products

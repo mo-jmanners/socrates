@@ -32,7 +32,11 @@ use rad_pcf, only: &
   ip_scatter_full, &
   ip_scatter_none                           => ip_no_scatter_abs, &
   ip_scatter_approx, &
-  ip_scatter_hybrid
+  ip_scatter_hybrid, &
+  ip_gas_overlap_hybrid                     => ip_overlap_hybrid, &
+  ip_gas_overlap_random                     => ip_overlap_random, &
+  ip_gas_overlap_exact_major                => ip_overlap_exact_major, &
+  ip_gas_overlap_k_eqv                      => ip_overlap_k_eqv_scl
 
 use socrates_def_diag, only: StrDiag
 
@@ -121,7 +125,8 @@ subroutine runes(n_profile, n_layer, diag, &
   cloud_horizontal_rsd, &
   liq_dim_aparam, liq_dim_bparam, &
   layer_heat_capacity, layer_heat_capacity_1d, &
-  i_source, i_scatter_method, i_cloud_representation, i_overlap, i_inhom, &
+  i_source, i_scatter_method, i_gas_overlap, &
+  i_cloud_representation, i_overlap, i_inhom, &
   i_cloud_entrapment, i_mcica_sampling, &
   i_st_water, i_cnv_water, i_st_ice, i_cnv_ice, i_drop_re, &
   rand_seed, &
@@ -583,6 +588,8 @@ integer, intent(in), optional :: i_source
 !   Select source of radiation
 integer, intent(in), optional :: i_scatter_method
 !   Select scattering parametrisation
+integer, intent(in), optional :: i_gas_overlap
+!   Select treatment of overlapping gas absorption
 integer, intent(in), optional :: &
   i_cloud_representation, i_overlap, i_inhom, i_cloud_entrapment, &
   i_mcica_sampling, i_st_water, i_st_ice, i_cnv_water, i_cnv_ice, i_drop_re
@@ -703,6 +710,12 @@ type(StrAer) :: aer
 ! Output fields from core radiation code:
 type(StrOut) :: radout
 
+! Controlling options for diagnostic calls:
+type (StrCtrl) :: control_clean
+
+! Output fields from diagnostic calls:
+type(StrOut) :: radout_clean
+
 integer :: id_spec, id_mcica
 !   Loop variables
 
@@ -777,6 +790,7 @@ call set_control(control, diag, spec, &
   n_cloud_layer          = n_cloud_layer, &
   n_aer_mode             = n_aer_mode, &
   i_scatter_method       = i_scatter_method, &
+  i_gas_overlap          = i_gas_overlap, &
   i_cloud_representation = i_cloud_representation, &
   i_overlap              = i_overlap, &
   i_inhom                = i_inhom, &
@@ -796,7 +810,7 @@ call set_dimen(dimen, control, n_profile, n_layer, &
   n_aer_mode    = n_aer_mode, &
   n_subcol_gen  = n_subcol_gen )
 
-call set_atm(atm, dimen, spec, n_profile, n_layer, &
+call set_atm(atm, control, dimen, spec, n_profile, n_layer, &
   profile_list, n_layer_stride, n_level_stride, &
   p_layer, t_layer, mass, density, p_level, t_level, r_layer, r_level, &
   p_layer_1d, t_layer_1d, mass_1d, density_1d, p_level_1d, t_level_1d, &
@@ -991,6 +1005,34 @@ call set_aer(aer, control, dimen, spec, &
   l_invert, l_profile_last)
 
 ! DEPENDS ON: radiance_calc
+if (control%l_clean .or. control%l_clear_clean) then
+  ! Calculate radiative transfer for clean-air diagnostics
+  control_clean = control
+  control_clean%l_aerosol = .false.
+  control_clean%l_aerosol_mode = .false.
+  control_clean%l_clear = control%l_clear_clean
+
+  control_clean%l_flux_direct_band = associated(diag%flux_direct_clean_band)
+  control_clean%l_flux_down_band = associated(diag%flux_down_clean_band)
+  control_clean%l_flux_up_band = associated(diag%flux_up_clean_band)
+  control_clean%l_flux_direct_clear_band = associated( &
+             diag%flux_direct_clear_clean_band)
+  control_clean%l_flux_down_clear_band = associated( &
+             diag%flux_down_clear_clean_band)
+  control_clean%l_flux_up_clear_band = associated( &
+             diag%flux_up_clear_clean_band)
+  control_clean%l_photolysis_rate = control%l_photolysis_rate_clean
+  control_clean%l_photolysis_rate_clear = control%l_photolysis_rate_clear_clean
+
+  control_clean%l_aerosol_absorption_band = .false.
+  control_clean%l_aerosol_scattering_band = .false.
+  control_clean%l_aerosol_asymmetry_band  = .false.
+  control_clean%l_cloud_extinction        = .false.
+  control_clean%l_cloud_absorptivity      = .false.
+  call radiance_calc(control_clean, dimen, spec, atm, cld, aer, bound, &
+                     radout_clean)
+end if
+
 if (associated(diag%heating_rate) .or. &
     associated(diag%flux_direct) .or. &
     associated(diag%flux_down) .or. &
@@ -1009,11 +1051,12 @@ if (associated(diag%heating_rate) .or. &
     control%l_aerosol_asymmetry_band .or. &
     control%l_cloud_absorptivity .or. &
     control%l_cloud_extinction) then
+  ! Calculate radiative transfer
   call radiance_calc(control, dimen, spec, atm, cld, aer, bound, radout)
 end if
 
 call set_diag(diag, &
-  control, dimen, spec, atm, cld, mcica, aer, bound, radout, &
+  control, dimen, spec, atm, cld, mcica, aer, bound, radout, radout_clean, &
   n_profile, n_layer, &
   profile_list           = profile_list, &
   n_layer_stride         = n_layer_stride, &

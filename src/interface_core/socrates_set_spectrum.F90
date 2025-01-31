@@ -13,7 +13,7 @@ use def_mcica, only: StrMcica
 implicit none
 private
 public :: set_spectrum, compress_spectrum, set_weight_blue, get_spectrum, &
-          spectrum_array_name, spectrum_array, &
+          get_spectral_band, spectrum_array_name, spectrum_array, &
           set_mcica, mcica_spectrum_name, mcica_data_array
 
 integer, parameter :: specnamelength = 64
@@ -71,8 +71,9 @@ real(RealExt), intent(in), optional :: wavelength_blue
 
 ! Local variables
 type(StrSpecData), pointer :: spec
+real(RealK), allocatable :: weight_blue(:)
 integer, parameter :: nd_instances = 2
-integer :: id_spec
+integer :: i, id_spec
 integer :: ierr = i_normal
 character(len=errormessagelength) :: cmessage
 character(len=*), parameter :: RoutineName='SET_SPECTRUM'
@@ -122,7 +123,12 @@ else if (present(spectrum_name).or.present(spectrum)) then
   ! DEPENDS ON: read_spectrum
   call read_spectrum(spectral_file, spec)
   if (spec%solar%weight_blue(1) == rmdi) then
-    call set_weight_blue(spec, wavelength_blue)
+    allocate(weight_blue(spec%basic%n_band))
+    call set_weight_blue(spec, weight_blue, wavelength_blue)
+    do i=1, spec%basic%n_band
+      spec%solar%weight_blue(i) = weight_blue(i)
+    end do
+    deallocate(weight_blue)
   end if
   ! Remove gases that are not required
   call compress_spectrum(spec, &
@@ -315,13 +321,14 @@ contains
 end subroutine compress_spectrum
 
 
-subroutine set_weight_blue(spec, wavelength_blue)
+subroutine set_weight_blue(spec, weight_blue, wavelength_blue)
 
 use realtype_rd, only: RealK, RealExt
 
 implicit none
 
-type(StrSpecData), intent(inout) :: spec
+type(StrSpecData), intent(in) :: spec
+real(RealK), intent(inout) :: weight_blue(:)
 real(RealExt), intent(in), optional :: wavelength_blue
 
 integer :: i, j, i_exclude
@@ -335,9 +342,9 @@ end if
 
 do i=1, spec%basic%n_band
   if (spec%basic%wavelength_long(i) < wl_blue) then
-    spec%solar%weight_blue(i) = 1.0_RealK
+    weight_blue(i) = 1.0_RealK
   else if (spec%basic%wavelength_short(i) > wl_blue) then
-    spec%solar%weight_blue(i) = 0.0_RealK
+    weight_blue(i) = 0.0_RealK
   else
     blue_energy_range  = 1.0_RealK / spec%basic%wavelength_short(i) &
                        - 1.0_RealK / wl_blue
@@ -361,7 +368,7 @@ do i=1, spec%basic%n_band
           + 1.0_RealK / spec%basic%wavelength_long(i_exclude)
       end do
     end if
-    spec%solar%weight_blue(i) = blue_energy_range / total_energy_range
+    weight_blue(i) = blue_energy_range / total_energy_range
   end if
 end do
 
@@ -369,29 +376,34 @@ end subroutine set_weight_blue
 
 
 subroutine get_spectrum(spectrum_name, spectrum, &
-  n_band, n_band_exclude, index_exclude, &
+  n_band, n_pathway, n_band_exclude, index_exclude, &
+  photol_absorber, photol_products, photol_fieldname, &
   wavelength_short, wavelength_long, weight_blue)
 
 use realtype_rd, only: RealK, RealExt
 use errormessagelength_mod, only: errormessagelength
 use ereport_mod, only: ereport
 use rad_pcf, only: i_normal, i_err_fatal
+use gas_list_pcf, only: photol_fldname
 
 implicit none
 
 character(len=*), intent(in) :: spectrum_name
 type (StrSpecData), intent(out), optional :: spectrum
 
-integer, optional, intent(out) :: n_band
+integer, optional, intent(out) :: n_band, n_pathway
 integer, allocatable, optional, intent(out) :: n_band_exclude(:)
 integer, allocatable, optional, intent(out) :: index_exclude(:, :)
+integer, allocatable, optional, intent(out) :: photol_absorber(:)
+integer, allocatable, optional, intent(out) :: photol_products(:)
+character(len=56), allocatable, optional, intent(out) :: photol_fieldname(:)
 real(RealExt), allocatable, optional, intent(out) :: wavelength_short(:)
 real(RealExt), allocatable, optional, intent(out) :: wavelength_long(:)
 real(RealExt), allocatable, optional, intent(out) :: weight_blue(:)
 
 ! Local variables
 type(StrSpecData), pointer :: spec
-integer :: id_spec
+integer :: id_spec, k
 integer :: ierr = i_normal
 character(len=errormessagelength) :: cmessage
 character(len=*), parameter :: RoutineName='GET_SPECTRUM'
@@ -410,6 +422,8 @@ spec => spectrum_array(id_spec)
 
 if (present(spectrum)) spectrum = spec
 if (present(n_band)) n_band = spec%basic%n_band
+if (present(n_pathway)) n_pathway = spec%photol%n_pathway
+
 if (present(n_band_exclude)) then
   if (allocated(n_band_exclude)) deallocate(n_band_exclude)
   allocate(n_band_exclude(spec%dim%nd_band))
@@ -420,6 +434,30 @@ if (present(index_exclude)) then
   allocate(index_exclude(spec%dim%nd_exclude, spec%dim%nd_band))
   index_exclude = spec%basic%index_exclude
 end if
+
+if (present(photol_absorber)) then
+  if (allocated(photol_absorber)) deallocate(photol_absorber)
+  allocate(photol_absorber(spec%photol%n_pathway))
+  do k=1, spec%photol%n_pathway
+    photol_absorber(k) = spec%gas%type_absorb(spec%photol%pathway_absorber(k))
+  end do
+end if
+if (present(photol_products)) then
+  if (allocated(photol_products)) deallocate(photol_products)
+  allocate(photol_products(spec%photol%n_pathway))
+  do k=1, spec%photol%n_pathway
+    photol_products(k) = spec%photol%pathway_products(k)
+  end do
+end if
+if (present(photol_fieldname)) then
+  if (allocated(photol_fieldname)) deallocate(photol_fieldname)
+  allocate(photol_fieldname(spec%photol%n_pathway))
+  do k=1, spec%photol%n_pathway
+    photol_fieldname(k) = photol_fldname( spec%photol%pathway_products(k), &
+      spec%gas%type_absorb(spec%photol%pathway_absorber(k)) )
+  end do
+end if
+
 if (present(wavelength_short)) then
   if (allocated(wavelength_short)) deallocate(wavelength_short)
   allocate(wavelength_short(spec%dim%nd_band))
@@ -437,6 +475,77 @@ if (present(weight_blue)) then
 end if
 
 end subroutine get_spectrum
+
+
+function get_spectral_band(wavelength, spectrum_name, spectrum) result(band)
+
+use realtype_rd, only: RealExt
+use errormessagelength_mod, only: errormessagelength
+use ereport_mod, only: ereport
+use rad_pcf, only: i_normal, i_err_fatal, i_warning
+
+implicit none
+
+! Output spectral band
+integer :: band
+
+! Provide wavelength in metres
+real(RealExt), intent(in) :: wavelength
+
+character(len=*), intent(in), optional :: spectrum_name
+type(StrSpecData), intent(in), target, optional :: spectrum
+
+! Local variables
+type(StrSpecData), pointer :: spec
+integer :: id_spec, i_band, i_band_exclude, index_exclude
+integer :: ierr = i_normal
+character(len=errormessagelength) :: cmessage
+character(len=*), parameter :: RoutineName='GET_SPECTRAL_BAND'
+
+nullify(spec)
+
+if (present(spectrum_name)) then
+  do id_spec=1, size(spectrum_array)
+    if (spectrum_array_name(id_spec) == spectrum_name) exit
+    if (id_spec == size(spectrum_array)) then
+      cmessage = ' Spectrum name not found.'
+      ierr=i_err_fatal
+      call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+    end if
+  end do
+  spec => spectrum_array(id_spec)
+else if (present(spectrum)) then
+  spec => spectrum
+else
+  cmessage = ' Spectrum not provided.'
+  ierr=i_err_fatal
+  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+end if
+
+band = 0
+outer : do i_band=1, spec%basic%n_band
+  if ( spec%basic%wavelength_short(i_band) > wavelength ) cycle outer
+  if ( spec%basic%wavelength_long(i_band) <= wavelength ) cycle outer
+  inner : do i_band_exclude = 1, spec%basic%n_band_exclude(i_band)
+    index_exclude = spec%basic%index_exclude(i_band_exclude, i_band)
+    if ( spec%basic%wavelength_short(index_exclude) <= wavelength .and. &
+         spec%basic%wavelength_long(index_exclude) > wavelength ) cycle outer
+  end do inner
+  if (band > 0) then
+    cmessage = ' Wavelength found in more than one band: using last'
+    ierr=i_warning
+    call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+  end if
+  band = i_band
+end do outer
+
+if (band == 0) then
+  cmessage = ' Wavelength outside spectral file range.'
+  ierr=i_err_fatal
+  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+end if
+
+end function get_spectral_band
 
 
 subroutine set_mcica(mcica_data_file, sw_spectrum_name, lw_spectrum_name)
