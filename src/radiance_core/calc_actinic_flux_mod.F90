@@ -67,6 +67,8 @@ SUBROUTINE calc_actinic_flux(control, sph_comp, sph_common, &
 !   Tolerance for weak absorption
   REAL(RealK), PARAMETER :: tol_ke = 0.1_RealK
 !   Tolerance for change in absorption from equivalent extinction
+  REAL(RealK), PARAMETER :: tiny_real = TINY(1.0_RealK)
+!   Minimum value to prevent LOG(0)
   REAL(RealK) :: adjust_tau
 !   Adjustment to tau with equivalent extinction
 
@@ -77,12 +79,8 @@ SUBROUTINE calc_actinic_flux(control, sph_comp, sph_common, &
     IF (l_scale_solar) THEN
       DO i=1, n_layer
         DO l=1, n_profile
-          IF (adjust_solar_ke(l, i) > 0.0_RealK) THEN
-            adjust_tau = LOG(adjust_solar_ke(l, i)) / sph_common%path_div(l, i)
-          ELSE
-            ! Arbitrarily set adjust_tau to prevent use below
-            adjust_tau = tau_abs(l, i)
-          END IF
+          adjust_tau = LOG(MAX(adjust_solar_ke(l, i), tiny_real)) &
+                     / sph_common%path_div(l, i)
           IF (tau_abs(l, i) - adjust_tau > tol) THEN
             IF (ABS(adjust_tau)/tau_abs(l, i) < tol_ke) THEN
               ! Here the adjustment to the total absorption from equivalent
@@ -130,12 +128,7 @@ SUBROUTINE calc_actinic_flux(control, sph_comp, sph_common, &
     IF (l_scale_solar) THEN
       DO i=1, n_layer
         DO l=1, n_profile
-          IF (adjust_solar_ke(l, i) > 0.0_RealK) THEN
-            adjust_tau = LOG(adjust_solar_ke(l, i))/sec_0(l)
-          ELSE
-            ! Arbitrarily set adjust_tau to prevent use below
-            adjust_tau = tau_abs(l, i)
-          END IF
+          adjust_tau = LOG(MAX(adjust_solar_ke(l, i), tiny_real)) / sec_0(l)
           IF (tau_abs(l, i) - adjust_tau > tol) THEN
             IF (ABS(adjust_tau)/tau_abs(l, i) < tol_ke) THEN
               actinic_flux(l, i) = &
