@@ -43,7 +43,8 @@ SUBROUTINE corr_k_single &
   USE ck_fit_pcf
   USE hitran_cnst, ONLY: atomic_mass_unit, molar_gas_constant
   USE gas_list_pcf
-  USE caviar_continuum_v1_0
+  USE weighting_pcf, ONLY: ip_weight_planck, ip_weight_d_planck
+  USE h2o_continuum, ONLY: self_continuum, foreign_continuum, sat_vap_press
   USE line_prof_corr_mod, ONLY: line_prof_corr, set_line_prof_corr_cnst
   USE errormessagelength_mod, ONLY: errormessagelength
   USE ereport_mod, ONLY: ereport
@@ -442,6 +443,9 @@ SUBROUTINE corr_k_single &
   REAL  (RealK) :: grid_offset
 !   Offset of externally supplied wavenumber grid
 
+  REAL :: start_band, finish_band, timer1, timer2
+!   Timers
+  
   LOGICAL :: l_debug = .FALSE.
 !  LOGICAL :: l_debug = .TRUE.
   LOGICAL :: l_output_reference_weight = .FALSE.
@@ -621,10 +625,8 @@ SUBROUTINE corr_k_single &
 !
 !
   END INTERFACE
-!
-!- End of header
-!
-!
+
+
 ! Check that either a lbl file has been provided or the code has access to
 ! HITRAN
   IF (l_fit_line_data.OR.l_fit_frn_continuum.OR.l_fit_self_continuum.OR. &
@@ -794,7 +796,7 @@ SUBROUTINE corr_k_single &
         band_max(ib) = band_max(ib) + grid_offset - nu_inc/2.0_RealK
       END IF
 
-      WRITE(*,'(a,i3,a,2f16.3,a)') 'Band ', ib, ' limits adjusted to:', &
+      WRITE(*,'(a,i4,a,2f16.3,a)') 'Band ', ib, ' limits adjusted to:', &
         band_min(ib), band_max(ib), ' m-1'
     END IF
   END DO
@@ -848,6 +850,7 @@ SUBROUTINE corr_k_single &
     WRITE(*,'(a, i5)') "Processing band ", ib
     WRITE(iu_monitor,"(a)") "==============================="
     WRITE(iu_monitor,'(a, i5)') "Fitting in band: ", ib
+    CALL cpu_time(start_band)
 
 !   Set the wavenumbers of the weighting points in the band (in nu_wgt).
     CALL set_wgt_int
@@ -881,7 +884,10 @@ SUBROUTINE corr_k_single &
 !
       l_transparent_fit=.FALSE.
       IF (l_lbl_exist) THEN
+        CALL cpu_time(timer1)
         CALL input_lbl_band_cdf ! Read lbl file for current band
+        CALL cpu_time(timer2)
+        WRITE(iu_monitor,*) 'CPU time reading LBL file: ',timer2-timer1
         IF (l_self_broadening) THEN
           l_transparent_fit=SUM(kabs_all_sb) < EPSILON(kabs_all_sb)
         ELSE
@@ -922,15 +928,28 @@ SUBROUTINE corr_k_single &
           cmessage='Error in fit_transparent_int'
           CALL ereport(RoutineName, ierr, cmessage)
         END IF
-!
+
+        IF ( (l_fit_self_continuum .OR. l_fit_frn_continuum) .AND. &
+             (i_weight /= ip_weight_planck) .AND. &
+             (i_weight /= ip_weight_d_planck) ) THEN
+          CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(1), wgt)
+          CALL apply_response_int
+          IF (ierr /= i_normal) THEN
+            cmessage='Error in apply_response_int'
+            CALL ereport(RoutineName, ierr, cmessage)
+          END IF
+        END IF
 !       Continuum absorption must be fitted anyway.
         IF (l_fit_self_continuum) THEN
           DO ipt=1, n_pt_pair
-            CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(ipt), wgt)
-            CALL apply_response_int
-            IF (ierr /= i_normal) THEN
-              cmessage='Error in apply_response_int'
-              CALL ereport(RoutineName, ierr, cmessage)
+            IF ( (i_weight == ip_weight_planck) .OR. &
+                 (i_weight == ip_weight_d_planck) ) THEN
+              CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(ipt), wgt)
+              CALL apply_response_int
+              IF (ierr /= i_normal) THEN
+                cmessage='Error in apply_response_int'
+                CALL ereport(RoutineName, ierr, cmessage)
+              END IF
             END IF
             CALL calc_self_trans_int
             IF (ierr /= i_normal) THEN
@@ -941,11 +960,14 @@ SUBROUTINE corr_k_single &
         ENDIF
         IF (l_fit_frn_continuum) THEN
           DO ipt=1, n_pt_pair
-            CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(ipt), wgt)
-            CALL apply_response_int
-            IF (ierr /= i_normal) THEN
-              cmessage='Error in apply_response_int'
-              CALL ereport(RoutineName, ierr, cmessage)
+            IF ( (i_weight == ip_weight_planck) .OR. &
+                 (i_weight == ip_weight_d_planck) ) THEN
+              CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(ipt), wgt)
+              CALL apply_response_int
+              IF (ierr /= i_normal) THEN
+                cmessage='Error in apply_response_int'
+                CALL ereport(RoutineName, ierr, cmessage)
+              END IF
             END IF
             CALL calc_frn_trans_int
             IF (ierr /= i_normal) THEN
@@ -982,6 +1004,7 @@ SUBROUTINE corr_k_single &
 
 !             Adjust the line parameters of each line for the particular
 !             ambient conditions.
+!$OMP PARALLEL DO PRIVATE(i) NUM_THREADS(n_omp_threads)
               DO i = 1, num_lines_in_band
                 CALL adjust_path ( &
                   hitran_data(i) % mol_num, &
@@ -1001,12 +1024,14 @@ SUBROUTINE corr_k_single &
                   adj_line_parm(i) % alpha_lorentz_self, &
                   adj_line_parm(i) % alpha_doppler)
               ENDDO
+!$OMP END PARALLEL DO
 !
 !             If using the CKD continuum we now calculate the absorption
 !             of each line at its cutoff: the check on i_gas is used for
 !             safety.
               IF ( l_ckd_cutoff .AND. (i_gas == IP_H2O) ) THEN
                 ALLOCATE(k_cutoff(num_lines_in_band))
+!$OMP PARALLEL DO PRIVATE(i) NUM_THREADS(n_omp_threads)
                 DO i = 1, num_lines_in_band
                   CALL voigt_profile ( &
                     adj_line_parm(i) % line_centre+line_cutoff,  &
@@ -1016,6 +1041,7 @@ SUBROUTINE corr_k_single &
                     adj_line_parm(i) % alpha_doppler, &
                     k_cutoff(i))
                 ENDDO
+!$OMP END PARALLEL DO
               ENDIF
 
 !             Set line profile correction parameters for current condition
@@ -1076,21 +1102,37 @@ SUBROUTINE corr_k_single &
         ELSE IF (l_calc_cont .AND. l_use_h2o_frn_param) THEN
 
 !         Loop over temperatures
+!$OMP PARALLEL DO PRIVATE(ipt, kabs) NUM_THREADS(n_omp_threads)
           DO ipt=1, n_pt_pair
             CALL foreign_continuum(t_calc(ipt), 0.0_RealK, 0.0_RealK, &
               n_nu, nu_wgt, .TRUE., kabs)
             kabs_all(:,ipt)=kabs
           END DO
+!$OMP END PARALLEL DO
 
         ELSE IF (l_calc_cont .AND. l_use_h2o_self_param) THEN
 
 !         Loop over temperatures
+!$OMP PARALLEL DO PRIVATE(ipt, kabs) NUM_THREADS(n_omp_threads)
           DO ipt=1, n_pt_pair
             CALL self_continuum(t_calc(ipt), 0.0_RealK, 0.0_RealK, &
               n_nu, nu_wgt, .TRUE., kabs)
             kabs_all(:,ipt)=kabs
           END DO
+!$OMP END PARALLEL DO
 
+        END IF
+
+        IF (l_fit_self_continuum .OR. l_fit_frn_continuum .OR. &
+            (i_ck_fit /= ip_ck_none)) THEN
+          IF ( i_weight /= ip_weight_planck .AND. &
+               i_weight /= ip_weight_d_planck ) THEN
+            ! The weighting does not depend on temperature and can be
+            ! calculated once for each wavenumber point in the band.
+            CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(1), wgt)
+            CALL apply_response_int
+            wgt_sv=wgt
+          END IF
         END IF
 
         IF (i_ck_fit /= ip_ck_none) THEN
@@ -1270,31 +1312,35 @@ SUBROUTINE corr_k_single &
 
           DEALLOCATE(kabs_rank1)
 
-!         Set the weights to use the fraction of the Plankian at the
-!         reference temperature where optical depth = 1
-!         (inefficiently coded, especially if weighting is solar)
-          ALLOCATE(wgt_sum(n_p))
-          DO ipt=1,n_p
-            CALL rad_weight_90(i_weight, nu_wgt(:), &
-                              SolarSpec, t_calc(index_pt_ref(ipt)), wgt)
-            wgt_sum(ipt)=SUM(wgt)
-          END DO
+          IF ( (i_weight == ip_weight_planck) .OR. &
+               (i_weight == ip_weight_d_planck) ) THEN
+            ! Set the weights to use the fraction of the Plankian
+            ! at the reference temperature where optical depth = 1
+            ! (inefficiently coded)
+            ALLOCATE(wgt_sum(n_p))
+            DO ipt=1,n_p
+              CALL rad_weight_90(i_weight, nu_wgt(:), &
+                                SolarSpec, t_calc(index_pt_ref(ipt)), wgt)
+              wgt_sum(ipt)=SUM(wgt)
+            END DO
+            DO i=1,n_nu
+              IF (kabs_rank2(i) < TINY(kabs_rank2(i))) THEN
+                ipoint = n_p
+              ELSE
+                ipoint=MINLOC( ABS( &
+                  ln_p_calc(index_pt_ref) - LOG(kabs_rank2(i)) ), 1 )
+              END IF
+              CALL rad_weight_90(i_weight, nu_wgt(i:i), SolarSpec, &
+                t_calc(index_pt_ref(ipoint)), wgt(i:i))
+              wgt(i) = wgt(i)/wgt_sum(ipoint)
+            END DO
+            DEALLOCATE(wgt_sum)
+            CALL apply_response_int
+          ELSE
+            wgt=wgt_sv
+          END IF
 
-          DO i=1,n_nu
-            IF (kabs_rank2(i) < TINY(kabs_rank2(i))) THEN
-              ipoint = n_p
-            ELSE
-              ipoint=MINLOC( ABS( &
-                ln_p_calc(index_pt_ref) - LOG(kabs_rank2(i)) ), 1 )
-            END IF
-            CALL rad_weight_90(i_weight, nu_wgt(i:i), SolarSpec, &
-              t_calc(index_pt_ref(ipoint)), wgt(i:i))
-            wgt(i) = wgt(i)/wgt_sum(ipoint)
-          END DO
-          DEALLOCATE(wgt_sum)
           DEALLOCATE(kabs_rank2)
-
-          CALL apply_response_int
 
 !         Save the unsorted weights to calculate the sub-band weights
           ALLOCATE(wgt_unsorted(n_nu))
@@ -1391,10 +1437,16 @@ SUBROUTINE corr_k_single &
 
         IF (l_fit_self_continuum .OR. l_fit_frn_continuum .OR. &
             (i_ck_fit /= ip_ck_none)) THEN
+
           DO ipt=1, n_pt_pair
 !           Calculate the weighting function across the band.
-            CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(ipt), wgt)
-            CALL apply_response_int
+            IF ( i_weight == ip_weight_planck .OR. &
+                 i_weight == ip_weight_d_planck ) THEN
+              CALL rad_weight_90(i_weight, nu_wgt, SolarSpec, t_calc(ipt), wgt)
+              CALL apply_response_int
+            ELSE
+              wgt=wgt_sv
+            END IF
           
             IF (l_fit_cont_data .AND. l_cont_line_abs_weight) &
               kabs_lines=kabs_all_lines(1:n_nu,ipt)
@@ -1485,7 +1537,7 @@ SUBROUTINE corr_k_single &
     ENDIF
 !
     DEALLOCATE(wgt)
-    IF (l_self_broadening) DEALLOCATE(wgt_sv)
+    DEALLOCATE(wgt_sv)
     DEALLOCATE(kabs)
     DEALLOCATE(map)
     DEALLOCATE(gmap)
@@ -1609,6 +1661,8 @@ SUBROUTINE corr_k_single &
         l_fit_self_continuum .OR. l_fit_frn_continuum) THEN
       CLOSE(iu_k_out)
     END IF
+    CALL cpu_time(finish_band)
+    WRITE(iu_monitor,*) 'CPU time for band: ', finish_band-start_band
     CLOSE(iu_monitor)
 !
     IF (l_access_HITRAN .AND. .NOT.l_lbl_exist) THEN
@@ -1942,7 +1996,7 @@ CONTAINS
     IF (l_self_broadening) ALLOCATE(kabs_all_sb(n_nu,n_pt_pair,n_gas_frac))
     ALLOCATE(wgt_ref(n_nu))
     ALLOCATE(wgt(n_nu))
-    IF (l_self_broadening) ALLOCATE(wgt_sv(n_nu))
+    ALLOCATE(wgt_sv(n_nu))
     ALLOCATE(kabs(n_nu))
     ALLOCATE(map(n_nu))
     ALLOCATE(gmap(n_nu))
@@ -2498,6 +2552,10 @@ CONTAINS
     e_sat = sat_vap_press(t_calc(ipt), p_calc(ipt))
     ALLOCATE(k_self(n_nu))
     ALLOCATE(ktot(n_nu))
+
+!$OMP PARALLEL DO                                              &
+!$OMP PRIVATE(i_pp, pp, k_self, ktot, trans_c, il, ih, ju, jv) &
+!$OMP NUM_THREADS(n_omp_threads)
     DO i_pp = 1, n_pp
 !
       pp = e_sat * REAL(i_pp, RealK) / REAL(n_pp, RealK) 
@@ -2537,13 +2595,14 @@ CONTAINS
           trans_fit_c(jv, ipt) = 1.0_RealK
         ENDIF
       ENDDO
-!     
-!
+
     ENDDO
+!$OMP END PARALLEL DO
+
     DEALLOCATE(trans_line)
     DEALLOCATE(k_self)
     DEALLOCATE(ktot)
-!
+
     IF (ipt == ipt_ref) THEN
       CALL exponent_fit_90(n_path_c * n_pp, u_fit_c(:, ipt), &
                         trans_fit_c(:, ipt), &
@@ -2632,6 +2691,10 @@ CONTAINS
     e_sat = sat_vap_press(t_calc(ipt), p_calc(ipt))
     ALLOCATE(k_frn(n_nu))
     ALLOCATE(ktot(n_nu))
+
+!$OMP PARALLEL DO                                             &
+!$OMP PRIVATE(i_pp, pp, k_frn, ktot, trans_c, il, ih, ju, jv) &
+!$OMP NUM_THREADS(n_omp_threads)
     DO i_pp = 1, n_pp
 !
       pp = e_sat * REAL(i_pp, RealK) / REAL(n_pp, RealK) 
@@ -2671,13 +2734,14 @@ CONTAINS
           trans_fit_c(jv, ipt) = 1.0_RealK
         ENDIF
       ENDDO
-!     
-!
+
     ENDDO
+!$OMP END PARALLEL DO
+
     DEALLOCATE(trans_line)
     DEALLOCATE(k_frn)
     DEALLOCATE(ktot)
-!
+
     IF (ipt == ipt_ref) THEN
       CALL exponent_fit_90(n_path_c * n_pp, u_fit_c(:, ipt), &
                         trans_fit_c(:, ipt), &
@@ -3274,17 +3338,18 @@ CONTAINS
     IMPLICIT NONE
     INTEGER :: dimid1, dimid2, dimid3, dimid4 ! dimension ID
     INTEGER :: varid                          ! variable ID
-    INTEGER :: n_nu(n_band)                   ! number of frequency points
+    INTEGER :: n_nu_band(n_selected_band)     ! number of frequency points
     LOGICAL :: l_map_exist                    ! flag for mapping file existing 
 
 !   Calculate total number of frequency points
-    DO ib=1,n_band
+    DO ibb=1, n_selected_band
+      ib=list_band(ibb)
       band_width = band_max(ib) - band_min(ib)
       DO jx = 1, n_band_exclude(ib)
         band_width = band_width + &
           band_min(index_exclude(jx, ib)) - band_max(index_exclude(jx, ib))
       ENDDO
-      n_nu(ib)=NINT(band_width/nu_inc)
+      n_nu_band(ibb)=NINT(band_width/nu_inc)
     END DO
 
     INQUIRE(FILE=file_map, EXIST=l_map_exist)
@@ -3299,7 +3364,7 @@ CONTAINS
                           ncidout_map))
 
 !     Create dimensions
-      CALL nf(nf90_def_dim(ncidout_map, 'nu', MAXVAL(n_nu), dimid1))
+      CALL nf(nf90_def_dim(ncidout_map, 'nu', MAXVAL(n_nu_band), dimid1))
       CALL nf(nf90_def_dim(ncidout_map, 'nd_k_term', nd_k_term+1, dimid2))
       CALL nf(nf90_def_dim(ncidout_map, 'pre', n_pt_pair, dimid3))
       CALL nf(nf90_def_dim(ncidout_map, 'band', n_band, dimid4))

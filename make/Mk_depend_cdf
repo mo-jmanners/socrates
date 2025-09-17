@@ -32,6 +32,12 @@ cosp2_io.o: cosp2_io.f90
 cosp_driver.o: cosp_driver.f90
 	$(FORTCOMP) -I$(INCCDF_PATH) cosp_driver.f90
 
+set_extern_ckd_frn_data.o: set_extern_ckd_frn_data.f90
+	$(FORTCOMP) -I$(INCCDF_PATH) set_extern_ckd_frn_data.f90
+
+set_extern_ckd_self_data.o: set_extern_ckd_self_data.f90
+	$(FORTCOMP) -I$(INCCDF_PATH) set_extern_ckd_self_data.f90
+
 #
 # Object dependencies for programs that use netCDF
 #
