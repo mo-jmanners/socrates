@@ -3,3 +3,7 @@ __pycache__
 .idea
 *.pyc
 .pytest_cache
+bin
+sbin/Cinc_field
+sbin/Cscale_field
+set_rad_env
