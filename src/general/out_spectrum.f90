@@ -1224,21 +1224,45 @@ CONTAINS
         'Number of times for periodic repetition = ', SpVar%n_repeat_times
       IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(a, i0)') &
         'Number of Rayleigh coefficients given = ', SpVar%n_rayleigh_coeff
+      IF (SpVar%n_var_band < SpVar%n_sub_band) THEN
+        WRITE(iu_spc2, '(a, i0)') &
+          'Number of var-bands in look-up table = ', SpVar%n_var_band
+        WRITE(iu_spc2, '(a)') '*MAPPING'
+        WRITE(iu_spc2, '(a)') &
+          'Sub-band Var-band  Lower limit  ' // &
+          '   Upper limit    Frac var-band     Frac TSI    '
+        DO i=1, SpVar%n_sub_band
+          WRITE(iu_spc2, '(2(i7,1x),4(1pe16.9))') &
+            i, SpVar%var_band_map(i), SpVar%wavelength_sub_band(1:2,i), &
+            SpVar%var_band_fraction(i), SpVar%solar_flux_sub_band(i, 0)
+        END DO
+        WRITE(iu_spc2, *)
+      END IF
       WRITE(iu_spc2, '(a)') &
         'Year  Month  Day(of month)  Seconds(since midnight)  TSI(Wm-2 at 1 AU)'
-      WRITE(iu_spc2, '(a)') &
-        'Fraction of solar flux in each sub-band.'
-      IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(a,i0,a)') &
-        'Rayleigh coefficient in the first ', SpVar%n_rayleigh_coeff, &
-        ' sub-bands.'
+      IF (SpVar%n_var_band < SpVar%n_sub_band) THEN
+        WRITE(iu_spc2, '(a)') &
+          'Fraction of solar flux in each var-band.'
+      ELSE
+        WRITE(iu_spc2, '(a)') &
+          'Fraction of solar flux in each sub-band.'
+        IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(a,i0,a)') &
+          'Rayleigh coefficient in the first ', SpVar%n_rayleigh_coeff, &
+          ' sub-bands.'
+      END IF
       WRITE(iu_spc2, '(a)') '*BEGIN: spectral variability data'
       DO i=1, SpVar%n_times
         WRITE(iu_spc2, '(4(i6),4x,1pe16.9)') &
           SpVar%time(1:4, i), SpVar%total_solar_flux(i)
-        WRITE(iu_spc2, '(5(1pe16.9))') &
-          SpVar%solar_flux_sub_band(1:SpVar%n_sub_band, i)
-        IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(5(1pe16.9))') &
-          SpVar%rayleigh_coeff(1:SpVar%n_rayleigh_coeff, i)
+        IF (SpVar%n_var_band < SpVar%n_sub_band) THEN
+          WRITE(iu_spc2, '(5(1pe16.9))') &
+            SpVar%solar_flux_var_band(1:SpVar%n_var_band, i)
+        ELSE
+          WRITE(iu_spc2, '(5(1pe16.9))') &
+            SpVar%solar_flux_sub_band(1:SpVar%n_sub_band, i)
+          IF (SpVar%n_rayleigh_coeff > 0) WRITE(iu_spc2, '(5(1pe16.9))') &
+            SpVar%rayleigh_coeff(1:SpVar%n_rayleigh_coeff, i)
+        END IF
       END DO
       CLOSE(iu_spc2)
     END IF

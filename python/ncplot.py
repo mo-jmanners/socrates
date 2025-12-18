@@ -101,7 +101,7 @@ else:
     ax2.plot(wl, toa_spec, color='blue', label='TOA')
     ax2.set_xlabel('Wavelength (micron)')
     if ('ph_rate' in name):
-        ax2.set_ylabel('J rate (s$^{-1}$ m$^{-1}$)')
+        ax2.set_ylabel('J (s$^{-1}$ m$^{-1}$)')
         ax2.set_yscale('symlog')
         e_height = -np.log(p[e_layer]/max(p))*CONST
         ax1.plot([min(vmean),max(vmean)], [e_height,e_height], color='green')

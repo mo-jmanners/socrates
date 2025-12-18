@@ -94,6 +94,8 @@ SUBROUTINE change_block_0(Sp)
     Sp%Gas%w_ses(:,1:nb) = Sp%Gas%w_ses(:,fb:lb)
   IF (ALLOCATED(Sp%Gas%f_mix)) &
     Sp%Gas%f_mix(1:nb) = Sp%Gas%f_mix(fb:lb)
+  IF (ALLOCATED(Sp%Gas%k_t_lookup_gas)) &
+    Sp%Gas%k_t_lookup_gas(:,:,:,1:nb) = Sp%Gas%k_t_lookup_gas(:,:,:,fb:lb)
   IF (ALLOCATED(Sp%Gas%n_sub_band_gas)) &
     Sp%Gas%n_sub_band_gas(1:nb,:) = Sp%Gas%n_sub_band_gas(fb:lb,:)
   IF (ALLOCATED(Sp%Gas%sub_band_k)) &
@@ -179,6 +181,15 @@ SUBROUTINE change_block_0(Sp)
         END IF
       END IF
     END DO
+    IF (Sp%Var%n_var_band == Sp%Var%n_sub_band) THEN
+      Sp%Var%n_var_band = n_sub_band
+      DO i=1, n_sub_band
+        Sp%Var%var_band_map(i) = i
+        Sp%Var%var_band_fraction(i) = 1.0_RealK
+      END DO
+    ELSE
+      WRITE(iu_err, '(A)') 'Spectral Var file will need to be regenerated.'
+    END IF
     Sp%Var%n_sub_band = n_sub_band
     Sp%Var%n_rayleigh_coeff = MIN(n_rayleigh_coeff,n_sub_band)
   END IF

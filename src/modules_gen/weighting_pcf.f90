@@ -18,5 +18,7 @@ MODULE weighting_pcf
 !    Solar weighting
   INTEGER, Parameter :: IP_weight_uniform = 4
 !    Uniform weighting
+  INTEGER, Parameter :: IP_weight_solar_path = 5
+!    Solar weighting after absorption along path
 
 END MODULE weighting_pcf

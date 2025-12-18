@@ -3254,7 +3254,7 @@ INTEGER :: desc_end
 !   Position of equals sign to delimit end of item description
 INTEGER :: idum
 !   Dummy integer
-INTEGER :: i_band
+INTEGER :: i_band, i_gas, i_sub_band_gas(nd_band)
 !   Loop index
 LOGICAL :: l_exist_var
 !   True if spectral variability file exists and is readable
@@ -3280,6 +3280,15 @@ DO
     ALLOCATE(Sp%Var%index_sub_band(2, nd_sub_band))
     ALLOCATE(Sp%Var%wavelength_sub_band(0:2, nd_sub_band))
     ALLOCATE(rayleigh_coeff(nd_sub_band))
+    ALLOCATE(Sp%Var%var_band_map(nd_sub_band))
+    ALLOCATE(Sp%Var%var_band_fraction(nd_sub_band))
+    ! By default, var-bands are equal to sub-bands
+    Sp%Var%n_var_band = Sp%Var%n_sub_band
+    Sp%Dim%nd_var_band = nd_sub_band
+    DO i=1, Sp%Var%n_sub_band
+      Sp%Var%var_band_map(i) = i
+      Sp%Var%var_band_fraction(i) = 1.0_RealK
+    END DO
 
     IF (Sp%Var%n_sub_band > Sp%Basic%n_band) THEN
       ! Skip header line
@@ -3345,10 +3354,12 @@ DO
       ios = 0
     END IF
 
-    Sp%Var%n_times          = 0
-    nd_times                = 0
-    Sp%Var%n_repeat_times   = 0
-    Sp%Var%n_rayleigh_coeff = 0
+    Sp%Var%n_times           = 0
+    nd_times                 = 0
+    Sp%Dim%nd_var_band_times = 0
+    Sp%Dim%nd_sub_band_times = 0
+    Sp%Var%n_repeat_times    = 0
+    Sp%Var%n_rayleigh_coeff  = 0
     IF (l_exist_var) THEN
       ! Read number of times / dates and skip over header
       DO
@@ -3371,33 +3382,81 @@ DO
         IF ( line(1:desc_end-1) == 'Number of Rayleigh coefficients given' ) &
           READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) &
             Sp%Var%n_rayleigh_coeff
+        IF ( line(1:desc_end-1) == 'Number of var-bands in look-up table' .OR. &
+             line(1:desc_end-1) == 'nd_var_band' ) THEN
+          READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) &
+            Sp%Var%n_var_band
+          Sp%Dim%nd_var_band = Sp%Var%n_var_band
+        END IF
+        IF ( line(1:8) == '*MAPPING' ) THEN
+          READ(iu_spc2, *)
+          DO i=1, Sp%Var%n_sub_band
+            READ(iu_spc2, '(8x, i7, 33x, 1pe16.9)') &
+              Sp%Var%var_band_map(i), Sp%Var%var_band_fraction(i)
+          END DO
+        END IF
         IF ( line(1:6) == '*BEGIN' ) EXIT
       END DO
+      IF (Sp%Var%n_var_band < Sp%Var%n_sub_band) THEN
+        Sp%Dim%nd_var_band_times = nd_times
+        Sp%Dim%nd_sub_band_times = 0
+      ELSE
+        Sp%Dim%nd_var_band_times = 0
+        Sp%Dim%nd_sub_band_times = nd_times
+      END IF
       
       ! Read look-up table of spectral variability data
       ALLOCATE(Sp%Var%time(4, nd_times))
       ALLOCATE(Sp%Var%total_solar_flux(nd_times))
-      ALLOCATE(Sp%Var%solar_flux_sub_band(nd_sub_band, nd_times))
-      ALLOCATE(Sp%Var%rayleigh_coeff(nd_sub_band, 0:nd_times))
+      ALLOCATE(Sp%Var%solar_flux_var_band(Sp%Dim%nd_var_band, &
+                                        0:Sp%Dim%nd_var_band_times))
+      ALLOCATE(Sp%Var%solar_flux_sub_band(nd_sub_band, &
+                                 0:Sp%Dim%nd_sub_band_times))
+      ALLOCATE(Sp%Var%rayleigh_coeff(nd_sub_band, &
+                            0:Sp%Dim%nd_sub_band_times))
       DO i=1, Sp%Var%n_times
         READ(iu_spc2, '(4(i6),4x,1pe16.9)') &
           Sp%Var%time(:, i), Sp%Var%total_solar_flux(i)
-        READ(iu_spc2, '(5(1pe16.9))') Sp%Var%solar_flux_sub_band(:, i)
-        IF (Sp%Var%n_rayleigh_coeff > 0) READ(iu_spc2, '(5(1pe16.9))') &
-          Sp%Var%rayleigh_coeff(1:Sp%Var%n_rayleigh_coeff, i)
+        IF (Sp%Var%n_var_band < Sp%Var%n_sub_band) THEN
+          READ(iu_spc2, '(5(1pe16.9))') Sp%Var%solar_flux_var_band(:, i)
+        ELSE
+          READ(iu_spc2, '(5(1pe16.9))') Sp%Var%solar_flux_sub_band(:, i)
+          IF (Sp%Var%n_rayleigh_coeff > 0) READ(iu_spc2, '(5(1pe16.9))') &
+            Sp%Var%rayleigh_coeff(1:Sp%Var%n_rayleigh_coeff, i)
+        END IF
       END DO
       
       CLOSE(iu_spc2)
     ELSE
-      ALLOCATE(Sp%Var%rayleigh_coeff(nd_sub_band, 0:nd_times))
+      ALLOCATE(Sp%Var%solar_flux_sub_band(nd_sub_band, &
+                                 0:Sp%Dim%nd_sub_band_times))
+      ALLOCATE(Sp%Var%rayleigh_coeff(nd_sub_band, &
+                            0:Sp%Dim%nd_sub_band_times))
     END IF
 
+    ! Set Rayleigh coefficients in each sub-band
     Sp%Var%rayleigh_coeff(:,0) = rayleigh_coeff
-    DO i=1, Sp%Var%n_times
+    DO i=1, Sp%Dim%nd_sub_band_times
       Sp%Var%rayleigh_coeff(Sp%Var%n_rayleigh_coeff+1:,i) = &
              rayleigh_coeff(Sp%Var%n_rayleigh_coeff+1:)
     END DO
     DEALLOCATE(rayleigh_coeff)
+
+    ! Determine fraction of solar spectrum in each sub-band
+    i_sub_band_gas = 0
+    DO i=1, Sp%Var%n_sub_band
+      i_band = Sp%Var%index_sub_band(1, i)
+      IF (Sp%Var%index_sub_band(2, i) == 0) THEN
+        Sp%Var%solar_flux_sub_band(i, 0) &
+          = Sp%Solar%solar_flux_band(i_band)
+      ELSE
+        i_gas = Sp%Gas%index_absorb(1, i_band)
+        i_sub_band_gas(i_band) = i_sub_band_gas(i_band) + 1
+        Sp%Var%solar_flux_sub_band(i, 0) &
+          = Sp%Solar%solar_flux_band(i_band) &
+          * Sp%Gas%sub_band_w(i_sub_band_gas(i_band), i_band, i_gas)
+      END IF
+    END DO
 
     CALL release_file_unit(iu_spc2, handler="fortran")
   END SELECT

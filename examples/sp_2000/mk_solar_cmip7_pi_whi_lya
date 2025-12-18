@@ -1,0 +1,26 @@
+#!/bin/bash
+
+mkdir solar_cmip7_pi_whi_lya
+cd solar_cmip7_pi_whi_lya
+
+# wget https://lasp.colorado.edu/lisird/resources/lasp/lyman_alpha/shape_lya_profile_model.ncdf
+cp $SOCRATES_DATA_DIR/lisird/shape_lya_profile_model.ncdf .
+
+# wget https://lasp.colorado.edu/lisird/resources/whi_ref_spectra/data/ref_solar_irradiance_whi-2008_ver2.dat
+cp $SOCRATES_DATA_DIR/lisird/ref_solar_irradiance_whi-2008_ver2.dat .
+
+cp $SOCRATES_DATA_DIR/solarisheppa/cmip7/multiple_input4MIPs_solar_CMIP_SOLARIS-HEPPA-CMIP-4-6_gn.nc.gz .
+gunzip multiple_input4MIPs_solar_CMIP_SOLARIS-HEPPA-CMIP-4-6_gn.nc.gz
+
+lya2sol shape_lya_profile_model.ncdf lya
+whi2sol ref_solar_irradiance_whi-2008_ver2.dat whi
+cmip2sol multiple_input4MIPs_solar_CMIP_SOLARIS-HEPPA-CMIP-4-6_gn.nc cmip7_picontrol
+
+merge_solar_spectra whi_mean lya_mean whi_lya_mean -s
+merge_solar_spectra cmip7_picontrol whi_lya_mean cmip7_pi_whi_lya_mean -u 310.0e-9
+solar_tail_temperature cmip7_pi_whi_lya_mean cmip7_pi_whi_lya_mean_tfit
+
+python ../../../python/plot_solar_spectrum.py cmip7_pi_whi_lya_mean_tfit
+cd ..
+
+exit 0

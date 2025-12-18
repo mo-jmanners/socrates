@@ -57,6 +57,8 @@ SUBROUTINE select_weight_ck_90 &
     '. TOA solar spectral weighting.'
   WRITE(iu_stdout, '(3x, i2, a)' ) ip_weight_uniform, &
     '. Uniform weighting.'
+  WRITE(iu_stdout, '(3x, i2, a)' ) ip_weight_solar_path, &
+    '. Solar spectral weighting with absorption along path.'
 !
   WRITE(iu_stdout, '(a/)') 'Enter required number.'
   DO
@@ -65,6 +67,7 @@ SUBROUTINE select_weight_ck_90 &
          ( (i_weight /= ip_weight_planck)   .AND.  &
            (i_weight /= ip_weight_d_planck) .AND.  &
            (i_weight /= ip_weight_solar)    .AND.  &
+           (i_weight /= ip_weight_solar_path).AND. &
            (i_weight /= ip_weight_uniform) ) ) then
       WRITE(iu_err, '(a)') '+++ Erroneous response:'
       IF (l_interactive) then
@@ -79,7 +82,7 @@ SUBROUTINE select_weight_ck_90 &
   ENDDO
 !
 ! If solar weighting is used read the data in.
-  if (i_weight == ip_weight_solar) then
+  if (i_weight == ip_weight_solar .OR. i_weight == ip_weight_solar_path) then
     CALL read_solar_spectrum(SolarSpec, ierr)
     if (ierr /= i_normal) RETURN
   endif

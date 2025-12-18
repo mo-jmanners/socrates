@@ -21,7 +21,7 @@ USE realtype_rd, ONLY: RealK
 IMPLICIT NONE
 
 
-INTEGER, PARAMETER :: n_dim = 38
+INTEGER, PARAMETER :: n_dim = 41
 !   Number of dimensions in StrSpecDim
 INTEGER, PARAMETER :: n_int = 18
 !   Number of (non-allocatable) integers
@@ -87,8 +87,14 @@ TYPE StrSpecDim
 !   Size allocated for spectral sub-bands in each band
   INTEGER :: nd_sub_band = 0
 !   Size allocated for total spectral sub-bands
+  INTEGER :: nd_var_band = 0
+!   Size allocated for varying spectral sub-bands
   INTEGER :: nd_times = 0
 !   Size allocated for times (for spectral variability)
+  INTEGER :: nd_var_band_times = 0
+!   Size allocated for times for specifying varying sub-bands
+  INTEGER :: nd_sub_band_times = 0
+!   Size allocated for times for specifying all sub-bands
   INTEGER :: nd_cont = 0
 !   Size allocated for generalised continua
   INTEGER :: nd_t_lookup_cont = 0
@@ -388,6 +394,8 @@ END TYPE StrSpecIce
 TYPE StrSpecVar
   INTEGER                   :: n_sub_band = 0
 !   Number of sub-bands used
+  INTEGER                   :: n_var_band = 0
+!   Number of varying-bands used
   INTEGER                   :: n_times = 0
 !   Number of times at which the solar spectrum is given
   INTEGER                   :: n_repeat_times = 0
@@ -396,6 +404,10 @@ TYPE StrSpecVar
 !   Number of Rayleigh coefficients that vary
   INTEGER, ALLOCATABLE      :: index_sub_band(:, :)
 !   Index of k-terms associated with each sub-band
+  INTEGER, ALLOCATABLE      :: var_band_map(:)
+!   Index of varying-band associated with each sub-band
+  REAL (RealK), ALLOCATABLE :: var_band_fraction(:)
+!   Fraction of varying-band associated with each sub-band
   REAL (RealK), ALLOCATABLE :: wavelength_sub_band(:, :)
 !   Wavelength limits for the sub-band
 
@@ -403,6 +415,8 @@ TYPE StrSpecVar
 !   Times: year, month, day of month, seconds in day
   REAL (RealK), ALLOCATABLE :: total_solar_flux(:)
 !   Total solar flux in Wm-2 at 1 AU for each time
+  REAL (RealK), ALLOCATABLE :: solar_flux_var_band(:, :)
+!   Fraction of the solar spectrum in each varying-band for each time
   REAL (RealK), ALLOCATABLE :: solar_flux_sub_band(:, :)
 !   Fraction of the solar spectrum in each sub-band for each time
   REAL (RealK), ALLOCATABLE :: rayleigh_coeff(:, :)
@@ -1064,6 +1078,16 @@ IF (.NOT. ALLOCATED(Sp%Var%index_sub_band)) &
 Sp%Dim%nd_alloc_int = &
 Sp%Dim%nd_alloc_int + SIZE(Sp%Var%index_sub_band)
 
+IF (.NOT. ALLOCATED(Sp%Var%var_band_map)) &
+  ALLOCATE(Sp%Var%var_band_map( Sp%Dim%nd_sub_band ))
+Sp%Dim%nd_alloc_int = &
+Sp%Dim%nd_alloc_int + SIZE(Sp%Var%var_band_map)
+
+IF (.NOT. ALLOCATED(Sp%Var%var_band_fraction)) &
+  ALLOCATE(Sp%Var%var_band_fraction( Sp%Dim%nd_sub_band ))
+Sp%Dim%nd_alloc_real = &
+Sp%Dim%nd_alloc_real + SIZE(Sp%Var%var_band_fraction)
+
 IF (.NOT. ALLOCATED(Sp%Var%wavelength_sub_band)) &
   ALLOCATE(Sp%Var%wavelength_sub_band( 0:2, Sp%Dim%nd_sub_band ))
 Sp%Dim%nd_alloc_real = &
@@ -1079,13 +1103,21 @@ IF (.NOT. ALLOCATED(Sp%Var%total_solar_flux)) &
 Sp%Dim%nd_alloc_real = &
 Sp%Dim%nd_alloc_real + SIZE(Sp%Var%total_solar_flux)
 
+IF (.NOT. ALLOCATED(Sp%Var%solar_flux_var_band)) &
+  ALLOCATE(Sp%Var%solar_flux_var_band( Sp%Dim%nd_var_band, &
+                                       Sp%Dim%nd_var_band_times ))
+Sp%Dim%nd_alloc_real = &
+Sp%Dim%nd_alloc_real + SIZE(Sp%Var%solar_flux_var_band)
+
 IF (.NOT. ALLOCATED(Sp%Var%solar_flux_sub_band)) &
-  ALLOCATE(Sp%Var%solar_flux_sub_band( Sp%Dim%nd_sub_band, Sp%Dim%nd_times ))
+  ALLOCATE(Sp%Var%solar_flux_sub_band( Sp%Dim%nd_sub_band, &
+                                     0:Sp%Dim%nd_sub_band_times ))
 Sp%Dim%nd_alloc_real = &
 Sp%Dim%nd_alloc_real + SIZE(Sp%Var%solar_flux_sub_band)
 
 IF (.NOT. ALLOCATED(Sp%Var%rayleigh_coeff)) &
-  ALLOCATE(Sp%Var%rayleigh_coeff( Sp%Dim%nd_sub_band, 0:Sp%Dim%nd_times ))
+  ALLOCATE(Sp%Var%rayleigh_coeff( Sp%Dim%nd_sub_band, &
+                                0:Sp%Dim%nd_sub_band_times ))
 Sp%Dim%nd_alloc_real = &
 Sp%Dim%nd_alloc_real + SIZE(Sp%Var%rayleigh_coeff)
 
@@ -1243,12 +1275,18 @@ IF (ALLOCATED(Sp%Var%rayleigh_coeff)) &
    DEALLOCATE(Sp%Var%rayleigh_coeff)
 IF (ALLOCATED(Sp%Var%solar_flux_sub_band)) &
    DEALLOCATE(Sp%Var%solar_flux_sub_band)
+IF (ALLOCATED(Sp%Var%solar_flux_var_band)) &
+   DEALLOCATE(Sp%Var%solar_flux_var_band)
 IF (ALLOCATED(Sp%Var%total_solar_flux)) &
    DEALLOCATE(Sp%Var%total_solar_flux)
 IF (ALLOCATED(Sp%Var%time)) &
    DEALLOCATE(Sp%Var%time)
 IF (ALLOCATED(Sp%Var%wavelength_sub_band)) &
    DEALLOCATE(Sp%Var%wavelength_sub_band)
+IF (ALLOCATED(Sp%Var%var_band_fraction)) &
+   DEALLOCATE(Sp%Var%var_band_fraction)
+IF (ALLOCATED(Sp%Var%var_band_map)) &
+   DEALLOCATE(Sp%Var%var_band_map)
 IF (ALLOCATED(Sp%Var%index_sub_band)) &
    DEALLOCATE(Sp%Var%index_sub_band)
 
