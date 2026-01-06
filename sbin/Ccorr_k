@@ -57,6 +57,7 @@ do case $1 in
       -s) SPECTRUM=$2 ; shift 2 ;;
       -x) FRN_INCLUDE=y ; LINE_FRN_CF=y ; FRN_CF_FILE=$2 ; shift 2 ;;
       +S) WEIGHT=$IP_WEIGHT_SOLAR ; SOLAR_FILE=$2 ; shift 2 ;;
+      +SP) WEIGHT=$IP_WEIGHT_SOLAR_PATH ; SOLAR_FILE=$2 ; PATH_FILE=$3 ; shift 3 ;;
       +p) WEIGHT=$IP_WEIGHT_PLANCK ; shift ;;
       +d) WEIGHT=$IP_WEIGHT_DPLANCK ; shift ;;
       -u) WEIGHT=$IP_WEIGHT_UNIFORM ; shift ;;
@@ -303,8 +304,11 @@ if [ $FIT_TYPE -ne $IP_CK_NONE ] || \
    ([ -z "$CONT_DATA" ] && ([ "$SELF_CF" ] || [ "$FRN_CF" ]))
   then echo $WEIGHT >> /tmp/ck.$$
   if [ $WEIGHT -eq $IP_WEIGHT_SOLAR ]
-  then echo $SOLAR_FILE >> /tmp/ck.$$
-  fi  
+    then echo $SOLAR_FILE >> /tmp/ck.$$
+	else if [ $WEIGHT -eq $IP_WEIGHT_SOLAR_PATH ]
+    then echo $SOLAR_FILE >> /tmp/ck.$$
+         echo $PATH_FILE >> /tmp/ck.$$
+  fi
   echo $OUT_FILE >> /tmp/ck.$$
 fi
 echo $MON_FILE >> /tmp/ck.$$

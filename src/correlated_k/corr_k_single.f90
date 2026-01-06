@@ -22,7 +22,7 @@ SUBROUTINE corr_k_single &
  l_fit_cont_data, n_path_c, umin_c, umax_c, n_pp, &
  include_instrument_response, filter, &
  i_line_prof_corr, l_self_broadening, n_gas_frac, gas_frac, &
- i_ck_fit, tol, max_path, max_path_wgt, &
+ i_ck_fit, tol, max_path, max_path_wgt, abs_path, &
  nd_k_term, n_k, w_k, k_ave, k_opt, &
  k_opt_self, k_opt_frn, &
  i_type_residual, i_scale_function, scale_vector, scale_cont, &
@@ -43,7 +43,8 @@ SUBROUTINE corr_k_single &
   USE ck_fit_pcf
   USE hitran_cnst, ONLY: atomic_mass_unit, molar_gas_constant
   USE gas_list_pcf
-  USE weighting_pcf, ONLY: ip_weight_planck, ip_weight_d_planck
+  USE weighting_pcf, ONLY: ip_weight_planck, ip_weight_d_planck, &
+    ip_weight_solar_path
   USE h2o_continuum, ONLY: self_continuum, foreign_continuum, sat_vap_press
   USE line_prof_corr_mod, ONLY: line_prof_corr, set_line_prof_corr_cnst
   USE errormessagelength_mod, ONLY: errormessagelength
@@ -136,6 +137,7 @@ SUBROUTINE corr_k_single &
   REAL  (RealK), Intent(IN) :: max_path_wgt
 !   Maximum pathlength to be considered for the absorber used for weighting
 !   in continuum transmissions
+  REAL  (RealK), ALLOCATABLE, Intent(IN) :: abs_path(:)  
   REAL  (RealK), Intent(IN) :: line_cutoff
 !   Cutoff for choosing lines
   LOGICAL, Intent(IN) :: l_ckd_cutoff
@@ -387,6 +389,7 @@ SUBROUTINE corr_k_single &
   REAL  (RealK), Allocatable :: rdiff(:)
 !   Array of squared differences from reference conditions
   INTEGER :: ipt_ref, index_pt_ref(n_p), n_t(n_p), ipoint
+  INTEGER :: index_p(n_pt_pair)
   LOGICAL :: mask_pt_ref(n_pt_pair)
 !   Pointer for reference pressure/temperature
 
@@ -727,11 +730,14 @@ SUBROUTINE corr_k_single &
 ! Find the median profile of P/Ts:
   i = 1
   n_t = 1
+  IF (n_p > 0) index_p(1) = 1
   DO ipt = 2, n_pt_pair
     IF (p_calc(ipt) == p_calc(ipt-1)) THEN
       n_t(i) = n_t(i)+1
+      index_p(ipt) = index_p(ipt-1)
     ELSE
       i=i+1
+      index_p(ipt) = index_p(ipt-1)+1
     END IF
   END DO
   mask_pt_ref = .FALSE.
@@ -1478,6 +1484,16 @@ SUBROUTINE corr_k_single &
                 DO igf=1, n_gas_frac
                   wgt=wgt_sv
                   kabs=kabs_all_sb(:,ipt,igf)
+                  IF (i_weight == ip_weight_solar_path) THEN
+                    wgt=wgt*exp(-kabs*abs_path(index_p(ipt)))
+                    IF (index_p(ipt) == n_p) THEN
+                      umax_kopt = 10.0_RealK * &
+                        abs_path(index_p(ipt))-abs_path(index_p(ipt)-1)
+                    ELSE
+                      umax_kopt = 10.0_RealK * &
+                        abs_path(index_p(ipt)+1)-abs_path(index_p(ipt))
+                    END IF
+                  END IF
                   CALL ck_fit_k
                   IF (ierr /= i_normal) THEN
                     write(cmessage,'(a,2i3)') &
@@ -1488,6 +1504,16 @@ SUBROUTINE corr_k_single &
                 END DO
               ELSE
                 kabs=kabs_all(1:n_nu,ipt)
+                IF (i_weight == ip_weight_solar_path) THEN
+                  wgt=wgt*exp(-kabs*abs_path(index_p(ipt)))
+                  IF (index_p(ipt) == n_p) THEN
+                    umax_kopt = 10.0_RealK * &
+                      abs_path(index_p(ipt))-abs_path(index_p(ipt)-1)
+                  ELSE
+                    umax_kopt = 10.0_RealK * &
+                      abs_path(index_p(ipt)+1)-abs_path(index_p(ipt))
+                  END IF
+                END IF
                 CALL ck_fit_k
                 IF (ierr /= i_normal) THEN
                   write(cmessage,'(a,i3)') 'Error in ck_fit_k: ipt =', ipt

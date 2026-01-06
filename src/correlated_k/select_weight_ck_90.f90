@@ -8,7 +8,7 @@
 !
 SUBROUTINE select_weight_ck_90 &
 !
-(i_weight, SolarSpec, l_interactive, ierr)
+(i_weight, SolarSpec, abs_path, l_interactive, ierr)
 !
 ! Description:
 !   A list of possible weighting functions is displayed and
@@ -38,13 +38,27 @@ SUBROUTINE select_weight_ck_90 &
 !   Method of weighting
   TYPE (StrSolarSpec), Intent(OUT) :: SolarSpec
 !   Solar spectral irradiance data
+  REAL (RealK), ALLOCATABLE, Intent(INOUT) :: abs_path(:)
+!   Cumulative absorber pathlength to each pressure in lookup table
 !
 ! Local variables
 !
 !
+  INTEGER :: i
   INTEGER :: ios
 !   I/O error flag
-!
+  INTEGER :: iu_path
+!   Unit number for cumulative path file
+  INTEGER :: n_p_path
+!   Number of pressure levels read for cumulative path
+  CHARACTER(LEN=256) :: file_in
+!   Input file for cumulative absorber path
+  CHARACTER (LEN=256) :: line
+!   Line of input data
+  LOGICAL :: l_count
+!   Flag for counting points
+  REAL (RealK) :: pressure
+!   Dummy pressure variable
 !
 ! Display menu of weightings.
   WRITE(iu_stdout, '(/a)') &
@@ -80,14 +94,65 @@ SUBROUTINE select_weight_ck_90 &
       EXIT
     ENDIF
   ENDDO
-!
+
 ! If solar weighting is used read the data in.
   if (i_weight == ip_weight_solar .OR. i_weight == ip_weight_solar_path) then
     CALL read_solar_spectrum(SolarSpec, ierr)
     if (ierr /= i_normal) RETURN
-  endif
-!
-!
-!
-  RETURN
+  end if
+
+  ! If solar path weighting is used read in the cumulative absorber path
+  if (i_weight == ip_weight_solar_path) then
+    write(*, '(/a)') &
+      'Filename for cumulative absorber path for each P in the lookup table:'
+    file_in=''
+    read(iu_stdin, '(a)', iostat=ios) file_in
+    open(newunit=iu_path, file=trim(file_in), &
+      status='old', action="read", iostat=ios)
+    if (ios == 0) then
+      n_p_path = 0
+      l_count=.false.
+      do
+        read(iu_path, '(a)', iostat=ios) line
+        if (ios /= 0) then
+          exit
+        else if (line(1:11) == '*BEGIN_DATA') then
+          l_count=.true.
+        else if (line(1:16) == '*BEGIN_2COL_DATA') then
+          l_count=.true.
+        else if (line(1:4) == '*END') then
+          l_count=.false.
+        else if (l_count) then
+          n_p_path = n_p_path + 1
+        end if
+      end do
+      if (size(abs_path) /= n_p_path) then
+        write(iu_err, '(a)') &
+          'Error: wrong number of pressures in absorber path file'
+        ierr=i_err_fatal
+        return
+      end if
+      rewind(iu_path)
+      do
+        read(iu_path, '(a)', iostat=ios) line
+        if (line(1:11) == '*BEGIN_DATA') then
+          do i = 1, n_p_path
+            read(iu_path, *, iostat=ios) abs_path(i)
+          end do
+          exit
+        else if (line(1:16) == '*BEGIN_2COL_DATA') then
+          do i = 1, n_p_path
+            read(iu_path, *, iostat=ios) pressure, abs_path(i)
+          end do
+          exit
+        end if
+      end do
+    else
+      write(iu_err, '(a)') 'Error: problem reading absorber path file'
+      ierr=i_err_fatal
+      return
+    end if
+    close(iu_path)
+  end if
+  
 END SUBROUTINE select_weight_ck_90

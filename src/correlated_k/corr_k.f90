@@ -151,6 +151,8 @@ PROGRAM corr_k
   REAL  (RealK) :: max_path_wgt
 !   Maximum pathlength to be considered for the absorber used for weighting
 !   in continuum transmissions
+  REAL  (RealK), ALLOCATABLE :: abs_path(:)
+!   Cumulative absorber pathlength to each pressure in lookup table
 !
 ! Continuum data:
   REAL  (RealK) :: umin_c
@@ -226,7 +228,7 @@ PROGRAM corr_k
        l_fit_cont_data, n_path_c, umin_c, umax_c, n_pp, &
        include_instrument_response, filter, &
        i_line_prof_corr, l_self_broadening, n_gas_frac, gas_frac, &
-       i_ck_fit, tol, max_path, max_path_wgt, &
+       i_ck_fit, tol, max_path, max_path_wgt, abs_path, &
        nd_k_term, n_k, w_k, k_ave, k_opt, &
        k_opt_self, k_opt_frn, &
        i_type_residual, i_scale_function, scale_vector, &
@@ -262,6 +264,7 @@ PROGRAM corr_k
       REAL  (RealK), Intent(IN) :: tol
       REAL  (RealK), Intent(IN) :: max_path
       REAL  (RealK), Intent(IN) :: max_path_wgt
+      REAL  (RealK), ALLOCATABLE, Intent(IN) :: abs_path(:)
       REAL  (RealK), Intent(IN) :: line_cutoff
       LOGICAL, Intent(IN) :: l_ckd_cutoff
       INTEGER, Intent(IN) :: n_pt_pair
@@ -540,12 +543,13 @@ PROGRAM corr_k
   ALLOCATE(k_opt_frn(Spectrum%Dim%nd_band))
   ALLOCATE(scale_cont(MAX(n_scale_variable(i_scale_fnc), 1), 1, &
     Spectrum%Dim%nd_band))
+  ALLOCATE(abs_path(n_p))
 
   IF ((i_ck_fit /= ip_ck_none) .OR. &
       l_fit_self_continuum .OR. l_fit_frn_continuum) THEN
 !   Select the weighting to be applied.
-    CALL select_weight_ck_90(i_weight, SolarSpec, l_interactive, ierr)
-!   
+    CALL select_weight_ck_90(i_weight, SolarSpec, abs_path, l_interactive, ierr)
+
 !   Set the output file.
     CALL get_free_unit(ierr, iu_k_out)
     IF (ierr /= i_normal) STOP
@@ -615,7 +619,7 @@ PROGRAM corr_k
     l_fit_cont_data, n_path_c, umin_c, umax_c, n_pp, &
     include_instrument_response, filter, &
     i_line_prof_corr, l_self_broadening, n_gas_frac, gas_frac, &
-    i_ck_fit, tol, max_path, max_path_wgt, &
+    i_ck_fit, tol, max_path, max_path_wgt, abs_path, &
     npd_k_term, n_k, w_k, k_ave, k_opt, &
     k_opt_self, k_opt_frn, &
     i_type_residual, i_scale_fnc, scale, scale_cont, &
@@ -623,6 +627,7 @@ PROGRAM corr_k
     l_load_map, l_load_wgt, l_save_map, file_map, &
     n_omp_threads, ierr )
 
+  DEALLOCATE(abs_path)
   IF (include_instrument_response) THEN
     DEALLOCATE(filter%wavenumber)
     DEALLOCATE(filter%response)
