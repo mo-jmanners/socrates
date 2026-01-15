@@ -305,9 +305,11 @@ if [ $FIT_TYPE -ne $IP_CK_NONE ] || \
   then echo $WEIGHT >> /tmp/ck.$$
   if [ $WEIGHT -eq $IP_WEIGHT_SOLAR ]
     then echo $SOLAR_FILE >> /tmp/ck.$$
-	else if [ $WEIGHT -eq $IP_WEIGHT_SOLAR_PATH ]
-    then echo $SOLAR_FILE >> /tmp/ck.$$
-         echo $PATH_FILE >> /tmp/ck.$$
+  else
+    if [ $WEIGHT -eq $IP_WEIGHT_SOLAR_PATH ]
+      then echo $SOLAR_FILE >> /tmp/ck.$$
+           echo $PATH_FILE >> /tmp/ck.$$
+    fi
   fi
   echo $OUT_FILE >> /tmp/ck.$$
 fi
