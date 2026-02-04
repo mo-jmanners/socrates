@@ -113,6 +113,8 @@ TYPE StrSpecDim
 !   Number of wavelengths in quantum yield look-up tables
   INTEGER :: nd_t_lookup_gas = 0
 !   Number of temperatures in gas k-term look-up tables
+  INTEGER :: nd_species_lk = 0
+!   Size allocated for gaseous species with a P/T look-up table
 END TYPE StrSPecDim
 
 
@@ -704,7 +706,7 @@ Sp%Dim%nd_alloc_real + SIZE(Sp%Gas%gf_lookup)
 
 IF (.NOT. ALLOCATED(Sp%Gas%k_lookup)) &
   ALLOCATE(Sp%Gas%k_lookup( Sp%Dim%nd_tmp, Sp%Dim%nd_pre, Sp%Dim%nd_k_term, &
-                            Sp%Dim%nd_species, Sp%Dim%nd_band ))
+                            Sp%Dim%nd_species_lk, Sp%Dim%nd_band ))
 Sp%Dim%nd_alloc_real = &
 Sp%Dim%nd_alloc_real + SIZE(Sp%Gas%k_lookup)
 

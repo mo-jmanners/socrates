@@ -228,7 +228,7 @@ if [ ! -s $sp_dir/h2o_fir_s ] ; then
     echo "H2O: far-ir self-broadened continuum"
     rm -f $sp_dir/h2o_fir_s*
 	  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -C 33 1.0e-4 1.0e4 -P 7 \
+      -R 1501 2000 -C 33 1.0e-4 1.0e4 -P 7 \
       -e ${CONT_H2O_S260} ${CONT_H2O_S260} \
       -s $skelfile -u -p -r ${REF_PT_FILE} \
       -o $sp_dir/h2o_fir_s -m $sp_dir/h2o_fir_sm \
@@ -313,8 +313,75 @@ if [ ! -s ${sp_dir}/o3_uv_l ] || [ ! -s ${sp_dir}/o3_lbl_uv.nc ] ; then
   fi
 fi
 
-##### got to here
+##########################################################################
+#################### got to here #########################################
+wait
+
+# Create the spectral file from the data calculated above
+# -------------------------------------------------------
+echo 'Constructing spectral file'
+mv ${specfile} ${specfile}_old 2> /dev/null
+mv ${specfile}_k ${specfile}_old_k 2> /dev/null
+prep_spec << EOF > ${specfile}_log1 2>&1
+$skelfile
+n
+$specfile
+2
+n
+${SOLSPEC}
+n
+3
+a
+5
+${sp_dir}/h2o_xuv_l
+5
+y
+${sp_dir}/h2o_euv_l
+5
+y
+${sp_dir}/h2o_fuv_l
+5
+y
+${sp_dir}/h2o_nuv_l
+5
+y
+${sp_dir}/h2o_vis_l
+5
+y
+${sp_dir}/h2o_nirf_l
+5
+y
+${sp_dir}/h2o_nuv_l
+5
+y
+${sp_dir}/h2o_vis_l
+5
+y
+${sp_dir}/h2o_nirf_l
+5
+y
+${sp_dir}/h2o_mirf_l
+5
+y
+${sp_dir}/h2o_firf_l
+5
+y
+${sp_dir}/co2_xuv_l
+5
+y
+${sp_dir}/co2_euv_l
+5
+y
+${sp_dir}/co2_fuv_l
+5
+y
+${sp_dir}/o3_uv_l
+-1
+EOF
+
 exit 0
+##########################################################################
+##########################################################################
 
 # Dinitrogen Oxide (N2O)
 rm -f n2o_???K.uvxsc n2o_298K_ext.uvxsc n2o_208-298K.uvxsc

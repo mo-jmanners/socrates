@@ -177,6 +177,7 @@ CONTAINS
 !     Indices of continuum gases
     INTEGER :: nd_k_term, nd_k_term_cont
 !     Maximum number of k-terms in a band
+    INTEGER :: nd_species_lk
 
 
     WRITE(iu_spc, '(a19, a16, a16)') &
@@ -187,6 +188,20 @@ CONTAINS
       'Number of spectral bands =', Spectrum%Basic%n_band
     WRITE(iu_spc, '(a35, 1x, i5)') &
       'Total number of gaseous absorbers =', Spectrum%Gas%n_absorb
+
+    nd_species_lk = 0
+    IF (ALLOCATED(Spectrum%Gas%i_scale_fnc)) THEN
+      DO j=1, Spectrum%Gas%n_absorb
+        DO i=1, Spectrum%Basic%n_band
+          IF (Spectrum%Gas%i_scale_fnc(i, j) == ip_scale_lookup) THEN
+            nd_species_lk = j
+          END IF
+        END DO
+      END DO
+    END IF
+    WRITE(iu_spc, '(a44, 1x, i5)') &
+      'Maximum index of gas with P-T lookup table =', nd_species_lk
+
     IF (ALLOCATED(Spectrum%Gas%i_band_k)) THEN
       nd_k_term = 0
       DO i=1, Spectrum%Basic%n_band

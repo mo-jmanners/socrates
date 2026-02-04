@@ -133,6 +133,8 @@ INTEGER :: nd_species_sb
 ! Size allocated for gaseous species with self-broadening
 INTEGER :: nd_gas_frac
 ! Size allocated for gas fractions (for self-broadening)
+INTEGER :: nd_species_lk
+! Size allocated for gaseous species with a P/T look-up table
 
 CHARACTER (LEN=errormessagelength) :: cmessage
 CHARACTER (LEN=*), PARAMETER       :: RoutineName = 'READ_SPECTRUM'
@@ -168,6 +170,7 @@ nd_t_lookup_cont = 0
 nd_k_term_cont = 0
 nd_species_sb = 0
 nd_gas_frac = 0
+nd_species_lk = 0
 
 Sp%Dim%nd_type = npd_type
 
@@ -296,6 +299,7 @@ Sp%Dim%nd_t_lookup_cont = nd_t_lookup_cont
 Sp%Dim%nd_k_term_cont = nd_k_term_cont
 Sp%Dim%nd_species_sb = nd_species_sb
 Sp%Dim%nd_gas_frac = nd_gas_frac
+Sp%Dim%nd_species_lk = nd_species_lk
 
 ! Allocate spectrum arrays that remain unallocated
 CALL allocate_spectrum(Sp)
@@ -591,6 +595,7 @@ IF (ios /= 0) THEN
   RETURN
 END IF
 nd_species=MAX(Sp%Gas%n_absorb, 1)
+nd_species_lk=nd_species
 
 READ(iu_spc, '(27x, i5)', IOSTAT=ios, IOMSG=iomessage) Sp%Aerosol%n_aerosol
 IF (ios /= 0) THEN
@@ -651,6 +656,7 @@ DO
   CASE ('Total number of gaseous absorbers','nd_species')
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) Sp%Gas%n_absorb
     nd_species=MAX(Sp%Gas%n_absorb, 1)
+    nd_species_lk=nd_species
   CASE ('Total number of aerosols','nd_aerosol_species')
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) &
                                                      Sp%Aerosol%n_aerosol
@@ -709,6 +715,8 @@ DO
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) nd_sub_band_gas
   CASE ('Maximum number of continuum k-terms in a band', 'nd_k_term_cont')
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) nd_k_term_cont
+  CASE ('Maximum index of gas with P-T lookup table', 'nd_species_lk')
+    READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) nd_species_lk
 
   END SELECT
   IF (ios /= 0) THEN
@@ -1161,7 +1169,7 @@ IF (l_lookup) THEN
   ALLOCATE(Sp%Gas%p_lookup( nd_pre ))
   ALLOCATE(Sp%Gas%t_lookup( nd_tmp, nd_pre ))
   ALLOCATE(Sp%Gas%k_lookup( nd_tmp, nd_pre, &
-                            nd_k_term, nd_species, nd_band ))
+                            nd_k_term, nd_species_lk, nd_band ))
 
   ! Skip over the headers.
   READ(iu_spc1, '(/)')
@@ -1402,7 +1410,7 @@ IF (l_lookup) THEN
   ALLOCATE(Sp%Gas%p_lookup( nd_pre ))
   ALLOCATE(Sp%Gas%t_lookup( nd_tmp, nd_pre ))
   ALLOCATE(Sp%Gas%k_lookup( nd_tmp, nd_pre, &
-                            nd_k_term, nd_species, nd_band ))
+                            nd_k_term, nd_species_lk, nd_band ))
 
   ! Locate correct block in extended spectral file
   l_k_table_exists=.FALSE.
@@ -1714,7 +1722,7 @@ nd_mix = MAXVAL(Sp%Gas%num_mix(1:Sp%Basic%n_band))
 nd_band_mix_gas = COUNT( Sp%Gas%num_mix(1:Sp%Basic%n_band) > 1 )
 
 ALLOCATE(Sp%Gas%k_lookup( nd_tmp, nd_pre, &
-                          nd_k_term, nd_species, nd_band ))
+                          nd_k_term, nd_species_lk, nd_band ))
 
 DO i=1, Sp%Basic%n_band
 
