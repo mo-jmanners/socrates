@@ -357,7 +357,7 @@ if [ ! -s ${sp_dir}/o3_uv_l ] || [ ! -s ${sp_dir}/o3_lbl_uv.nc ] ; then
   echo 'O3 (far-UV - near-IR continuum)'
   rm -f ${sp_dir}/o3_uv_l*
   ck_args="Ccorr_k -F $o3_pt_file -X $UV_O3 \
-    -R 111 1091 -i 1.0 -l 3 1.0e-2 -t 1.0e-3 \
+    -R 111 1091 -i 1.0 -l 3 ${COL_MASS_K_O3} -t 1.0e-3 \
     -s $skelfile +S $SOLSPEC -lk \
     -o ${sp_dir}/o3_uv_l -m ${sp_dir}/o3_uv_lm \
     -L ${sp_dir}/o3_lbl_uv.nc -np $procs"
@@ -403,6 +403,81 @@ if [ ! -s $sp_dir/o3_fir_l ] ; then
     else
       ${ck_args} > $sp_dir/o3_fir_log
     fi
+  fi
+fi
+
+# ----------------------------
+# Dinitrogen Oxide (N2O)
+# ----------------------------
+UV_N2O=${sp_dir}/n2o_208-298K.uvxsc  #  6 - 250 nm
+n2o_pt_file="pt_n2o"
+
+if [ ! -s $UV_N2O ] ; then
+  rm -f n2o_???K.dat n2o_???K.uvxsc n2o_298K_ext.uvxsc
+  calc_n2o_xsc
+  cat n2o_298K_6-160nm.dat n2o_298K.dat > n2o_298K_ext.dat
+  dat2xsc -t 208 n2o_208K.dat n2o_208K.uvxsc
+  dat2xsc -t 238 n2o_238K.dat n2o_238K.uvxsc
+  dat2xsc -t 268 n2o_268K.dat n2o_268K.uvxsc
+  dat2xsc -t 298 n2o_298K_ext.dat n2o_298K_ext.uvxsc
+  cat n2o_208K.uvxsc n2o_238K.uvxsc n2o_268K.uvxsc n2o_298K_ext.uvxsc > $UV_N2O
+  rm -f n2o_???K.dat n2o_???K.uvxsc n2o_298K_ext.uvxsc n2o_298K_ext.dat
+fi
+
+if [ ! -s ${sp_dir}/n2o_xuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_xuv.nc ] ; then
+  echo 'N2O (XUV continuum)'
+  rm -f ${sp_dir}/n2o_xuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
+    -R 6 10 -i 1000.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/n2o_xuv_l -m ${sp_dir}/n2o_xuv_lm \
+    -L ${sp_dir}/n2o_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2o_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2o_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/n2o_euv_l ] || [ ! -s ${sp_dir}/n2o_lbl_euv.nc ] ; then
+  echo 'N2O (EUV continuum)'
+  rm -f ${sp_dir}/n2o_euv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
+    -R 11 100 -i 10.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/n2o_euv_l -m ${sp_dir}/n2o_euv_lm \
+    -L ${sp_dir}/n2o_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2o_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2o_euv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/n2o_fuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_fuv.nc ] ; then
+  echo 'N2O (FUV continuum)'
+  rm -f ${sp_dir}/n2o_fuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
+    -R 101 160 -i 1.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/n2o_fuv_l -m ${sp_dir}/n2o_fuv_lm \
+    -L ${sp_dir}/n2o_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2o_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2o_fuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/n2o_uv_l ] || [ ! -s ${sp_dir}/n2o_lbl_uv.nc ] ; then
+  echo 'N2O (UV continuum)'
+  rm -f ${sp_dir}/n2o_uv_l*
+  ck_args="Ccorr_k -F $n2o_pt_file -UVX $UV_N2O \
+    -R 161 250 -i 1.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/n2o_uv_l -m ${sp_dir}/n2o_uv_lm \
+    -L ${sp_dir}/n2o_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2o_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2o_uv_log
   fi
 fi
 
@@ -483,66 +558,24 @@ ${sp_dir}/o3_mir_l
 5
 y
 ${sp_dir}/o3_fir_l
+5
+y
+${sp_dir}/n2o_xuv_l
+5
+y
+${sp_dir}/n2o_euv_l
+5
+y
+${sp_dir}/n2o_fuv_l
+5
+y
+${sp_dir}/n2o_uv_l
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-# Dinitrogen Oxide (N2O)
-rm -f n2o_???K.uvxsc n2o_298K_ext.uvxsc n2o_208-298K.uvxsc
-rm -f n2o_???K.dat
-calc_n2o_xsc
-cat n2o_298K_6-160nm.dat n2o_298K.dat > n2o_298K_ext.dat
-dat2xsc -t 208 n2o_208K.dat n2o_208K.uvxsc
-dat2xsc -t 238 n2o_238K.dat n2o_238K.uvxsc
-dat2xsc -t 268 n2o_268K.dat n2o_268K.uvxsc
-dat2xsc -t 298 n2o_298K_ext.dat n2o_298K_ext.uvxsc
-cat n2o_208K.uvxsc n2o_238K.uvxsc n2o_268K.uvxsc n2o_298K_ext.uvxsc \
-		> n2o_208-298K.uvxsc
-UV_N2O='n2o_208-298K.uvxsc' #   6 - 250 nm
-n2o_pt_file="pt_n2o"
-if [ ! -s ${sp_dir}/n2o_xuv_l ] || [ ! -s $SW_DATA/n2o_lbl_xuv.nc ] ; then
-  echo 'N2O (XUV continuum)'
-  rm -f ${sp_dir}/n2o_xuv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
-    -R 7 10 -i 1000.0 -l 4 5.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/n2o_xuv_l -m ${sp_dir}/n2o_xuv_lm \
-    -L $SW_DATA/n2o_lbl_xuv.nc -np $procs \
-     > ${sp_dir}/n2o_xuv_log
-fi
-if [ ! -s ${sp_dir}/n2o_euv_l ] || [ ! -s $SW_DATA/n2o_lbl_euv.nc ] ; then
-  echo 'N2O (EUV continuum)'
-  rm -f ${sp_dir}/n2o_euv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
-    -R 11 100 -i 10.0 -l 4 5.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/n2o_euv_l -m ${sp_dir}/n2o_euv_lm \
-    -L $SW_DATA/n2o_lbl_euv.nc -np $procs \
-     > ${sp_dir}/n2o_euv_log
-fi
-if [ ! -s ${sp_dir}/n2o_fuv_l ] || [ ! -s $SW_DATA/n2o_lbl_fuv.nc ] ; then
-  echo 'N2O (FUV continuum)'
-  rm -f ${sp_dir}/n2o_fuv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
-    -R 101 160 -i 1.0 -l 4 5.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/n2o_fuv_l -m ${sp_dir}/n2o_fuv_lm \
-    -L $SW_DATA/n2o_lbl_fuv.nc -np $procs \
-     > ${sp_dir}/n2o_fuv_log
-fi
-if [ ! -s ${sp_dir}/n2o_uv_l ] || [ ! -s $SW_DATA/n2o_lbl_uv.nc ] ; then
-  echo 'N2O (UV continuum)'
-  rm -f ${sp_dir}/n2o_uv_l*
-  Ccorr_k -F $n2o_pt_file -UVX $UV_N2O \
-    -R 161 250 -i 1.0 -l 4 5.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/n2o_uv_l -m ${sp_dir}/n2o_uv_lm \
-    -L $SW_DATA/n2o_lbl_uv.nc -np $procs \
-     > ${sp_dir}/n2o_uv_log
-fi
 
 # Carbon Monoxide (CO)
 rm -f co.uvxsc
