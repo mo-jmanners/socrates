@@ -11,8 +11,8 @@ fi
 procs=24
 . ./env_earth
 
-# HITRAN2020 data downloaded from hitran.org on 11.11.22
-HITRAN_H2O="${ARCHIVE_DATA}/HITRAN2020/h2o_111122.par"
+# HITRAN2024 data downloaded from hitran.org on 20.1.26
+HITRAN_H2O="${ARCHIVE_DATA}/HITRAN2024/h2o_200126.par"
 
 # MT_CKD 4.3 foreign-broadened continuum
 CONT_H2O_FRN="${RAD_DATA}/continua/absco-ref_wv-mt-ckd4p3.nc"
@@ -54,7 +54,7 @@ if [ ! -s $H2O_LBL_IRF ] ; then
         -s $skelfile -m ${lbl_base}_lm -L ${lbl_base}.nc \
         -np $procs"
       if command -v sbatch &> /dev/null ; then
-        sbatch -W -n $procs -o ${lbl_base}_log -t 120 ${ck_args} &
+        sbatch -W -n $procs -o ${lbl_base}_log -t 360 ${ck_args} &
       else
         ${ck_args} > ${lbl_base}_log
       fi

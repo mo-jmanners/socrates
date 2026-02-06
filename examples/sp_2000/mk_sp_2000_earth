@@ -32,9 +32,9 @@ skelfile=${sp_dir}/sp_2000_earth_skel
 # ----------------------------
 # Water vapour (H2O)
 # ----------------------------
-rm -f h2o.uvxsc
-dat2xsc --eric ericH2O.dat h2o.uvxsc
-UV_H2O='h2o.uvxsc' #   6 - 216 nm
+UV_H2O=${sp_dir}/h2o.uvxsc
+rm -f $UV_H2O
+dat2xsc h2o_298K_Hebrard2022.dat $UV_H2O  #  6 - 216 nm
 if [ ! -s ${sp_dir}/h2o_xuv_l ] || [ ! -s ${sp_dir}/h2o_lbl_xuv.nc ] ; then
   echo 'H2O: XUV - continuum'
   rm -f ${sp_dir}/h2o_xuv_l*
@@ -77,7 +77,6 @@ if [ ! -s ${sp_dir}/h2o_fuv_l ] || [ ! -s ${sp_dir}/h2o_lbl_fuv.nc ] ; then
     ${ck_args} > ${sp_dir}/h2o_fuv_log
   fi
 fi
-rm -f h2o.uvxsc
 
 if [ ! -s $sp_dir/h2o_nuv_l ] ; then
   if [ ! -s $H2O_LBL_VIS ] ; then
@@ -245,9 +244,9 @@ fi
 # ----------------------------
 # Carbon Dioxide (CO2)
 # ----------------------------
-rm -f co2_hb2010.uvxsc
-dat2xsc CO2_HB2010_300K.dat co2_hb2010.uvxsc
-UV_CO2='co2_hb2010.uvxsc' #   0.1254-201.6nm
+UV_CO2=${sp_dir}/co2.uvxsc
+rm -f $UV_CO2
+dat2xsc co2_300K_HuestisBerkowitz2010.dat $UV_CO2  #  0.1254-201.6nm
 if [ ! -s ${sp_dir}/co2_xuv_l ] || [ ! -s ${sp_dir}/co2_lbl_xuv.nc ] ; then
   echo 'CO2: XUV - continuum'
   rm -f ${sp_dir}/co2_xuv_l*
@@ -290,8 +289,64 @@ if [ ! -s ${sp_dir}/co2_fuv_l ] || [ ! -s ${sp_dir}/co2_lbl_fuv.nc ] ; then
     ${ck_args} > ${sp_dir}/co2_fuv_log
   fi
 fi
-rm -f co2_hb2010.uvxsc
 
+if [ ! -s $sp_dir/co2_nir_l ] ; then
+  if [ ! -s $CO2_LBL ] ; then
+    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_earth"
+    exit 1
+  else
+    echo "CO2: near infra-red"
+    rm -f $sp_dir/co2_nir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 547 1000 -l 2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -s $skelfile +S $SOLSPEC -lk \
+      -o $sp_dir/co2_nir_l -m $sp_dir/co2_nir_lm \
+      -L $CO2_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/co2_nir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/co2_nir_log
+    fi
+  fi
+fi
+if [ ! -s $sp_dir/co2_mir_l ] ; then
+  if [ ! -s $CO2_LBL ] ; then
+    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_earth"
+    exit 1
+  else
+    echo "CO2: mid infra-red"
+    rm -f $sp_dir/co2_mir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 1001 1500 -l 2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/co2_mir_l -m $sp_dir/co2_mir_lm \
+      -L $CO2_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/co2_mir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/co2_mir_log
+    fi
+  fi
+fi
+if [ ! -s $sp_dir/co2_fir_l ] ; then
+  if [ ! -s $CO2_LBL ] ; then
+    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_earth"
+    exit 1
+  else
+    echo "CO2: far infra-red"
+    rm -f $sp_dir/co2_fir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 1501 2000 -l 2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/co2_fir_l -m $sp_dir/co2_fir_lm \
+      -L $CO2_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/co2_fir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/co2_fir_log
+    fi
+  fi
+fi
 
 # ----------------------------
 # Ozone (O3)
@@ -310,6 +365,44 @@ if [ ! -s ${sp_dir}/o3_uv_l ] || [ ! -s ${sp_dir}/o3_lbl_uv.nc ] ; then
     sbatch -W -n $procs -o ${sp_dir}/o3_uv_log -t 60 ${ck_args} &
   else
     ${ck_args} > ${sp_dir}/o3_uv_log
+  fi
+fi
+if [ ! -s $sp_dir/o3_mir_l ] ; then
+  if [ ! -s $O3_LBL ] ; then
+    echo "O3: No LBL file: please run ./mk_o3_lbl_2000_earth"
+    exit 1
+  else
+    echo "O3: mid infra-red"
+    rm -f $sp_dir/o3_mir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 1251 1500 -l 3 ${COL_MASS_K_O3} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/o3_mir_l -m $sp_dir/o3_mir_lm \
+      -L $O3_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/o3_mir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/o3_mir_log
+    fi
+  fi
+fi
+if [ ! -s $sp_dir/o3_fir_l ] ; then
+  if [ ! -s $O3_LBL ] ; then
+    echo "O3: No LBL file: please run ./mk_o3_lbl_2000_earth"
+    exit 1
+  else
+    echo "O3: far infra-red"
+    rm -f $sp_dir/o3_fir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 1501 2000 -l 3 ${COL_MASS_K_O3} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/o3_fir_l -m $sp_dir/o3_fir_lm \
+      -L $O3_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/o3_fir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/o3_fir_log
+    fi
   fi
 fi
 
@@ -351,19 +444,18 @@ y
 ${sp_dir}/h2o_nirf_l
 5
 y
-${sp_dir}/h2o_nuv_l
-5
-y
-${sp_dir}/h2o_vis_l
-5
-y
-${sp_dir}/h2o_nirf_l
-5
-y
 ${sp_dir}/h2o_mirf_l
 5
 y
 ${sp_dir}/h2o_firf_l
+9
+${sp_dir}/h2o_nir_s
+9
+y
+${sp_dir}/h2o_mir_s
+9
+y
+${sp_dir}/h2o_fir_s
 5
 y
 ${sp_dir}/co2_xuv_l
@@ -375,7 +467,22 @@ y
 ${sp_dir}/co2_fuv_l
 5
 y
+${sp_dir}/co2_nir_l
+5
+y
+${sp_dir}/co2_mir_l
+5
+y
+${sp_dir}/co2_fir_l
+5
+y
 ${sp_dir}/o3_uv_l
+5
+y
+${sp_dir}/o3_mir_l
+5
+y
+${sp_dir}/o3_fir_l
 -1
 EOF
 
