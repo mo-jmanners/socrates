@@ -1,0 +1,77 @@
+#!/bin/bash
+
+if [ $RAD_BIN ] ; then
+  echo "Using code compiled in "$RAD_BIN
+else
+  echo "Path to code not set."
+  exit 1
+fi
+
+# Set environment variables
+procs=24
+. ./env_earth
+
+# HITRAN2024 line data
+HITRAN_N2O="${ARCHIVE_DATA}/HITRAN2024/n2o_200126.par"
+
+mkdir -p ${SW_DATA}
+
+skelfile="${SW_DATA}/sp_2000_earth_skel"
+./mk_sp_2000_earth_skel $skelfile > /dev/null
+
+if [ ! -s $N2O_LBL ] ; then
+  ii=0
+  echo "Generating N2O line absorption data"
+  for ((i = 138; i < 401; i++))
+  do
+    i_begin=$((i*5-4))
+    i_end=$((i*5))
+    lbl_base="${SW_DATA}/n2o_blbl_${i_begin}_${i_end}_${PT_FILE}"
+    if [ ! -s ${lbl_base}.nc ] || [ ! -f ${lbl_base}.done ] ; then
+      rm -f ${lbl_base}*
+      ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -D $HITRAN_N2O \
+        -lo 4 -R ${i_end} ${i_begin} -c 50000.0 -i 0.1 \
+        -s $skelfile -m ${lbl_base}_lm -L ${lbl_base}.nc \
+        -np $procs"
+      if command -v sbatch &> /dev/null ; then
+        sbatch -W -n $procs -o ${lbl_base}_log -t 360 ${ck_args} &
+      else
+        ${ck_args} > ${lbl_base}_log
+      fi
+      ((ii++))
+    fi
+    if [ $ii -gt 99 ] ; then
+      wait -n
+    fi
+  done
+
+  wait
+  finished="true"
+
+  echo "Checking all bands have been completed"
+  for ((i = 138; i < 401; i++))
+  do
+    i_begin=$((i*5-4))
+    i_end=$((i*5))
+    lbl_base="${SW_DATA}/n2o_blbl_${i_begin}_${i_end}_${PT_FILE}"
+    if [ ! -f ${lbl_base}.done ] ; then
+      echo "Bands" ${i_begin} "-" ${i_end} "not done"
+      finished="false" 
+    fi
+  done
+  if [ $finished == "true" ] ; then
+    echo "Concatenating band data into a single file"
+    lblcat ${SW_DATA}/n2o_blbl_*_${PT_FILE}.nc $N2O_LBL
+  else
+    echo "Not concatenating band data: check for errors and rerun"
+    exit 1
+  fi
+else
+  echo "File exists:" $N2O_LBL
+fi
+
+# Check job progress using:
+# sacct --format=jobname%30,jobid%9,elapsed,totalcpu,ncpus%5,reqmem,exitcode,state
+# Use scancel to kill
+
+exit 0

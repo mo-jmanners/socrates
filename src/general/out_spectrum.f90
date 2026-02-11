@@ -177,7 +177,6 @@ CONTAINS
 !     Indices of continuum gases
     INTEGER :: nd_k_term, nd_k_term_cont
 !     Maximum number of k-terms in a band
-    INTEGER :: nd_species_lk
 
 
     WRITE(iu_spc, '(a19, a16, a16)') &
@@ -188,19 +187,6 @@ CONTAINS
       'Number of spectral bands =', Spectrum%Basic%n_band
     WRITE(iu_spc, '(a35, 1x, i5)') &
       'Total number of gaseous absorbers =', Spectrum%Gas%n_absorb
-
-    nd_species_lk = 0
-    IF (ALLOCATED(Spectrum%Gas%i_scale_fnc)) THEN
-      DO j=1, Spectrum%Gas%n_absorb
-        DO i=1, Spectrum%Basic%n_band
-          IF (Spectrum%Gas%i_scale_fnc(i, j) == ip_scale_lookup) THEN
-            nd_species_lk = j
-          END IF
-        END DO
-      END DO
-    END IF
-    WRITE(iu_spc, '(a44, 1x, i5)') &
-      'Maximum index of gas with P-T lookup table =', nd_species_lk
 
     IF (ALLOCATED(Spectrum%Gas%i_band_k)) THEN
       nd_k_term = 0
@@ -518,8 +504,6 @@ CONTAINS
 !     Loop variables
     INTEGER :: i_index
 !     Index of gas
-    INTEGER :: i_index_sb
-!     Index of gas in arrays with self-broadening
 
 
     WRITE(iu_spc, '(a19, a16, a16)') &
@@ -599,12 +583,11 @@ CONTAINS
             WRITE(iu_spc1,'(/,3(a,i4))') 'Band: ',i,', gas: ',i_index, &
               ', k-terms: ',SpGas%i_band_k(i, i_index)
             IF (SpGas%l_self_broadening(i_index)) THEN
-              i_index_sb = SpGas%index_sb(i_index)
               DO k=1, SpGas%i_band_k(i, i_index)
                 DO igf=1, SpGas%n_gas_frac
                   DO ip=1, Spectrum%Dim%nd_pre
                     WRITE(iu_spc1,'(6(1PE13.6))') &
-                      SpGas%k_lookup_sb(:,ip,igf,k,i_index_sb,i)
+                      SpGas%lookup(i_index,i)%k_sb(:,ip,igf,k)
                   END DO
                 END DO
               END DO
@@ -612,7 +595,7 @@ CONTAINS
               DO k=1, SpGas%i_band_k(i, i_index)
                 DO ip=1, Spectrum%Dim%nd_pre
                   WRITE(iu_spc1,'(6(1PE13.6))') &
-                    SpGas%k_lookup(:,ip,k,i_index,i)
+                    SpGas%lookup(i_index,i)%k(:,ip,k)
                 END DO
               END DO
             END IF

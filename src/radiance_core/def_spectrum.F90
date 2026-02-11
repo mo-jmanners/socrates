@@ -21,7 +21,7 @@ USE realtype_rd, ONLY: RealK
 IMPLICIT NONE
 
 
-INTEGER, PARAMETER :: n_dim = 41
+INTEGER, PARAMETER :: n_dim = 40
 !   Number of dimensions in StrSpecDim
 INTEGER, PARAMETER :: n_int = 18
 !   Number of (non-allocatable) integers
@@ -113,8 +113,6 @@ TYPE StrSpecDim
 !   Number of wavelengths in quantum yield look-up tables
   INTEGER :: nd_t_lookup_gas = 0
 !   Number of temperatures in gas k-term look-up tables
-  INTEGER :: nd_species_lk = 0
-!   Size allocated for gaseous species with a P/T look-up table
 END TYPE StrSPecDim
 
 
@@ -156,6 +154,18 @@ TYPE StrSpecRayleigh
   REAL (RealK), ALLOCATABLE :: rayleigh_coeff_gas(:, :)
 !   Rayleigh scattering coefficients for each gas in each band
 END TYPE StrSpecRayleigh
+
+
+TYPE StrSpecGasLookup
+  INTEGER :: nd_k_term = 0
+!   Size allocated for k-terms in P-T look-up table
+  INTEGER :: nd_k_term_sb = 0
+!   Size allocated for k-terms in self-broadening look-up table
+  REAL (RealK), ALLOCATABLE :: k(:, :, :)
+!   Absorption coefficients for P-T look-up table
+  REAL (RealK), ALLOCATABLE :: k_sb(:, :, :, :)
+!   Absorption coefficients for self-broadening look-up table
+END TYPE StrSpecGasLookup
 
 
 TYPE StrSpecGas
@@ -216,13 +226,14 @@ TYPE StrSpecGas
   REAL (RealK), ALLOCATABLE :: p_lookup(:)
   REAL (RealK), ALLOCATABLE :: t_lookup(:, :)
   REAL (RealK), ALLOCATABLE :: gf_lookup(:)
-  REAL (RealK), ALLOCATABLE :: k_lookup(:, :, :, :, :)
-  REAL (RealK), ALLOCATABLE :: k_lookup_sb(:, :, :, :, :, :)
   REAL (RealK), ALLOCATABLE :: w_ses(:, :)
   REAL (RealK), ALLOCATABLE :: k_mix_gas(:, :, :, :, :)
 !   Absorption coefficients for mixture species
   REAL (RealK), ALLOCATABLE :: f_mix(:)
 !   Mixing ratio of mixed absorber amount
+
+  TYPE (StrSpecGasLookup), ALLOCATABLE :: lookup(:, :)
+!   Absorption coefficients for look-up tables
 
   INTEGER, ALLOCATABLE :: n_t_lookup_gas(:)
   REAL (RealK), ALLOCATABLE :: t_lookup_gas(:, :)
@@ -497,6 +508,7 @@ USE missing_data_mod, ONLY: rmdi
 IMPLICIT NONE
 
 TYPE (StrSpecData), INTENT(INOUT) :: Sp
+INTEGER :: i, j
 
 ! Initialise count for integers, reals and logicals
 Sp%Dim%nd_alloc_int  = n_int
@@ -704,18 +716,27 @@ IF (.NOT. ALLOCATED(Sp%Gas%gf_lookup)) &
 Sp%Dim%nd_alloc_real = &
 Sp%Dim%nd_alloc_real + SIZE(Sp%Gas%gf_lookup)
 
-IF (.NOT. ALLOCATED(Sp%Gas%k_lookup)) &
-  ALLOCATE(Sp%Gas%k_lookup( Sp%Dim%nd_tmp, Sp%Dim%nd_pre, Sp%Dim%nd_k_term, &
-                            Sp%Dim%nd_species_lk, Sp%Dim%nd_band ))
-Sp%Dim%nd_alloc_real = &
-Sp%Dim%nd_alloc_real + SIZE(Sp%Gas%k_lookup)
+IF (.NOT. ALLOCATED(Sp%Gas%lookup)) &
+  ALLOCATE(Sp%Gas%lookup( Sp%Dim%nd_species, Sp%Dim%nd_band ))
+Sp%Dim%nd_alloc_int = &
+Sp%Dim%nd_alloc_int + SIZE(Sp%Gas%lookup)*2
 
-IF (.NOT. ALLOCATED(Sp%Gas%k_lookup_sb)) &
-  ALLOCATE(Sp%Gas%k_lookup_sb( Sp%Dim%nd_tmp, Sp%Dim%nd_pre, &
-                               Sp%Dim%nd_gas_frac, Sp%Dim%nd_k_term, &
-                               Sp%Dim%nd_species_sb, Sp%Dim%nd_band ))
-Sp%Dim%nd_alloc_real = &
-Sp%Dim%nd_alloc_real + SIZE(Sp%Gas%k_lookup_sb)
+DO i=1, Sp%Dim%nd_band
+  DO j=1, Sp%Dim%nd_species
+    IF (.NOT. ALLOCATED(Sp%Gas%lookup(j, i)%k)) &
+      ALLOCATE(Sp%Gas%lookup(j, i)%k( Sp%Dim%nd_tmp, Sp%Dim%nd_pre, &
+                                      Sp%Gas%lookup(j, i)%nd_k_term ))
+    Sp%Dim%nd_alloc_real = &
+    Sp%Dim%nd_alloc_real + SIZE(Sp%Gas%lookup(j, i)%k)
+
+    IF (.NOT. ALLOCATED(Sp%Gas%lookup(j, i)%k_sb)) &
+      ALLOCATE(Sp%Gas%lookup(j, i)%k_sb( Sp%Dim%nd_tmp, Sp%Dim%nd_pre, &
+                                         Sp%Dim%nd_gas_frac, &
+                                         Sp%Gas%lookup(j, i)%nd_k_term_sb ))
+    Sp%Dim%nd_alloc_real = &
+    Sp%Dim%nd_alloc_real + SIZE(Sp%Gas%lookup(j, i)%k_sb)
+  END DO
+END DO
 
 IF (.NOT. ALLOCATED(Sp%Gas%w_ses)) &
   ALLOCATE(Sp%Gas%w_ses( Sp%Dim%nd_k_term, Sp%Dim%nd_band ))
@@ -1425,10 +1446,8 @@ IF (ALLOCATED(Sp%Gas%k_mix_gas)) &
    DEALLOCATE(Sp%Gas%k_mix_gas)
 IF (ALLOCATED(Sp%Gas%w_ses)) &
    DEALLOCATE(Sp%Gas%w_ses)
-IF (ALLOCATED(Sp%Gas%k_lookup_sb)) &
-   DEALLOCATE(Sp%Gas%k_lookup_sb)
-IF (ALLOCATED(Sp%Gas%k_lookup)) &
-   DEALLOCATE(Sp%Gas%k_lookup)
+IF (ALLOCATED(Sp%Gas%lookup)) &
+   DEALLOCATE(Sp%Gas%lookup)
 IF (ALLOCATED(Sp%Gas%gf_lookup)) &
    DEALLOCATE(Sp%Gas%gf_lookup)
 IF (ALLOCATED(Sp%Gas%t_lookup)) &

@@ -32,14 +32,15 @@ skelfile=${sp_dir}/sp_2000_earth_skel
 # ----------------------------
 # Water vapour (H2O)
 # ----------------------------
-UV_H2O=${sp_dir}/h2o.uvxsc
-rm -f $UV_H2O
-dat2xsc h2o_298K_Hebrard2022.dat $UV_H2O  #  6 - 216 nm
+id_h2o='1'
+uv_h2o=${sp_dir}/h2o.uvxsc
+rm -f $uv_h2o
+dat2xsc h2o_298K_Hebrard2022.dat $uv_h2o  #  6 - 216 nm
 if [ ! -s ${sp_dir}/h2o_xuv_l ] || [ ! -s ${sp_dir}/h2o_lbl_xuv.nc ] ; then
   echo 'H2O: XUV - continuum'
   rm -f ${sp_dir}/h2o_xuv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_H2O \
-    -R 6 10 -i 1000.0 -l 1 1.0e-5 -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o \
+    -R 6 10 -i 1000.0 -l $id_h2o 1.0e-5 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/h2o_xuv_l -m ${sp_dir}/h2o_xuv_lm \
     -L ${sp_dir}/h2o_lbl_xuv.nc -np $procs"
@@ -52,8 +53,8 @@ fi
 if [ ! -s ${sp_dir}/h2o_euv_l ] || [ ! -s ${sp_dir}/h2o_lbl_euv.nc ] ; then
   echo 'H2O: extreme UV - continuum'
   rm -f ${sp_dir}/h2o_euv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_H2O \
-    -R 11 100 -i 10.0 -l 1 1.0e-5 -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o \
+    -R 11 100 -i 10.0 -l $id_h2o 1.0e-5 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/h2o_euv_l -m ${sp_dir}/h2o_euv_lm \
     -L ${sp_dir}/h2o_lbl_euv.nc -np $procs"
@@ -66,8 +67,8 @@ fi
 if [ ! -s ${sp_dir}/h2o_fuv_l ] || [ ! -s ${sp_dir}/h2o_lbl_fuv.nc ] ; then
   echo 'H2O: far UV - continuum'
   rm -f ${sp_dir}/h2o_fuv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_H2O \
-    -R 101 217 -i 1.0 -l 1 1.0e-5 -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o \
+    -R 101 217 -i 1.0 -l $id_h2o 1.0e-5 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/h2o_fuv_l -m ${sp_dir}/h2o_fuv_lm \
     -L ${sp_dir}/h2o_lbl_fuv.nc -np $procs"
@@ -86,7 +87,7 @@ if [ ! -s $sp_dir/h2o_nuv_l ] ; then
     echo "H2O: near UV - lines"
     rm -f $sp_dir/h2o_nuv_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 238 320 -l 1 ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 238 320 -l $id_h2o ${COL_MASS_K_H2O} -b 5.0e-4 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_nuv_l -m $sp_dir/h2o_nuv_lm \
       -L $H2O_LBL_VIS -np $procs"
@@ -105,7 +106,7 @@ if [ ! -s $sp_dir/h2o_vis_l ] ; then
     echo "H2O: visible"
     rm -f $sp_dir/h2o_vis_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 321 500 -l 1 ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 321 500 -l $id_h2o ${COL_MASS_K_H2O} -b 5.0e-4 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_vis_l -m $sp_dir/h2o_vis_lm \
       -L $H2O_LBL_VIS -np $procs"
@@ -125,7 +126,7 @@ if [ ! -s $sp_dir/h2o_nirf_l ] ; then
     rm -f $sp_dir/h2o_nirf_l*
     rm -f $sp_dir/h2o_nirf_l_map.nc
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 501 1000 -l 1 ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 501 1000 -l $id_h2o ${COL_MASS_K_H2O} -b 5.0e-4 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_nirf_l -m $sp_dir/h2o_nirf_lm \
       -L $H2O_LBL_IRF -np $procs \
@@ -146,7 +147,7 @@ if [ ! -s $sp_dir/h2o_mirf_l ] ; then
     rm -f $sp_dir/h2o_mirf_l*
     rm -f $sp_dir/h2o_mirf_l_map.nc
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -l 1 ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 1001 1500 -l $id_h2o ${COL_MASS_K_H2O} -b 5.0e-4 \
       -s $skelfile -u -lk \
       -o $sp_dir/h2o_mirf_l -m $sp_dir/h2o_mirf_lm \
       -L $H2O_LBL_IRF -np $procs \
@@ -167,7 +168,7 @@ if [ ! -s $sp_dir/h2o_firf_l ] ; then
     rm -f $sp_dir/h2o_firf_l*
     rm -f $sp_dir/h2o_firf_l_map.nc
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -l 1 ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 1501 2000 -l $id_h2o ${COL_MASS_K_H2O} -b 5.0e-4 \
       -s $skelfile -u -lk \
       -o $sp_dir/h2o_firf_l -m $sp_dir/h2o_firf_lm \
       -L $H2O_LBL_IRF -np $procs \
@@ -244,14 +245,15 @@ fi
 # ----------------------------
 # Carbon Dioxide (CO2)
 # ----------------------------
-UV_CO2=${sp_dir}/co2.uvxsc
-rm -f $UV_CO2
-dat2xsc co2_300K_HuestisBerkowitz2010.dat $UV_CO2  #  0.1254-201.6nm
+id_co2='2'
+uv_co2=${sp_dir}/co2.uvxsc
+rm -f $uv_co2
+dat2xsc co2_300K_HuestisBerkowitz2010.dat $uv_co2  #  0.1254-201.6nm
 if [ ! -s ${sp_dir}/co2_xuv_l ] || [ ! -s ${sp_dir}/co2_lbl_xuv.nc ] ; then
   echo 'CO2: XUV - continuum'
   rm -f ${sp_dir}/co2_xuv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_CO2 \
-    -R 1 10 -i 1000.0 -l 2 1.0e1 -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co2 \
+    -R 1 10 -i 1000.0 -l $id_co2 ${COL_MASS_K_CO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/co2_xuv_l -m ${sp_dir}/co2_xuv_lm \
     -L ${sp_dir}/co2_lbl_xuv.nc -np $procs"
@@ -264,8 +266,8 @@ fi
 if [ ! -s ${sp_dir}/co2_euv_l ] || [ ! -s ${sp_dir}/co2_lbl_euv.nc ] ; then
   echo 'CO2: extreme UV - continuum'
   rm -f ${sp_dir}/co2_euv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_CO2 \
-    -R 11 100 -i 10.0 -l 2 1.0e1 -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co2 \
+    -R 11 100 -i 10.0 -l $id_co2 ${COL_MASS_K_CO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/co2_euv_l -m ${sp_dir}/co2_euv_lm \
     -L ${sp_dir}/co2_lbl_euv.nc -np $procs"
@@ -278,8 +280,8 @@ fi
 if [ ! -s ${sp_dir}/co2_fuv_l ] || [ ! -s ${sp_dir}/co2_lbl_fuv.nc ] ; then
   echo 'CO2: far UV - continuum'
   rm -f ${sp_dir}/co2_fuv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_CO2 \
-    -R 101 202 -i 1.0 -l 2 1.0e1 -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co2 \
+    -R 101 202 -i 1.0 -l $id_co2 ${COL_MASS_K_CO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/co2_fuv_l -m ${sp_dir}/co2_fuv_lm \
     -L ${sp_dir}/co2_lbl_fuv.nc -np $procs"
@@ -298,7 +300,7 @@ if [ ! -s $sp_dir/co2_nir_l ] ; then
     echo "CO2: near infra-red"
     rm -f $sp_dir/co2_nir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 547 1000 -l 2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -R 547 1000 -l $id_co2 ${COL_MASS_K_CO2} -b 5.0e-4 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/co2_nir_l -m $sp_dir/co2_nir_lm \
       -L $CO2_LBL -np $procs"
@@ -317,7 +319,7 @@ if [ ! -s $sp_dir/co2_mir_l ] ; then
     echo "CO2: mid infra-red"
     rm -f $sp_dir/co2_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -l 2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -R 1001 1500 -l $id_co2 ${COL_MASS_K_CO2} -b 5.0e-4 \
       -s $skelfile -u -lk \
       -o $sp_dir/co2_mir_l -m $sp_dir/co2_mir_lm \
       -L $CO2_LBL -np $procs"
@@ -336,7 +338,7 @@ if [ ! -s $sp_dir/co2_fir_l ] ; then
     echo "CO2: far infra-red"
     rm -f $sp_dir/co2_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -l 2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -R 1501 2000 -l $id_co2 ${COL_MASS_K_CO2} -b 5.0e-4 \
       -s $skelfile -u -lk \
       -o $sp_dir/co2_fir_l -m $sp_dir/co2_fir_lm \
       -L $CO2_LBL -np $procs"
@@ -351,13 +353,14 @@ fi
 # ----------------------------
 # Ozone (O3)
 # ----------------------------
-UV_O3="$RAD_DATA/gases/O3_110nm-1100nm.xsc"
+id_o3='3'
+uv_o3="$RAD_DATA/gases/O3_110nm-1100nm.xsc"
 o3_pt_file="$RAD_DATA/gases/pt_o3_uv"
 if [ ! -s ${sp_dir}/o3_uv_l ] || [ ! -s ${sp_dir}/o3_lbl_uv.nc ] ; then
   echo 'O3 (far-UV - near-IR continuum)'
   rm -f ${sp_dir}/o3_uv_l*
-  ck_args="Ccorr_k -F $o3_pt_file -X $UV_O3 \
-    -R 111 1091 -i 1.0 -l 3 ${COL_MASS_K_O3} -t 1.0e-3 \
+  ck_args="Ccorr_k -F $o3_pt_file -X $uv_o3 \
+    -R 111 1091 -i 1.0 -l $id_o3 ${COL_MASS_K_O3} -t 1.0e-3 \
     -s $skelfile +S $SOLSPEC -lk \
     -o ${sp_dir}/o3_uv_l -m ${sp_dir}/o3_uv_lm \
     -L ${sp_dir}/o3_lbl_uv.nc -np $procs"
@@ -375,7 +378,7 @@ if [ ! -s $sp_dir/o3_mir_l ] ; then
     echo "O3: mid infra-red"
     rm -f $sp_dir/o3_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1251 1500 -l 3 ${COL_MASS_K_O3} -b 5.0e-4 \
+      -R 1251 1500 -l $id_o3 ${COL_MASS_K_O3} -b 5.0e-4 \
       -s $skelfile -u -lk \
       -o $sp_dir/o3_mir_l -m $sp_dir/o3_mir_lm \
       -L $O3_LBL -np $procs"
@@ -394,7 +397,7 @@ if [ ! -s $sp_dir/o3_fir_l ] ; then
     echo "O3: far infra-red"
     rm -f $sp_dir/o3_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -l 3 ${COL_MASS_K_O3} -b 5.0e-4 \
+      -R 1501 2000 -l $id_o3 ${COL_MASS_K_O3} -b 5.0e-4 \
       -s $skelfile -u -lk \
       -o $sp_dir/o3_fir_l -m $sp_dir/o3_fir_lm \
       -L $O3_LBL -np $procs"
@@ -409,10 +412,11 @@ fi
 # ----------------------------
 # Dinitrogen Oxide (N2O)
 # ----------------------------
-UV_N2O=${sp_dir}/n2o_208-298K.uvxsc  #  6 - 250 nm
+id_n2o='4'
+uv_n2o=${sp_dir}/n2o_208-298K.uvxsc  #  6 - 250 nm
 n2o_pt_file="pt_n2o"
 
-if [ ! -s $UV_N2O ] ; then
+if [ ! -s $uv_n2o ] ; then
   rm -f n2o_???K.dat n2o_???K.uvxsc n2o_298K_ext.uvxsc
   calc_n2o_xsc
   cat n2o_298K_6-160nm.dat n2o_298K.dat > n2o_298K_ext.dat
@@ -420,15 +424,15 @@ if [ ! -s $UV_N2O ] ; then
   dat2xsc -t 238 n2o_238K.dat n2o_238K.uvxsc
   dat2xsc -t 268 n2o_268K.dat n2o_268K.uvxsc
   dat2xsc -t 298 n2o_298K_ext.dat n2o_298K_ext.uvxsc
-  cat n2o_208K.uvxsc n2o_238K.uvxsc n2o_268K.uvxsc n2o_298K_ext.uvxsc > $UV_N2O
+  cat n2o_208K.uvxsc n2o_238K.uvxsc n2o_268K.uvxsc n2o_298K_ext.uvxsc > $uv_n2o
   rm -f n2o_???K.dat n2o_???K.uvxsc n2o_298K_ext.uvxsc n2o_298K_ext.dat
 fi
 
 if [ ! -s ${sp_dir}/n2o_xuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_xuv.nc ] ; then
   echo 'N2O (XUV continuum)'
   rm -f ${sp_dir}/n2o_xuv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
-    -R 6 10 -i 1000.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2o \
+    -R 7 10 -i 1000.0 -l $id_n2o ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n2o_xuv_l -m ${sp_dir}/n2o_xuv_lm \
     -L ${sp_dir}/n2o_lbl_xuv.nc -np $procs"
@@ -441,8 +445,8 @@ fi
 if [ ! -s ${sp_dir}/n2o_euv_l ] || [ ! -s ${sp_dir}/n2o_lbl_euv.nc ] ; then
   echo 'N2O (EUV continuum)'
   rm -f ${sp_dir}/n2o_euv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
-    -R 11 100 -i 10.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2o \
+    -R 11 100 -i 10.0 -l $id_n2o ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n2o_euv_l -m ${sp_dir}/n2o_euv_lm \
     -L ${sp_dir}/n2o_lbl_euv.nc -np $procs"
@@ -455,8 +459,8 @@ fi
 if [ ! -s ${sp_dir}/n2o_fuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_fuv.nc ] ; then
   echo 'N2O (FUV continuum)'
   rm -f ${sp_dir}/n2o_fuv_l*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $UV_N2O \
-    -R 101 160 -i 1.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2o \
+    -R 101 160 -i 1.0 -l $id_n2o ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n2o_fuv_l -m ${sp_dir}/n2o_fuv_lm \
     -L ${sp_dir}/n2o_lbl_fuv.nc -np $procs"
@@ -469,8 +473,8 @@ fi
 if [ ! -s ${sp_dir}/n2o_uv_l ] || [ ! -s ${sp_dir}/n2o_lbl_uv.nc ] ; then
   echo 'N2O (UV continuum)'
   rm -f ${sp_dir}/n2o_uv_l*
-  ck_args="Ccorr_k -F $n2o_pt_file -UVX $UV_N2O \
-    -R 161 250 -i 1.0 -l 4 ${COL_MASS_K_N2O} -t 1.0e-3  \
+  ck_args="Ccorr_k -F $n2o_pt_file -UVX $uv_n2o \
+    -R 161 250 -i 1.0 -l $id_n2o ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -lk \
     -o ${sp_dir}/n2o_uv_l -m ${sp_dir}/n2o_uv_lm \
     -L ${sp_dir}/n2o_lbl_uv.nc -np $procs"
@@ -478,6 +482,64 @@ if [ ! -s ${sp_dir}/n2o_uv_l ] || [ ! -s ${sp_dir}/n2o_lbl_uv.nc ] ; then
     sbatch -W -n $procs -o ${sp_dir}/n2o_uv_log -t 60 ${ck_args} &
   else
     ${ck_args} > ${sp_dir}/n2o_uv_log
+  fi
+fi
+
+if [ ! -s $sp_dir/n2o_nir_l ] ; then
+  if [ ! -s $N2O_LBL ] ; then
+    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_earth"
+    exit 1
+  else
+    echo "N2O: near infra-red"
+    rm -f $sp_dir/n2o_nir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 686 1000 -l $id_n2o ${COL_MASS_K_N2O} -b 5.0e-4 \
+      -s $skelfile +S $SOLSPEC -lk \
+      -o $sp_dir/n2o_nir_l -m $sp_dir/n2o_nir_lm \
+      -L $N2O_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/n2o_nir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/n2o_nir_log
+    fi
+  fi
+fi
+if [ ! -s $sp_dir/n2o_mir_l ] ; then
+  if [ ! -s $N2O_LBL ] ; then
+    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_earth"
+    exit 1
+  else
+    echo "N2O: mid infra-red"
+    rm -f $sp_dir/n2o_mir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 1001 1500 -l $id_n2o ${COL_MASS_K_N2O} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/n2o_mir_l -m $sp_dir/n2o_mir_lm \
+      -L $N2O_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/n2o_mir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/n2o_mir_log
+    fi
+  fi
+fi
+if [ ! -s $sp_dir/n2o_fir_l ] ; then
+  if [ ! -s $N2O_LBL ] ; then
+    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_earth"
+    exit 1
+  else
+    echo "N2O: far infra-red"
+    rm -f $sp_dir/n2o_fir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 1501 2000 -l $id_n2o ${COL_MASS_K_N2O} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/n2o_fir_l -m $sp_dir/n2o_fir_lm \
+      -L $N2O_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/n2o_fir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/n2o_fir_log
+    fi
   fi
 fi
 
@@ -570,6 +632,15 @@ ${sp_dir}/n2o_fuv_l
 5
 y
 ${sp_dir}/n2o_uv_l
+5
+y
+${sp_dir}/n2o_nir_l
+5
+y
+${sp_dir}/n2o_mir_l
+5
+y
+${sp_dir}/n2o_fir_l
 -1
 EOF
 
@@ -960,11 +1031,11 @@ if [ ! -s ${sp_dir}/no3_uv_l ] || [ ! -s $SW_DATA/no3_lbl.nc ] ; then
 fi
 
 # Dinitrogen Pentoxide (N2O5)
-UV_N2O5='n2o5.uvxsc' # 152 - 397 nm
+uv_n2o5='n2o5.uvxsc' # 152 - 397 nm
 if [ ! -s ${sp_dir}/n2o5_uv_l ] || [ ! -s $SW_DATA/n2o5_lbl.nc ] ; then
   echo 'N2O5 (UV)'
   rm -f ${sp_dir}/n2o5_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_N2O5 \
+  Ccorr_k -F $PT_SINGLE -UVX $uv_n2o5 \
     -R 152 398 -i 1.0 -l 42 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n2o5_uv_l -m ${sp_dir}/n2o5_uv_lm \
@@ -1013,12 +1084,12 @@ dat2xsc -t 280 h2o2_280K.dat h2o2_280K.uvxsc
 dat2xsc -t 298 h2o2_298K.dat h2o2_298K.uvxsc
 dat2xsc -t 320 h2o2_320K.dat h2o2_320K.uvxsc
 cat h2o2_???K.uvxsc > h2o2.uvxsc
-UV_H2O2='h2o2.uvxsc' #   190nm - 350 nm
+uv_h2o2='h2o2.uvxsc' #   190nm - 350 nm
 h2o2_pt_file='pt_h2o2'
 if [ ! -s ${sp_dir}/h2o2_uv_l ] || [ ! -s $SW_DATA/h2o2_lbl.nc ] ; then
   echo 'H2O2 (UV)'
   rm -f ${sp_dir}/h2o2_uv_l*
-  Ccorr_k -F $h2o2_pt_file -UVX $UV_H2O2 \
+  Ccorr_k -F $h2o2_pt_file -UVX $uv_h2o2 \
     -R 190 350 -i 1.0 -l 45 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/h2o2_uv_l -m ${sp_dir}/h2o2_uv_lm \

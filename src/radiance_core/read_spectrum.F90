@@ -133,8 +133,6 @@ INTEGER :: nd_species_sb
 ! Size allocated for gaseous species with self-broadening
 INTEGER :: nd_gas_frac
 ! Size allocated for gas fractions (for self-broadening)
-INTEGER :: nd_species_lk
-! Size allocated for gaseous species with a P/T look-up table
 
 CHARACTER (LEN=errormessagelength) :: cmessage
 CHARACTER (LEN=*), PARAMETER       :: RoutineName = 'READ_SPECTRUM'
@@ -170,7 +168,6 @@ nd_t_lookup_cont = 0
 nd_k_term_cont = 0
 nd_species_sb = 0
 nd_gas_frac = 0
-nd_species_lk = 0
 
 Sp%Dim%nd_type = npd_type
 
@@ -299,7 +296,6 @@ Sp%Dim%nd_t_lookup_cont = nd_t_lookup_cont
 Sp%Dim%nd_k_term_cont = nd_k_term_cont
 Sp%Dim%nd_species_sb = nd_species_sb
 Sp%Dim%nd_gas_frac = nd_gas_frac
-Sp%Dim%nd_species_lk = nd_species_lk
 
 ! Allocate spectrum arrays that remain unallocated
 CALL allocate_spectrum(Sp)
@@ -595,7 +591,6 @@ IF (ios /= 0) THEN
   RETURN
 END IF
 nd_species=MAX(Sp%Gas%n_absorb, 1)
-nd_species_lk=nd_species
 
 READ(iu_spc, '(27x, i5)', IOSTAT=ios, IOMSG=iomessage) Sp%Aerosol%n_aerosol
 IF (ios /= 0) THEN
@@ -656,7 +651,6 @@ DO
   CASE ('Total number of gaseous absorbers','nd_species')
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) Sp%Gas%n_absorb
     nd_species=MAX(Sp%Gas%n_absorb, 1)
-    nd_species_lk=nd_species
   CASE ('Total number of aerosols','nd_aerosol_species')
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) &
                                                      Sp%Aerosol%n_aerosol
@@ -715,8 +709,6 @@ DO
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) nd_sub_band_gas
   CASE ('Maximum number of continuum k-terms in a band', 'nd_k_term_cont')
     READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) nd_k_term_cont
-  CASE ('Maximum index of gas with P-T lookup table', 'nd_species_lk')
-    READ(line(desc_end+1:),*,IOSTAT=ios, IOMSG=iomessage) nd_species_lk
 
   END SELECT
   IF (ios /= 0) THEN
@@ -1079,6 +1071,7 @@ ALLOCATE(Sp%Gas%scale(nd_scale_variable, nd_k_term, &
 ALLOCATE(Sp%Gas%i_scat(nd_k_term, nd_band, nd_species))
 ALLOCATE(Sp%Gas%num_ref_p(nd_species, nd_band))
 ALLOCATE(Sp%Gas%num_ref_t(nd_species, nd_band))
+ALLOCATE(Sp%Gas%lookup(nd_species, nd_band))
 Sp%Gas%num_ref_p=0
 Sp%Gas%num_ref_t=0
 l_lookup=.FALSE.
@@ -1168,8 +1161,6 @@ IF (l_lookup) THEN
 
   ALLOCATE(Sp%Gas%p_lookup( nd_pre ))
   ALLOCATE(Sp%Gas%t_lookup( nd_tmp, nd_pre ))
-  ALLOCATE(Sp%Gas%k_lookup( nd_tmp, nd_pre, &
-                            nd_k_term, nd_species_lk, nd_band ))
 
   ! Skip over the headers.
   READ(iu_spc1, '(/)')
@@ -1199,10 +1190,14 @@ IF (l_lookup) THEN
         END IF
         ! Skip over the headers.
         READ(iu_spc1, '(/)')
+        Sp%Gas%lookup(idum_species, i)%nd_k_term &
+          = Sp%Gas%i_band_k(i, idum_species)
+        ALLOCATE(Sp%Gas%lookup(idum_species, i)%k( nd_tmp, nd_pre, &
+          Sp%Gas%lookup(idum_species, i)%nd_k_term ))
         DO i_term=1, Sp%Gas%i_band_k(i, idum_species)
           DO ip=1, nd_pre
             READ(iu_spc1, '(6(1PE13.6))', IOSTAT=ios, IOMSG=iomessage) &
-              (Sp%Gas%k_lookup(it,ip,i_term,idum_species,i), &
+              (Sp%Gas%lookup(idum_species,i)%k(it,ip,i_term), &
                it=1, nd_tmp)
             IF (ios /= 0) THEN
               WRITE(cmessage,'(a, 4i4, A)') &
@@ -1230,7 +1225,7 @@ IMPLICIT NONE
 ! Local variables.
 INTEGER :: idum_band
 !   Dummy integer
-INTEGER :: idum_species, jspecies(nd_species, nd_band), idum_species_sb
+INTEGER :: idum_species, jspecies(nd_species, nd_band)
 !   Dummy integer
 INTEGER :: idum_scale
 !   Dummy integer
@@ -1269,6 +1264,7 @@ ALLOCATE(Sp%Gas%n_sub_band_gas(nd_band, nd_species))
 ALLOCATE(Sp%Gas%sub_band_k(nd_sub_band_gas, nd_band, nd_species))
 ALLOCATE(Sp%Gas%sub_band_w(nd_sub_band_gas, nd_band, nd_species))
 ALLOCATE(Sp%Gas%wavelength_sub_band(2, nd_sub_band_gas, nd_band, nd_species))
+ALLOCATE(Sp%Gas%lookup(nd_species, nd_band))
 Sp%Gas%num_ref_p=0
 Sp%Gas%num_ref_t=0
 Sp%Gas%n_t_lookup_gas=0
@@ -1409,8 +1405,6 @@ END IF
 IF (l_lookup) THEN
   ALLOCATE(Sp%Gas%p_lookup( nd_pre ))
   ALLOCATE(Sp%Gas%t_lookup( nd_tmp, nd_pre ))
-  ALLOCATE(Sp%Gas%k_lookup( nd_tmp, nd_pre, &
-                            nd_k_term, nd_species_lk, nd_band ))
 
   ! Locate correct block in extended spectral file
   l_k_table_exists=.FALSE.
@@ -1454,8 +1448,6 @@ IF (l_lookup) THEN
     READ(iu_spc1, '(/,14X,I4)') Sp%Gas%n_gas_frac
     nd_gas_frac=Sp%Gas%n_gas_frac
     ALLOCATE(Sp%Gas%gf_lookup( nd_gas_frac ))
-    ALLOCATE(Sp%Gas%k_lookup_sb( nd_tmp, nd_pre, nd_gas_frac, &
-                                 nd_k_term, nd_species_sb, nd_band ))
     READ(iu_spc1, '(6(1PE13.6))', IOSTAT=ios, IOMSG=iomessage) &
       Sp%Gas%gf_lookup(1:Sp%Gas%n_gas_frac)
     IF (ios /= 0) THEN
@@ -1475,12 +1467,15 @@ IF (l_lookup) THEN
         ! Skip over the headers.
         READ(iu_spc1, '(/)')
         IF (Sp%Gas%l_self_broadening(idum_species)) THEN
-          idum_species_sb = Sp%Gas%index_sb(idum_species)
+          Sp%Gas%lookup(idum_species, i)%nd_k_term_sb &
+            = Sp%Gas%i_band_k(i, idum_species)
+          ALLOCATE(Sp%Gas%lookup(idum_species, i)%k_sb( nd_tmp, nd_pre, &
+            nd_gas_frac, Sp%Gas%lookup(idum_species, i)%nd_k_term_sb ))
           DO i_term=1, Sp%Gas%i_band_k(i, idum_species)
             DO igf=1, Sp%Gas%n_gas_frac
               DO ip=1, nd_pre
                 READ(iu_spc1, '(6(1PE13.6))', IOSTAT=ios, IOMSG=iomessage) &
-                  (Sp%Gas%k_lookup_sb(it,ip,igf,i_term,idum_species_sb,i), &
+                  (Sp%Gas%lookup(idum_species, i)%k_sb(it,ip,igf,i_term), &
                    it=1, nd_tmp)
                 IF (ios /= 0) THEN
                   WRITE(cmessage,'(a, 5i4, A)') &
@@ -1494,10 +1489,14 @@ IF (l_lookup) THEN
             END DO
           END DO
         ELSE
+          Sp%Gas%lookup(idum_species, i)%nd_k_term &
+            = Sp%Gas%i_band_k(i, idum_species)
+          ALLOCATE(Sp%Gas%lookup(idum_species, i)%k( nd_tmp, nd_pre, &
+            Sp%Gas%lookup(idum_species, i)%nd_k_term ))
           DO i_term=1, Sp%Gas%i_band_k(i, idum_species)
             DO ip=1, nd_pre
               READ(iu_spc1, '(6(1PE13.6))', IOSTAT=ios, IOMSG=iomessage) &
-                (Sp%Gas%k_lookup(it,ip,i_term,idum_species,i), &
+                (Sp%Gas%lookup(idum_species,i)%k(it,ip,i_term), &
                  it=1, nd_tmp)
               IF (ios /= 0) THEN
                 WRITE(cmessage,'(a, 4i4, A)') &
@@ -1685,6 +1684,7 @@ ALLOCATE(Sp%Gas%f_mix(nd_band))
 ALLOCATE(Sp%Gas%w_ses(nd_k_term, nd_band))
 ALLOCATE(Sp%Gas%i_scale_fnc(nd_band, nd_species))
 ALLOCATE(Sp%Gas%i_scale_k(nd_band, nd_species))
+ALLOCATE(Sp%Gas%lookup(nd_species, nd_band))
 
 Sp%Gas%i_scale_fnc = ip_scale_ses2
 Sp%Gas%i_scale_k   = ip_scale_null
@@ -1721,19 +1721,19 @@ nd_tmp = 5  ! Currently hardwired
 nd_mix = MAXVAL(Sp%Gas%num_mix(1:Sp%Basic%n_band))
 nd_band_mix_gas = COUNT( Sp%Gas%num_mix(1:Sp%Basic%n_band) > 1 )
 
-ALLOCATE(Sp%Gas%k_lookup( nd_tmp, nd_pre, &
-                          nd_k_term, nd_species_lk, nd_band ))
-
 DO i=1, Sp%Basic%n_band
 
   ! Skip over the headers.
   READ(iu_spc1, '(/)')
 
   DO i_gas=1, Sp%Gas%n_band_absorb(i)
+    Sp%Gas%lookup(i_gas, i)%nd_k_term = Sp%Gas%i_band_k_ses(i)
+    ALLOCATE(Sp%Gas%lookup(i_gas, i)%k( nd_tmp, nd_pre, &
+      Sp%Gas%lookup(i_gas, i)%nd_k_term ))
     DO i_term=1, Sp%Gas%i_band_k_ses(i)
       DO ip=1, Sp%Gas%num_ref_p(1, i)
         READ(iu_spc1, '(5(1PE12.6,1x))', IOSTAT=ios, IOMSG=iomessage) &
-          (Sp%Gas%k_lookup(it,ip,i_term,i_gas,i), it=1, nd_tmp)
+          (Sp%Gas%lookup(i_gas, i)%k(it,ip,i_term), it=1, nd_tmp)
         IF (ios /= 0) THEN
           WRITE(cmessage, '(a, 4i4, A)') &
             '*** 3rd error in subroutine read_block_5_1_0: ', &
