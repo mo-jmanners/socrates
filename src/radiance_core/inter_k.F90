@@ -61,7 +61,7 @@ SUBROUTINE inter_k(n_profile, n_layer, n_band_absorb                    &
      , nd_band_mix_gas
 !         Number of bands where mixture gases exist
   REAL (RealK) ::                                                       &
-       k_h2oc(nd_pre,nd_tmp,nd_esft_term)                               &
+       k_h2oc(nd_pre, nd_tmp, nd_esft_term, nd_band)                    &
 !         H2O continuum Absorption coefficients at reference conditions
      , k_mix_gas(nd_pre, nd_tmp, nd_mix, nd_esft_term, nd_band_mix_gas) &
 !         Absorption coefficients of minor species at reference conditions
@@ -180,11 +180,11 @@ SUBROUTINE inter_k(n_profile, n_layer, n_band_absorb                    &
             DO l=1, n_profile
               jp1=jph2oc(l,i)+1
               jt1=jtswo3(l,i)+1
-              k_contm_layer(l,k,i,ic) = MAX(0.0_RealK,              &
-                 fac00c(l,i)*k_h2oc(jph2oc(l,i),jtswo3(l,i),k)      &
-                +fac10c(l,i)*k_h2oc(jp1,jtswo3(l,i),k)              &
-                +fac01c(l,i)*k_h2oc(jph2oc(l,i),jt1,k)              &
-                +fac11c(l,i)*k_h2oc(jp1,jt1,k)                      &
+              k_contm_layer(l,k,i,ic) = MAX(0.0_RealK,                &
+                 fac00c(l,i)*k_h2oc(jph2oc(l,i),jtswo3(l,i),k,i_band) &
+                +fac10c(l,i)*k_h2oc(jp1,jtswo3(l,i),k,i_band)         &
+                +fac01c(l,i)*k_h2oc(jph2oc(l,i),jt1,k,i_band)         &
+                +fac11c(l,i)*k_h2oc(jp1,jt1,k,i_band)                 &
                 )
             END DO
           END DO

@@ -292,17 +292,6 @@ SUBROUTINE make_block_5(Spectrum, ierr)
         nd_band, nd_species))
       Spectrum%Gas%scale(:,1:nd_k_term_alloc,:,:) = arr_tmp_real_4d
       DEALLOCATE(arr_tmp_real_4d)
-
-      IF (ALLOCATED(Spectrum%Gas%k_t_lookup_gas)) THEN
-        ALLOCATE(arr_tmp_real_4d(Spectrum%Dim%nd_t_lookup_gas, &
-          nd_k_term_alloc, nd_species, nd_band))
-        arr_tmp_real_4d = Spectrum%Gas%k_t_lookup_gas
-        DEALLOCATE(Spectrum%Gas%k_t_lookup_gas)
-        ALLOCATE(Spectrum%Gas%k_t_lookup_gas(Spectrum%Dim%nd_t_lookup_gas, &
-          nd_k_term, nd_species, nd_band))
-        Spectrum%Gas%k_t_lookup_gas(:,1:nd_k_term_alloc,:,:) = arr_tmp_real_4d
-        DEALLOCATE(arr_tmp_real_4d)
-      END IF
     END IF
 
     DO k=1, Spectrum%Gas%i_band_k(i_band, i_index)
@@ -458,20 +447,6 @@ SUBROUTINE make_block_5(Spectrum, ierr)
           ALLOCATE(Spectrum%Gas%t_lookup_gas(Spectrum%Dim%nd_t_lookup_gas, &
             nd_species))
         END IF
-        IF (ALLOCATED(Spectrum%Gas%k_t_lookup_gas)) THEN
-          ALLOCATE(arr_tmp_real_4d(nd_t_lookup_gas_alloc, &
-            nd_k_term, nd_species, nd_band))
-          arr_tmp_real_4d = Spectrum%Gas%k_t_lookup_gas
-          DEALLOCATE(Spectrum%Gas%k_t_lookup_gas)
-          ALLOCATE(Spectrum%Gas%k_t_lookup_gas(Spectrum%Dim%nd_t_lookup_gas, &
-            nd_k_term, nd_species, nd_band))
-          Spectrum%Gas%k_t_lookup_gas(1:nd_t_lookup_gas_alloc,:,:,:) &
-            = arr_tmp_real_4d
-          DEALLOCATE(arr_tmp_real_4d)
-        ELSE
-          ALLOCATE(Spectrum%Gas%k_t_lookup_gas(Spectrum%Dim%nd_t_lookup_gas, &
-            nd_k_term, nd_species, nd_band))          
-        END IF
       END IF
 
 !     Read in temperature lookup table for this gas.
@@ -487,9 +462,16 @@ SUBROUTINE make_block_5(Spectrum, ierr)
 
 !     Skip over the headers.
       READ(iu_esft, '(/)')
+      Spectrum%Gas%lookup(i_index, i_band)%nd_k_term_t &
+        = Spectrum%Gas%i_band_k(i_band, i_index)
+      IF (ALLOCATED(Spectrum%Gas%lookup(i_index, i_band)%k_t)) &
+        DEALLOCATE(Spectrum%Gas%lookup(i_index, i_band)%k_t)
+      ALLOCATE(Spectrum%Gas%lookup(i_index, i_band)%k_t( &
+        Spectrum%Gas%n_t_lookup_gas(i_index), &
+        Spectrum%Gas%lookup(i_index, i_band)%nd_k_term_t ))
       DO k=1, Spectrum%Gas%i_band_k(i_band, i_index)
         READ(iu_esft, '(6(1PE13.6))', IOSTAT=ios) &
-          ( Spectrum%Gas%k_t_lookup_gas(it, k, i_index, i_band), &
+          ( Spectrum%Gas%lookup(i_index, i_band)%k_t(it, k), &
             it=1, Spectrum%Gas%n_t_lookup_gas(i_index) )
         IF (ios /= 0) THEN
           WRITE(*, '(/A/)') '*** Error in subroutine make_block_5'

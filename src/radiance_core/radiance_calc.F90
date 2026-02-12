@@ -1057,7 +1057,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
         , spectrum%gas%i_band_k_ses(i_band), i_band                            &
         , n_continuum, spectrum%cont%k_cont_ses, control%l_continuum           &
         , spectrum%cont%index_continuum                                        &
-        , spectrum%cont%k_h2oc(1,1,1,i_band)                                   &
+        , spectrum%cont%k_h2oc                                                 &
         , fac00, fac01, fac10, fac11                                           &
         , fac00c, fac01c, fac10c, fac11c, facc00, facc01                       &
         , jp, jph2oc, jt, jtt, jto2c, jtswo3                                   &
@@ -1172,17 +1172,17 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
               END DO
             END DO
           END IF
-        ELSE IF (spectrum%gas%i_scale_fnc(i_band, i_gas_band) &
+        ELSE IF (spectrum%gas%i_scale_fnc(i_band, i_gas_band)                  &
           == ip_scale_t_lookup) THEN
           ii = i_gas_lk(i_gas_band)
           DO k=1, spectrum%gas%i_band_k(i_band, i_gas_band)
             DO i=1, atm%n_layer
               DO l=1, atm%n_profile
-                k_esft_layer(l,i,k,i_gas_band) = MAX(0.0_RealK, &
-                  wt_gas(l,i,ii)*Spectrum%Gas%k_t_lookup_gas( &
-                    jt_gas(l,i,ii), k, i_gas_band, i_band ) &
-                  + (1.0_RealK - wt_gas(l,i,ii))*Spectrum%Gas%k_t_lookup_gas( &
-                    jt_gas(l,i,ii)+1, k, i_gas_band, i_band) )
+                k_esft_layer(l,i,k,i_gas_band) = MAX(0.0_RealK,                &
+                    wt_gas(l,i,ii) * spectrum%gas                              &
+                      %lookup(i_gas_band, i_band)%k_t( jt_gas(l,i,ii),   k )   &
+                  + (1.0_RealK - wt_gas(l,i,ii)) * spectrum%gas                &
+                      %lookup(i_gas_band, i_band)%k_t( jt_gas(l,i,ii)+1, k ) )
               END DO
             END DO
           END DO

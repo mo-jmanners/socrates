@@ -626,8 +626,7 @@ CONTAINS
               ', k-terms: ',SpGas%i_band_k(i, i_index)
             DO k=1, SpGas%i_band_k(i, i_index)
               WRITE(iu_spc1,'(6(1PE13.6))') &
-                SpGas%k_t_lookup_gas(1:SpGas%n_t_lookup_gas(i_index), &
-                                     k, i_index, i)
+                SpGas%lookup(i_index,i)%k_t(1:SpGas%n_t_lookup_gas(i_index), k)
             END DO
           END IF
         END DO

@@ -92,8 +92,6 @@ SUBROUTINE change_block_0(Sp)
     Sp%Gas%w_ses(:,1:nb) = Sp%Gas%w_ses(:,fb:lb)
   IF (ALLOCATED(Sp%Gas%f_mix)) &
     Sp%Gas%f_mix(1:nb) = Sp%Gas%f_mix(fb:lb)
-  IF (ALLOCATED(Sp%Gas%k_t_lookup_gas)) &
-    Sp%Gas%k_t_lookup_gas(:,:,:,1:nb) = Sp%Gas%k_t_lookup_gas(:,:,:,fb:lb)
   IF (ALLOCATED(Sp%Gas%n_sub_band_gas)) &
     Sp%Gas%n_sub_band_gas(1:nb,:) = Sp%Gas%n_sub_band_gas(fb:lb,:)
   IF (ALLOCATED(Sp%Gas%sub_band_k)) &

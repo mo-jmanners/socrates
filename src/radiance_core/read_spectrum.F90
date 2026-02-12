@@ -129,6 +129,8 @@ INTEGER :: nd_t_lookup_cont
 !   Size allocated for temperatures in generalised continua look-up table
 INTEGER :: nd_k_term_cont
 !   Size allocated for continuum k-terms
+INTEGER :: nd_k_term_cont_ses
+!   Size allocated for SES continuum k-terms
 INTEGER :: nd_species_sb
 ! Size allocated for gaseous species with self-broadening
 INTEGER :: nd_gas_frac
@@ -166,6 +168,7 @@ nd_times = 0
 nd_cont = 0
 nd_t_lookup_cont = 0
 nd_k_term_cont = 0
+nd_k_term_cont_ses = 0
 nd_species_sb = 0
 nd_gas_frac = 0
 
@@ -294,6 +297,7 @@ Sp%Dim%nd_times = nd_times
 Sp%Dim%nd_cont = nd_cont
 Sp%Dim%nd_t_lookup_cont = nd_t_lookup_cont
 Sp%Dim%nd_k_term_cont = nd_k_term_cont
+Sp%Dim%nd_k_term_cont_ses = nd_k_term_cont_ses
 Sp%Dim%nd_species_sb = nd_species_sb
 Sp%Dim%nd_gas_frac = nd_gas_frac
 
@@ -1548,8 +1552,6 @@ IF (l_t_lookup) THEN
   END IF
 
   ALLOCATE(Sp%Gas%t_lookup_gas(Sp%Dim%nd_t_lookup_gas, nd_species))
-  ALLOCATE(Sp%Gas%k_t_lookup_gas(Sp%Dim%nd_t_lookup_gas, &
-                                 nd_k_term, nd_species, nd_band))
   DO idum_species=1, Sp%Gas%n_absorb
     IF (ANY(Sp%Gas%i_scale_fnc(:, idum_species) == ip_scale_t_lookup)) THEN
       READ(iu_spc1,'(/,27x,i4)', IOSTAT=ios, IOMSG=iomessage) &
@@ -1570,12 +1572,17 @@ IF (l_t_lookup) THEN
     DO j=1, Sp%Gas%n_band_absorb(i)
       idum_species=Sp%Gas%index_absorb(j, i)
       IF (Sp%Gas%i_scale_fnc(i, idum_species) == ip_scale_t_lookup ) THEN
+        Sp%Gas%lookup(idum_species, i)%nd_k_term_t &
+          = Sp%Gas%i_band_k(i, idum_species)
+        ALLOCATE(Sp%Gas%lookup(idum_species, i)%k_t( &
+          Sp%Gas%n_t_lookup_gas(idum_species), &
+          Sp%Gas%lookup(idum_species, i)%nd_k_term_t ))
         ! Skip over the headers.
         READ(iu_spc1, '(/)')
         DO i_term=1, Sp%Gas%i_band_k(i, idum_species)
           READ(iu_spc1,'(6(1PE13.6))', IOSTAT=ios, IOMSG=iomessage) &
-            Sp%Gas%k_t_lookup_gas(1:Sp%Gas%n_t_lookup_gas(idum_species), &
-                                 i_term, idum_species, i)
+            Sp%Gas%lookup(idum_species, i)%k_t( &
+              1:Sp%Gas%n_t_lookup_gas(idum_species), i_term )
           IF (ios /= 0) THEN
             WRITE(cmessage,'(a, 3i4, a)') &
               '*** Error in subroutine read_block_5_0_1:\n' // &
@@ -2022,8 +2029,9 @@ INTEGER :: j, i_term, ip, it
 
 
 ! Allocate space for the variables.
-ALLOCATE(Sp%Cont%k_h2oc(nd_pre, nd_tmp, nd_k_term, nd_band))
-ALLOCATE(Sp%Cont%k_cont_ses(nd_k_term, nd_tmp, nd_band, nd_continuum))
+nd_k_term_cont_ses = nd_k_term
+ALLOCATE(Sp%Cont%k_h2oc(nd_pre, nd_tmp, nd_k_term_cont_ses, nd_band))
+ALLOCATE(Sp%Cont%k_cont_ses(nd_k_term_cont_ses, nd_tmp, nd_band, nd_continuum))
 ALLOCATE(Sp%Cont%i_scale_fnc_cont(nd_band, nd_continuum))
 
 Sp%Cont%i_scale_fnc_cont = ip_scale_ses2
