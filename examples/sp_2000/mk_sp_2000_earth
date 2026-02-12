@@ -543,6 +543,106 @@ if [ ! -s $sp_dir/n2o_fir_l ] ; then
   fi
 fi
 
+# ----------------------------
+# Carbon Monoxide (CO)
+# ----------------------------
+id_co='5'
+uv_co=${sp_dir}/co.uvxsc
+rm -f $uv_co
+dat2xsc --offset co_Venot2012.dat $uv_co  #  7.5 - 163.5 nm
+if [ ! -s ${sp_dir}/co_xuv_l ] || [ ! -s ${sp_dir}/co_lbl_xuv.nc ] ; then
+  echo 'CO (XUV continuum)'
+  rm -f ${sp_dir}/co_xuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co \
+    -R 8 10 -i 1000.0 -l $id_co ${COL_MASS_K_CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/co_xuv_l -m ${sp_dir}/co_xuv_lm \
+    -L ${sp_dir}/co_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/co_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/co_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/co_euv_l ] || [ ! -s ${sp_dir}/co_lbl_euv.nc ] ; then
+  echo 'CO (EUV continuum)'
+  rm -f ${sp_dir}/co_euv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co \
+    -R 11 100 -i 10.0 -l $id_co ${COL_MASS_K_CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/co_euv_l -m ${sp_dir}/co_euv_lm \
+    -L ${sp_dir}/co_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/co_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/co_euv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/co_fuv_l ] || [ ! -s ${sp_dir}/co_lbl_fuv.nc ] ; then
+  echo 'CO (FUV continuum)'
+  rm -f ${sp_dir}/co_fuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co \
+    -R 101 164 -i 1.0 -l $id_co ${COL_MASS_K_CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/co_fuv_l -m ${sp_dir}/co_fuv_lm \
+    -L ${sp_dir}/co_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/co_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/co_fuv_log
+  fi
+fi
+
+# ----------------------------
+# Methane (CH4)
+# ----------------------------
+id_ch4='6'
+uv_ch4=${sp_dir}/ch4.uvxsc
+rm -f $uv_ch4
+dat2xsc --offset ch4_Venot2012.dat $uv_ch4  #  6.5 - 151.5 nm
+if [ ! -s ${sp_dir}/ch4_xuv_l ] || [ ! -s ${sp_dir}/ch4_lbl_xuv.nc ] ; then
+  echo 'CH4 (XUV continuum)'
+  rm -f ${sp_dir}/ch4_xuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch4 \
+    -R 7 10 -i 1000.0 -l $id_ch4 ${COL_MASS_K_CH4} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ch4_xuv_l -m ${sp_dir}/ch4_xuv_lm \
+    -L ${sp_dir}/ch4_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch4_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch4_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/ch4_euv_l ] || [ ! -s ${sp_dir}/ch4_lbl_euv.nc ] ; then
+  echo 'CH4 (EUV continuum)'
+  rm -f ${sp_dir}/ch4_euv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch4 \
+    -R 11 100 -i 10.0 -l $id_ch4 ${COL_MASS_K_CH4} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ch4_euv_l -m ${sp_dir}/ch4_euv_lm \
+    -L ${sp_dir}/ch4_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch4_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch4_euv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/ch4_fuv_l ] || [ ! -s ${sp_dir}/ch4_lbl_fuv.nc ] ; then
+  echo 'CH4 (FUV continuum)'
+  rm -f ${sp_dir}/ch4_fuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch4 \
+    -R 101 152 -i 1.0 -l $id_ch4 ${COL_MASS_K_CH4} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ch4_fuv_l -m ${sp_dir}/ch4_fuv_lm \
+    -L ${sp_dir}/ch4_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch4_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch4_fuv_log
+  fi
+fi
+
 ##########################################################################
 #################### got to here #########################################
 wait
@@ -641,6 +741,24 @@ ${sp_dir}/n2o_mir_l
 5
 y
 ${sp_dir}/n2o_fir_l
+5
+y
+${sp_dir}/co_xuv_l
+5
+y
+${sp_dir}/co_euv_l
+5
+y
+${sp_dir}/co_fuv_l
+5
+y
+${sp_dir}/ch4_xuv_l
+5
+y
+${sp_dir}/ch4_euv_l
+5
+y
+${sp_dir}/ch4_fuv_l
 -1
 EOF
 
@@ -648,175 +766,107 @@ exit 0
 ##########################################################################
 ##########################################################################
 
-# Carbon Monoxide (CO)
-rm -f co.uvxsc
-dat2xsc CO.dat co.uvxsc
-UV_CO='co.uvxsc'   #   7 - 163 nm
-if [ ! -s ${sp_dir}/co_xuv_l ] || [ ! -s $SW_DATA/co_lbl_xuv.nc ] ; then
-  echo 'CO (XUV continuum)'
-  rm -f ${sp_dir}/co_xuv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CO \
-    -R 7 10 -i 1000.0 -l 5 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/co_xuv_l -m ${sp_dir}/co_xuv_lm \
-    -L $SW_DATA/co_lbl_xuv.nc -np $procs \
-     > ${sp_dir}/co_xuv_log
-fi
-if [ ! -s ${sp_dir}/co_euv_l ] || [ ! -s $SW_DATA/co_lbl_euv.nc ] ; then
-  echo 'CO (EUV continuum)'
-  rm -f ${sp_dir}/co_euv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CO \
-    -R 11 100 -i 10.0 -l 5 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/co_euv_l -m ${sp_dir}/co_euv_lm \
-    -L $SW_DATA/co_lbl_euv.nc -np $procs \
-     > ${sp_dir}/co_euv_log
-fi
-if [ ! -s ${sp_dir}/co_uv_l ] || [ ! -s $SW_DATA/co_lbl_uv.nc ] ; then
-  echo 'CO (UV continuum)'
-  rm -f ${sp_dir}/co_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CO \
-    -R 101 164 -i 1.0 -l 5 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/co_uv_l -m ${sp_dir}/co_uv_lm \
-    -L $SW_DATA/co_lbl_uv.nc -np $procs \
-     > ${sp_dir}/co_uv_log
-fi
-
-# Methane (CH4)
-rm -f ch4.uvxsc
-dat2xsc CH4.dat ch4.uvxsc
-UV_CH4='ch4.uvxsc' #   6 - 151 nm
-if [ ! -s ${sp_dir}/ch4_xuv_l ] || [ ! -s $SW_DATA/ch4_lbl_xuv.nc ] ; then
-  echo 'CH4 (XUV continuum)'
-  rm -f ${sp_dir}/ch4_xuv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CH4 \
-    -R 6 10 -i 1000.0 -l 6 1.0e-2 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/ch4_xuv_l -m ${sp_dir}/ch4_xuv_lm \
-    -L $SW_DATA/ch4_lbl_xuv.nc -np $procs \
-     > ${sp_dir}/ch4_xuv_log
-fi
-if [ ! -s ${sp_dir}/ch4_euv_l ] || [ ! -s $SW_DATA/ch4_lbl_euv.nc ] ; then
-  echo 'CH4 (EUV continuum)'
-  rm -f ${sp_dir}/ch4_euv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CH4 \
-    -R 11 100 -i 10.0 -l 6 1.0e-2 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/ch4_euv_l -m ${sp_dir}/ch4_euv_lm \
-    -L $SW_DATA/ch4_lbl_euv.nc -np $procs \
-     > ${sp_dir}/ch4_euv_log
-fi
-if [ ! -s ${sp_dir}/ch4_uv_l ] || [ ! -s $SW_DATA/ch4_lbl_uv.nc ] ; then
-  echo 'CH4 (UV continuum)'
-  rm -f ${sp_dir}/ch4_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CH4 \
-    -R 101 152 -i 1.0 -l 6 1.0e-2 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/ch4_uv_l -m ${sp_dir}/ch4_uv_lm \
-    -L $SW_DATA/ch4_lbl_uv.nc -np $procs \
-     > ${sp_dir}/ch4_uv_log
-fi
-
+# ----------------------------
 # Oxygen (O2)
+# ----------------------------
 rm -f o2_hires.uvxsc
 dat2xsc O2.dat o2_hires.uvxsc
 UV_O2_HIRES='o2_hires.uvxsc' # 0.04 - 294 nm
-if [ ! -s ${sp_dir}/o2_xuvhr_l ] || [ ! -s $SW_DATA/o2_lbl_xuvhr.nc ] ; then
+if [ ! -s ${sp_dir}/o2_xuvhr_l ] || [ ! -s ${sp_dir}/o2_lbl_xuvhr.nc ] ; then
   echo 'O2 (XUV continuum)'
   rm -f ${sp_dir}/o2_xuvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_O2_HIRES \
     -R 1 10 -i 1000.0 -l 7 2.3e3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/o2_xuvhr_l -m ${sp_dir}/o2_xuvhr_lm \
-    -L $SW_DATA/o2_lbl_xuvhr.nc -np $procs \
+    -L ${sp_dir}/o2_lbl_xuvhr.nc -np $procs \
      > ${sp_dir}/o2_xuvhr_log
 fi
-if [ ! -s ${sp_dir}/o2_euvhr_l ] || [ ! -s $SW_DATA/o2_lbl_euvhr.nc ] ; then
+if [ ! -s ${sp_dir}/o2_euvhr_l ] || [ ! -s ${sp_dir}/o2_lbl_euvhr.nc ] ; then
   echo 'O2 (EUV continuum)'
   rm -f ${sp_dir}/o2_euvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_O2_HIRES \
     -R 11 100 -i 10.0 -l 7 2.3e3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/o2_euvhr_l -m ${sp_dir}/o2_euvhr_lm \
-    -L $SW_DATA/o2_lbl_euvhr.nc -np $procs \
+    -L ${sp_dir}/o2_lbl_euvhr.nc -np $procs \
      > ${sp_dir}/o2_euvhr_log
 fi
-if [ ! -s ${sp_dir}/o2_uvhr_l ] || [ ! -s $SW_DATA/o2_lbl_uvhr.nc ] ; then
+if [ ! -s ${sp_dir}/o2_uvhr_l ] || [ ! -s ${sp_dir}/o2_lbl_uvhr.nc ] ; then
   echo 'O2 (UV continuum)'
   rm -f ${sp_dir}/o2_uvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_O2_HIRES \
     -R 101 294 -i 1.0 -l 7 2.3e3 -t 5.0e-4  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/o2_uvhr_l -m ${sp_dir}/o2_uvhr_lm \
-    -L $SW_DATA/o2_lbl_uvhr.nc -np $procs \
+    -L ${sp_dir}/o2_lbl_uvhr.nc -np $procs \
      > ${sp_dir}/o2_uvhr_log
 fi
 
 #Nitrogen Dioxide (NO2)
 UV_NO2='no2_cat.uvxsc' #   205 - 495nm
 no2_pt_file='pt_no2'
-if [ ! -s ${sp_dir}/no2_xuv_l ] || [ ! -s $SW_DATA/no2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/no2_xuv_l ] || [ ! -s ${sp_dir}/no2_lbl_xuv.nc ] ; then
   echo 'NO2 (XUV continuum)'
   rm -f ${sp_dir}/no2_xuv_l*
   Ccorr_k -F $no2_pt_file -UVX $UV_NO2 \
     -R 7 10 -i 1000.0 -l 10 5.0e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/no2_xuv_l -m ${sp_dir}/no2_xuv_lm \
-    -L $SW_DATA/no2_lbl_xuv.nc -np $procs \
+    -L ${sp_dir}/no2_lbl_xuv.nc -np $procs \
      > ${sp_dir}/no2_xuv_log
 fi
-if [ ! -s ${sp_dir}/no2_euv_l ] || [ ! -s $SW_DATA/no2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/no2_euv_l ] || [ ! -s ${sp_dir}/no2_lbl_euv.nc ] ; then
   echo 'NO2 (EUV continuum)'
   rm -f ${sp_dir}/no2_euv_l*
   Ccorr_k -F $no2_pt_file -UVX $UV_NO2 \
     -R 11 100 -i 10.0 -l 10 5.0e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/no2_euv_l -m ${sp_dir}/no2_euv_lm \
-    -L $SW_DATA/no2_lbl_euv.nc -np $procs \
+    -L ${sp_dir}/no2_lbl_euv.nc -np $procs \
      > ${sp_dir}/no2_euv_log
 fi
-if [ ! -s ${sp_dir}/no2_uv_l ] || [ ! -s $SW_DATA/no2_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/no2_uv_l ] || [ ! -s ${sp_dir}/no2_lbl_uv.nc ] ; then
   echo 'NO2 (UV continuum)'
   rm -f ${sp_dir}/no2_uv_l*
   Ccorr_k -F $no2_pt_file -UVX $UV_NO2 \
     -R 101 724 -i 1.0 -l 10 5.0e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/no2_uv_l -m ${sp_dir}/no2_uv_lm \
-    -L $SW_DATA/no2_lbl_uv.nc -np $procs \
+    -L ${sp_dir}/no2_lbl_uv.nc -np $procs \
      > ${sp_dir}/no2_uv_log
 fi
 
 #Ammonia (NH3)
 UV_NH3="${hj}/nh3.uvxsc"  #   7nm - 229 nm
-if [ ! -s ${sp_dir}/nh3_xuv_l ] || [ ! -s $SW_DATA/nh3_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/nh3_xuv_l ] || [ ! -s ${sp_dir}/nh3_lbl_xuv.nc ] ; then
   echo 'NH3 (XUV)'
   rm -f ${sp_dir}/nh3_xuv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_NH3 \
     -R 7 10 -i 1000.0 -l 11 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/nh3_xuv_l -m ${sp_dir}/nh3_xuv_lm \
-    -L $SW_DATA/nh3_lbl_xuv.nc -np $procs \
+    -L ${sp_dir}/nh3_lbl_xuv.nc -np $procs \
      > ${sp_dir}/nh3_xuv_log
 fi
-if [ ! -s ${sp_dir}/nh3_euv_l ] || [ ! -s $SW_DATA/nh3_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/nh3_euv_l ] || [ ! -s ${sp_dir}/nh3_lbl_euv.nc ] ; then
   echo 'NH3 (EUV)'
   rm -f ${sp_dir}/nh3_euv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_NH3 \
     -R 11 100 -i 10.0 -l 11 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/nh3_euv_l -m ${sp_dir}/nh3_euv_lm \
-    -L $SW_DATA/nh3_lbl_euv.nc -np $procs \
+    -L ${sp_dir}/nh3_lbl_euv.nc -np $procs \
      > ${sp_dir}/nh3_euv_log
 fi
-if [ ! -s ${sp_dir}/nh3_uv_l ] || [ ! -s $SW_DATA/nh3_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/nh3_uv_l ] || [ ! -s ${sp_dir}/nh3_lbl_uv.nc ] ; then
   echo 'NH3 (UV)'
   rm -f ${sp_dir}/nh3_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_NH3 \
     -R 101 230 -i 1.0 -l 11 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/nh3_uv_l -m ${sp_dir}/nh3_uv_lm \
-    -L $SW_DATA/nh3_lbl_uv.nc -np $procs \
+    -L ${sp_dir}/nh3_lbl_uv.nc -np $procs \
      > ${sp_dir}/nh3_uv_log
 fi
 
@@ -825,14 +875,14 @@ fi
 #dat2xsc HNO3.dat hno3.uvxsc
 UV_HNO3='hno3_cat.uvxsc' #   105nm - 350 nm
 hno3_pt_file='pt_hno3'
-if [ ! -s ${sp_dir}/hno3_uv_l ] || [ ! -s $SW_DATA/hno3_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/hno3_uv_l ] || [ ! -s ${sp_dir}/hno3_lbl.nc ] ; then
   echo 'HNO3 (UV)'
   rm -f ${sp_dir}/hno3_uv_l*
   Ccorr_k -F $hno3_pt_file -UVX $UV_HNO3 \
     -R 105 350 -i 1.0 -l 12 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/hno3_uv_l -m ${sp_dir}/hno3_uv_lm \
-    -L $SW_DATA/hno3_lbl.nc -np $procs \
+    -L ${sp_dir}/hno3_lbl.nc -np $procs \
      > ${sp_dir}/hno3_uv_log
 fi
 
@@ -840,24 +890,24 @@ fi
 rm -f n2_hires.uvxsc
 dat2xsc N2.dat n2_hires.uvxsc
 UV_N2_HIRES='n2_hires.uvxsc' # 0.04 - 102.7 nm
-if [ ! -s ${sp_dir}/n2_xuvhr_l ] || [ ! -s $SW_DATA/n2_lbl_xuvhr.nc ] ; then
+if [ ! -s ${sp_dir}/n2_xuvhr_l ] || [ ! -s ${sp_dir}/n2_lbl_xuvhr.nc ] ; then
   echo 'N2 (XUV continuum)'
   rm -f ${sp_dir}/n2_xuvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_N2_HIRES \
     -R 1 10 -i 1000.0 -l 13 7.5e3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n2_xuvhr_l -m ${sp_dir}/n2_xuvhr_lm \
-    -L $SW_DATA/n2_lbl_xuvhr.nc -np $procs \
+    -L ${sp_dir}/n2_lbl_xuvhr.nc -np $procs \
      > ${sp_dir}/n2_xuvhr_log
 fi
-if [ ! -s ${sp_dir}/n2_euvhr_l ] || [ ! -s $SW_DATA/n2_lbl_euvhr.nc ] ; then
+if [ ! -s ${sp_dir}/n2_euvhr_l ] || [ ! -s ${sp_dir}/n2_lbl_euvhr.nc ] ; then
   echo 'N2 (EUV continuum)'
   rm -f ${sp_dir}/n2_euvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_N2_HIRES \
     -R 11 100 -i 10.0 -l 13 7.5e3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n2_euvhr_l -m ${sp_dir}/n2_euvhr_lm \
-    -L $SW_DATA/n2_lbl_euvhr.nc -np $procs \
+    -L ${sp_dir}/n2_lbl_euvhr.nc -np $procs \
      > ${sp_dir}/n2_euvhr_log
 fi
 
@@ -865,104 +915,104 @@ fi
 rm -f h2.uvxsc
 dat2xsc H2.dat h2.uvxsc
 UV_H2='h2.uvxsc'   #   5 - 116 nm
-if [ ! -s ${sp_dir}/h2_xuv_l ] || [ ! -s $SW_DATA/h2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/h2_xuv_l ] || [ ! -s ${sp_dir}/h2_lbl_xuv.nc ] ; then
   echo 'H2 (XUV continuum)'
   rm -f ${sp_dir}/h2_xuv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_H2 \
     -R 5 10 -i 1000.0 -l 23 5.0e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/h2_xuv_l -m ${sp_dir}/h2_xuv_lm \
-    -L $SW_DATA/h2_lbl_xuv.nc -np $procs \
+    -L ${sp_dir}/h2_lbl_xuv.nc -np $procs \
      > ${sp_dir}/h2_xuv_log
 fi
-if [ ! -s ${sp_dir}/h2_euv_l ] || [ ! -s $SW_DATA/h2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/h2_euv_l ] || [ ! -s ${sp_dir}/h2_lbl_euv.nc ] ; then
   echo 'H2 (EUV continuum)'
   rm -f ${sp_dir}/h2_euv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_H2 \
     -R 11 100 -i 10.0 -l 23 5.0e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/h2_euv_l -m ${sp_dir}/h2_euv_lm \
-    -L $SW_DATA/h2_lbl_euv.nc -np $procs \
+    -L ${sp_dir}/h2_lbl_euv.nc -np $procs \
      > ${sp_dir}/h2_euv_log
 fi
-if [ ! -s ${sp_dir}/h2_uv_l ] || [ ! -s $SW_DATA/h2_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/h2_uv_l ] || [ ! -s ${sp_dir}/h2_lbl_uv.nc ] ; then
   echo 'H2 (UV continuum)'
   rm -f ${sp_dir}/h2_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_H2 \
     -R 101 117 -i 1.0 -l 23 5.0e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/h2_uv_l -m ${sp_dir}/h2_uv_lm \
-    -L $SW_DATA/h2_lbl_uv.nc -np $procs \
+    -L ${sp_dir}/h2_lbl_uv.nc -np $procs \
      > ${sp_dir}/h2_uv_log
 fi
 
 #Carbonyl Sulphide (OCS)
 UV_OCS='ocs.uvxsc' #   186nm - 292 nm
 ocs_pt_file='pt_ocs'
-if [ ! -s ${sp_dir}/ocs_uv_l ] || [ ! -s $SW_DATA/ocs_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/ocs_uv_l ] || [ ! -s ${sp_dir}/ocs_lbl.nc ] ; then
   echo 'OCS (UV)'
   rm -f ${sp_dir}/ocs_uv_l*
   Ccorr_k -F $ocs_pt_file -UVX $UV_OCS \
     -R 186 293 -i 1.0 -l 25 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/ocs_uv_l -m ${sp_dir}/ocs_uv_lm \
-    -L $SW_DATA/ocs_lbl.nc -np $procs \
+    -L ${sp_dir}/ocs_lbl.nc -np $procs \
      > ${sp_dir}/ocs_uv_log
 fi
 
 #Acetylene (C2H2)
 UV_C2H2="${hj}/c2h2.uvxsc"  #   7nm - 228 nm
-if [ ! -s ${sp_dir}/c2h2_xuv_l ] || [ ! -s $SW_DATA/c2h2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/c2h2_xuv_l ] || [ ! -s ${sp_dir}/c2h2_lbl_xuv.nc ] ; then
   echo 'C2H2 (XUV)'
   rm -f ${sp_dir}/c2h2_xuv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_C2H2 \
     -R 7 10 -i 1000.0 -l 34 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/c2h2_xuv_l -m ${sp_dir}/c2h2_xuv_lm \
-    -L $SW_DATA/c2h2_lbl_xuv.nc -np $procs \
+    -L ${sp_dir}/c2h2_lbl_xuv.nc -np $procs \
      > ${sp_dir}/c2h2_xuv_log
 fi
-if [ ! -s ${sp_dir}/c2h2_euv_l ] || [ ! -s $SW_DATA/c2h2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/c2h2_euv_l ] || [ ! -s ${sp_dir}/c2h2_lbl_euv.nc ] ; then
   echo 'C2H2 (EUV)'
   rm -f ${sp_dir}/c2h2_euv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_C2H2 \
     -R 11 100 -i 10.0 -l 34 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/c2h2_euv_l -m ${sp_dir}/c2h2_euv_lm \
-    -L $SW_DATA/c2h2_lbl_euv.nc -np $procs \
+    -L ${sp_dir}/c2h2_lbl_euv.nc -np $procs \
      > ${sp_dir}/c2h2_euv_log
 fi
-if [ ! -s ${sp_dir}/c2h2_uv_l ] || [ ! -s $SW_DATA/c2h2_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/c2h2_uv_l ] || [ ! -s ${sp_dir}/c2h2_lbl_uv.nc ] ; then
   echo 'C2H2 (UV)'
   rm -f ${sp_dir}/c2h2_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_C2H2 \
     -R 101 229 -i 1.0 -l 34 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/c2h2_uv_l -m ${sp_dir}/c2h2_uv_lm \
-    -L $SW_DATA/c2h2_lbl_uv.nc -np $procs \
+    -L ${sp_dir}/c2h2_lbl_uv.nc -np $procs \
      > ${sp_dir}/c2h2_uv_log
 fi
 
 #Hydrogen Cynanide (HCN)
 UV_HCN="${hj}/hcn.uvxsc"  #   80nm - 184 nm
-if [ ! -s ${sp_dir}/hcn_euv_l ] || [ ! -s $SW_DATA/hcn_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/hcn_euv_l ] || [ ! -s ${sp_dir}/hcn_lbl_euv.nc ] ; then
   echo 'HCN (EUV)'
   rm -f ${sp_dir}/hcn_euv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_HCN \
     -R 84 100 -i 10.0 -l 35 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/hcn_euv_l -m ${sp_dir}/hcn_euv_lm \
-    -L $SW_DATA/hcn_lbl_euv.nc -np $procs \
+    -L ${sp_dir}/hcn_lbl_euv.nc -np $procs \
      > ${sp_dir}/hcn_euv_log
 fi
-if [ ! -s ${sp_dir}/hcn_uv_l ] || [ ! -s $SW_DATA/hcn_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/hcn_uv_l ] || [ ! -s ${sp_dir}/hcn_lbl_uv.nc ] ; then
   echo 'HCN (UV)'
   rm -f ${sp_dir}/hcn_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_HCN \
     -R 101 185 -i 1.0 -l 35 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/hcn_uv_l -m ${sp_dir}/hcn_uv_lm \
-    -L $SW_DATA/hcn_lbl_uv.nc -np $procs \
+    -L ${sp_dir}/hcn_lbl_uv.nc -np $procs \
      > ${sp_dir}/hcn_uv_log
 fi
 
@@ -970,24 +1020,24 @@ fi
 rm -f o.uvxsc
 dat2xsc O.dat o.uvxsc
 UV_O='o.uvxsc' # 0.04 - 102.7 nm
-if [ ! -s ${sp_dir}/o_xuvhr_l ] || [ ! -s $SW_DATA/o_lbl_xuvhr.nc ] ; then
+if [ ! -s ${sp_dir}/o_xuvhr_l ] || [ ! -s ${sp_dir}/o_lbl_xuvhr.nc ] ; then
   echo 'O (XUV continuum)'
   rm -f ${sp_dir}/o_xuvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_O \
     -R 1 10 -i 1000.0 -l 39 2.6e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/o_xuvhr_l -m ${sp_dir}/o_xuvhr_lm \
-    -L $SW_DATA/o_lbl_xuvhr.nc -np $procs \
+    -L ${sp_dir}/o_lbl_xuvhr.nc -np $procs \
      > ${sp_dir}/o_xuvhr_log
 fi
-if [ ! -s ${sp_dir}/o_euvhr_l ] || [ ! -s $SW_DATA/o_lbl_euvhr.nc ] ; then
+if [ ! -s ${sp_dir}/o_euvhr_l ] || [ ! -s ${sp_dir}/o_lbl_euvhr.nc ] ; then
   echo 'O (EUV continuum)'
   rm -f ${sp_dir}/o_euvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_O \
     -R 11 93 -i 10.0 -l 39 2.6e-4 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/o_euvhr_l -m ${sp_dir}/o_euvhr_lm \
-    -L $SW_DATA/o_lbl_euvhr.nc -np $procs \
+    -L ${sp_dir}/o_lbl_euvhr.nc -np $procs \
      > ${sp_dir}/o_euvhr_log
 fi
 
@@ -995,51 +1045,51 @@ fi
 rm -f n.uvxsc
 dat2xsc N.dat n.uvxsc
 UV_N='n.uvxsc' # 0.04 - 102.7 nm
-if [ ! -s ${sp_dir}/n_xuvhr_l ] || [ ! -s $SW_DATA/n_lbl_xuvhr.nc ] ; then
+if [ ! -s ${sp_dir}/n_xuvhr_l ] || [ ! -s ${sp_dir}/n_lbl_xuvhr.nc ] ; then
   echo 'N (XUV continuum)'
   rm -f ${sp_dir}/n_xuvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_N \
     -R 1 10 -i 1000.0 -l 40 3.0e-10 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n_xuvhr_l -m ${sp_dir}/n_xuvhr_lm \
-    -L $SW_DATA/n_lbl_xuvhr.nc -np $procs \
+    -L ${sp_dir}/n_lbl_xuvhr.nc -np $procs \
      > ${sp_dir}/n_xuvhr_log
 fi
-if [ ! -s ${sp_dir}/n_euvhr_l ] || [ ! -s $SW_DATA/n_lbl_euvhr.nc ] ; then
+if [ ! -s ${sp_dir}/n_euvhr_l ] || [ ! -s ${sp_dir}/n_lbl_euvhr.nc ] ; then
   echo 'N (EUV continuum)'
   rm -f ${sp_dir}/n_euvhr_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_N \
     -R 11 88 -i 10.0 -l 40 3.0e-10 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n_euvhr_l -m ${sp_dir}/n_euvhr_lm \
-    -L $SW_DATA/n_lbl_euvhr.nc -np $procs \
+    -L ${sp_dir}/n_lbl_euvhr.nc -np $procs \
      > ${sp_dir}/n_euvhr_log
 fi
 
 # Nitrogen Trioxide (NO3)
 #dat2xsc NO3.dat no3.uvxsc
 UV_NO3='no3.uvxsc' #   400nm - 793 nm
-if [ ! -s ${sp_dir}/no3_uv_l ] || [ ! -s $SW_DATA/no3_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/no3_uv_l ] || [ ! -s ${sp_dir}/no3_lbl.nc ] ; then
   echo 'NO3 (UV)'
   rm -f ${sp_dir}/no3_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_NO3 \
     -R 400 794 -i 1.0 -l 41 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/no3_uv_l -m ${sp_dir}/no3_uv_lm \
-    -L $SW_DATA/no3_lbl.nc -np $procs \
+    -L ${sp_dir}/no3_lbl.nc -np $procs \
      > ${sp_dir}/no3_uv_log
 fi
 
 # Dinitrogen Pentoxide (N2O5)
 uv_n2o5='n2o5.uvxsc' # 152 - 397 nm
-if [ ! -s ${sp_dir}/n2o5_uv_l ] || [ ! -s $SW_DATA/n2o5_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/n2o5_uv_l ] || [ ! -s ${sp_dir}/n2o5_lbl.nc ] ; then
   echo 'N2O5 (UV)'
   rm -f ${sp_dir}/n2o5_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $uv_n2o5 \
     -R 152 398 -i 1.0 -l 42 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/n2o5_uv_l -m ${sp_dir}/n2o5_uv_lm \
-    -L $SW_DATA/n2o5_lbl.nc -np $procs \
+    -L ${sp_dir}/n2o5_lbl.nc -np $procs \
      > ${sp_dir}/n2o5_uv_log
 fi
 
@@ -1047,14 +1097,14 @@ fi
 rm -f hono.uvxsc
 dat2xsc HONO.dat hono.uvxsc
 UV_HONO='hono.uvxsc' #   184nm - 396 nm
-if [ ! -s ${sp_dir}/hono_uv_l ] || [ ! -s $SW_DATA/hono_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/hono_uv_l ] || [ ! -s ${sp_dir}/hono_lbl.nc ] ; then
   echo 'HONO (UV)'
   rm -f ${sp_dir}/hono_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_HONO \
     -R 184 397 -i 1.0 -l 43 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/hono_uv_l -m ${sp_dir}/hono_uv_lm \
-    -L $SW_DATA/hono_lbl.nc -np $procs \
+    -L ${sp_dir}/hono_lbl.nc -np $procs \
      > ${sp_dir}/hono_uv_log
 fi
 
@@ -1063,14 +1113,14 @@ fi
 #dat2xsc HO2NO2.dat ho2no2.uvxsc
 UV_HO2NO2='ho2no2_cat.uvxsc' #   190nm - 349 nm
 ho2no2_pt_file='pt_ho2no2'
-if [ ! -s ${sp_dir}/ho2no2_uv_l ] || [ ! -s $SW_DATA/ho2no2_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/ho2no2_uv_l ] || [ ! -s ${sp_dir}/ho2no2_lbl.nc ] ; then
   echo 'HO2NO2 (UV)'
   rm -f ${sp_dir}/ho2no2_uv_l*
   Ccorr_k -F $ho2no2_pt_file -UVX $UV_HO2NO2 \
     -R 190 1376 -i 1.0 -l 44 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/ho2no2_uv_l -m ${sp_dir}/ho2no2_uv_lm \
-    -L $SW_DATA/ho2no2_lbl.nc -np $procs \
+    -L ${sp_dir}/ho2no2_lbl.nc -np $procs \
      > ${sp_dir}/ho2no2_uv_log
 fi
 
@@ -1086,81 +1136,81 @@ dat2xsc -t 320 h2o2_320K.dat h2o2_320K.uvxsc
 cat h2o2_???K.uvxsc > h2o2.uvxsc
 uv_h2o2='h2o2.uvxsc' #   190nm - 350 nm
 h2o2_pt_file='pt_h2o2'
-if [ ! -s ${sp_dir}/h2o2_uv_l ] || [ ! -s $SW_DATA/h2o2_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/h2o2_uv_l ] || [ ! -s ${sp_dir}/h2o2_lbl.nc ] ; then
   echo 'H2O2 (UV)'
   rm -f ${sp_dir}/h2o2_uv_l*
   Ccorr_k -F $h2o2_pt_file -UVX $uv_h2o2 \
     -R 190 350 -i 1.0 -l 45 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/h2o2_uv_l -m ${sp_dir}/h2o2_uv_lm \
-    -L $SW_DATA/h2o2_lbl.nc -np $procs \
+    -L ${sp_dir}/h2o2_lbl.nc -np $procs \
      > ${sp_dir}/h2o2_uv_log
 fi
 
 #Ethane (C2H6)
 UV_C2H6="${hj}/c2h6.uvxsc"  #   6nm - 159 nm
-if [ ! -s ${sp_dir}/c2h6_xuv_l ] || [ ! -s $SW_DATA/c2h6_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/c2h6_xuv_l ] || [ ! -s ${sp_dir}/c2h6_lbl_xuv.nc ] ; then
   echo 'C2H6 (XUV)'
   rm -f ${sp_dir}/c2h6_xuv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_C2H6 \
     -R 6 10 -i 1000.0 -l 46 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/c2h6_xuv_l -m ${sp_dir}/c2h6_xuv_lm \
-    -L $SW_DATA/c2h6_lbl_xuv.nc -np $procs \
+    -L ${sp_dir}/c2h6_lbl_xuv.nc -np $procs \
      > ${sp_dir}/c2h6_xuv_log
 fi
-if [ ! -s ${sp_dir}/c2h6_euv_l ] || [ ! -s $SW_DATA/c2h6_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/c2h6_euv_l ] || [ ! -s ${sp_dir}/c2h6_lbl_euv.nc ] ; then
   echo 'C2H6 (EUV)'
   rm -f ${sp_dir}/c2h6_euv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_C2H6 \
     -R 11 100 -i 10.0 -l 46 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/c2h6_euv_l -m ${sp_dir}/c2h6_euv_lm \
-    -L $SW_DATA/c2h6_lbl_euv.nc -np $procs \
+    -L ${sp_dir}/c2h6_lbl_euv.nc -np $procs \
      > ${sp_dir}/c2h6_euv_log
 fi
-if [ ! -s ${sp_dir}/c2h6_uv_l ] || [ ! -s $SW_DATA/c2h6_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/c2h6_uv_l ] || [ ! -s ${sp_dir}/c2h6_lbl_uv.nc ] ; then
   echo 'C2H6 (UV)'
   rm -f ${sp_dir}/c2h6_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_C2H6 \
     -R 101 160 -i 1.0 -l 46 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/c2h6_uv_l -m ${sp_dir}/c2h6_uv_lm \
-    -L $SW_DATA/c2h6_lbl_uv.nc -np $procs \
+    -L ${sp_dir}/c2h6_lbl_uv.nc -np $procs \
      > ${sp_dir}/c2h6_uv_log
 fi
 
 #Methanal (H2CO)
 UV_H2CO='h2co.uvxsc' #   226nm - 370 nm
 h2co_pt_file='pt_h2co'
-if [ ! -s ${sp_dir}/h2co_xuv_l ] || [ ! -s $SW_DATA/h2co_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/h2co_xuv_l ] || [ ! -s ${sp_dir}/h2co_lbl_xuv.nc ] ; then
   echo 'H2CO (XUV)'
   rm -f ${sp_dir}/h2co_xuv_l*
   Ccorr_k -F $h2co_pt_file -UVX $UV_H2CO \
     -R 7 10 -i 1000.0 -l 48 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/h2co_xuv_l -m ${sp_dir}/h2co_xuv_lm \
-    -L $SW_DATA/h2co_lbl_xuv.nc -np $procs \
+    -L ${sp_dir}/h2co_lbl_xuv.nc -np $procs \
      > ${sp_dir}/h2co_xuv_log
 fi
-if [ ! -s ${sp_dir}/h2co_euv_l ] || [ ! -s $SW_DATA/h2co_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/h2co_euv_l ] || [ ! -s ${sp_dir}/h2co_lbl_euv.nc ] ; then
   echo 'H2CO (EUV)'
   rm -f ${sp_dir}/h2co_euv_l*
   Ccorr_k -F $h2co_pt_file -UVX $UV_H2CO \
     -R 11 100 -i 10.0 -l 48 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/h2co_euv_l -m ${sp_dir}/h2co_euv_lm \
-    -L $SW_DATA/h2co_lbl_euv.nc -np $procs \
+    -L ${sp_dir}/h2co_lbl_euv.nc -np $procs \
      > ${sp_dir}/h2co_euv_log
 fi
-if [ ! -s ${sp_dir}/h2co_uv_l ] || [ ! -s $SW_DATA/h2co_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/h2co_uv_l ] || [ ! -s ${sp_dir}/h2co_lbl_uv.nc ] ; then
   echo 'H2CO (UV)'
   rm -f ${sp_dir}/h2co_uv_l*
   Ccorr_k -F $h2co_pt_file -UVX $UV_H2CO \
     -R 101 376 -i 1.0 -l 48 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/h2co_uv_l -m ${sp_dir}/h2co_uv_lm \
-    -L $SW_DATA/h2co_lbl_uv.nc -np $procs \
+    -L ${sp_dir}/h2co_lbl_uv.nc -np $procs \
      > ${sp_dir}/h2co_uv_log
 fi
 
@@ -1168,14 +1218,14 @@ fi
 rm -f ch3cho.uvxsc
 dat2xsc CH3CHO.dat ch3cho.uvxsc
 UV_CH3CHO='ch3cho.uvxsc' #   202nm - 360 nm
-if [ ! -s ${sp_dir}/ch3cho_uv_l ] || [ ! -s $SW_DATA/ch3cho_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/ch3cho_uv_l ] || [ ! -s ${sp_dir}/ch3cho_lbl.nc ] ; then
   echo 'CH3CHO (UV)'
   rm -f ${sp_dir}/ch3cho_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_CH3CHO \
     -R 202 361 -i 1.0 -l 56 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/ch3cho_uv_l -m ${sp_dir}/ch3cho_uv_lm \
-    -L $SW_DATA/ch3cho_lbl.nc -np $procs \
+    -L ${sp_dir}/ch3cho_lbl.nc -np $procs \
      > ${sp_dir}/ch3cho_uv_log
 fi
 
@@ -1183,28 +1233,28 @@ fi
 rm -f ch3ooh.uvxsc
 dat2xsc CH3OOH.dat ch3ooh.uvxsc
 UV_CH3OOH='ch3ooh.uvxsc' #   210nm - 405 nm
-if [ ! -s ${sp_dir}/ch3ooh_uv_l ] || [ ! -s $SW_DATA/ch3ooh_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/ch3ooh_uv_l ] || [ ! -s ${sp_dir}/ch3ooh_lbl.nc ] ; then
   echo 'CH3OOH (UV)'
   rm -f ${sp_dir}/ch3ooh_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_CH3OOH \
     -R 210 406 -i 1.0 -l 57 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/ch3ooh_uv_l -m ${sp_dir}/ch3ooh_uv_lm \
-    -L $SW_DATA/ch3ooh_lbl.nc -np $procs \
+    -L ${sp_dir}/ch3ooh_lbl.nc -np $procs \
      > ${sp_dir}/ch3ooh_uv_log
 fi
 
 #Acetone (CH3COCH3)
 UV_CH3COCH3='ch3coch3.uvxsc' #   215nm - 349 nm
 ch3coch3_pt_file='pt_ch3coch3'
-if [ ! -s ${sp_dir}/ch3coch3_uv_l ] || [ ! -s $SW_DATA/ch3coch3_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/ch3coch3_uv_l ] || [ ! -s ${sp_dir}/ch3coch3_lbl.nc ] ; then
   echo 'CH3COCH3 (UV)'
   rm -f ${sp_dir}/ch3coch3_uv_l*
   Ccorr_k -F $ch3coch3_pt_file -UVX $UV_CH3COCH3 \
     -R 215 350 -i 1.0 -l 58 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/ch3coch3_uv_l -m ${sp_dir}/ch3coch3_uv_lm \
-    -L $SW_DATA/ch3coch3_lbl.nc -np $procs \
+    -L ${sp_dir}/ch3coch3_lbl.nc -np $procs \
      > ${sp_dir}/ch3coch3_uv_log
 fi
 
@@ -1212,14 +1262,14 @@ fi
 rm -f ch3cocho.uvxsc
 dat2xsc CH3COCHO.dat ch3cocho.uvxsc
 UV_CH3COCHO='ch3cocho.uvxsc' # 200 - 493 nm
-if [ ! -s ${sp_dir}/ch3cocho_uv_l ] || [ ! -s $SW_DATA/ch3cocho_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/ch3cocho_uv_l ] || [ ! -s ${sp_dir}/ch3cocho_lbl.nc ] ; then
   echo 'CH3COCHO (UV)'
   rm -f ${sp_dir}/ch3cocho_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_CH3COCHO \
     -R 200 494 -i 1.0 -l 59 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/ch3cocho_uv_l -m ${sp_dir}/ch3cocho_uv_lm \
-    -L $SW_DATA/ch3cocho_lbl.nc -np $procs \
+    -L ${sp_dir}/ch3cocho_lbl.nc -np $procs \
      > ${sp_dir}/ch3cocho_uv_log
 fi
 
@@ -1227,14 +1277,14 @@ fi
 rm -f chocho.uvxsc
 dat2xsc CHOCHO.dat chocho.uvxsc
 UV_CHOCHO='chocho.uvxsc' #   250nm - 526 nm
-if [ ! -s ${sp_dir}/chocho_uv_l ] || [ ! -s $SW_DATA/chocho_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/chocho_uv_l ] || [ ! -s ${sp_dir}/chocho_lbl.nc ] ; then
   echo 'CHOCHO (UV)'
   rm -f ${sp_dir}/chocho_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_CHOCHO \
     -R 250 527 -i 1.0 -l 60 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/chocho_uv_l -m ${sp_dir}/chocho_uv_lm \
-    -L $SW_DATA/chocho_lbl.nc -np $procs \
+    -L ${sp_dir}/chocho_lbl.nc -np $procs \
      > ${sp_dir}/chocho_uv_log
 fi
 
@@ -1242,14 +1292,14 @@ fi
 rm -f hoch2cho.uvxsc
 dat2xsc HOCH2CHO.dat hoch2cho.uvxsc
 UV_HOCH2CHO='hoch2cho.uvxsc' #   208nm - 332 nm
-if [ ! -s ${sp_dir}/hoch2cho_uv_l ] || [ ! -s $SW_DATA/hoch2cho_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/hoch2cho_uv_l ] || [ ! -s ${sp_dir}/hoch2cho_lbl.nc ] ; then
   echo 'HOCH2CHO (UV)'
   rm -f ${sp_dir}/hoch2cho_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_HOCH2CHO \
     -R 208 333 -i 1.0 -l 62 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/hoch2cho_uv_l -m ${sp_dir}/hoch2cho_uv_lm \
-    -L $SW_DATA/hoch2cho_lbl.nc -np $procs \
+    -L ${sp_dir}/hoch2cho_lbl.nc -np $procs \
      > ${sp_dir}/hoch2cho_uv_log
 fi
 
@@ -1257,28 +1307,28 @@ fi
 #rm -f macr.uvxsc
 #dat2xsc MACR.dat macr.uvxsc
 #UV_MACR='macr.uvxsc' #   250nm - 395 nm
-#if [ ! -s ${sp_dir}/macr_uv_l ] || [ ! -s $SW_DATA/macr_lbl.nc ] ; then
+#if [ ! -s ${sp_dir}/macr_uv_l ] || [ ! -s ${sp_dir}/macr_lbl.nc ] ; then
 #  echo 'MACR (UV)'
 #  rm -f ${sp_dir}/macr_uv_l*
 #  Ccorr_k -F $PT_SINGLE -UVX $UV_MACR \
 #    -R 250 396 -i 1.0 -l 65 2.0e-3 -t 1.0e-3  \
 #    -s $skelfile +S $SOLSPEC \
 #    -o ${sp_dir}/macr_uv_l -m ${sp_dir}/macr_uv_lm \
-#    -L $SW_DATA/macr_lbl.nc -np $procs \
+#    -L ${sp_dir}/macr_lbl.nc -np $procs \
 #     > ${sp_dir}/macr_uv_log
 #fi
 
 #Polyacrylonitrile (PAN)
 UV_PAN='pan.uvxsc' #   196nm - 350 nm
 pan_pt_file='pt_pan'
-if [ ! -s ${sp_dir}/pan_uv_l ] || [ ! -s $SW_DATA/pan_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/pan_uv_l ] || [ ! -s ${sp_dir}/pan_lbl.nc ] ; then
   echo 'PAN (UV)'
   rm -f ${sp_dir}/pan_uv_l*
   Ccorr_k -F $pan_pt_file -UVX $UV_PAN \
     -R 196 351 -i 1.0 -l 66 1.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
     -o ${sp_dir}/pan_uv_l -m ${sp_dir}/pan_uv_lm \
-    -L $SW_DATA/pan_lbl.nc -np $procs \
+    -L ${sp_dir}/pan_lbl.nc -np $procs \
      > ${sp_dir}/pan_uv_log
 fi
 
@@ -1286,14 +1336,14 @@ fi
 rm -f ch3ono2.uvxsc
 dat2xsc CH3ONO2.dat ch3ono2.uvxsc
 UV_CH3ONO2='ch3ono2.uvxsc' #   192nm - 344 nm
-if [ ! -s ${sp_dir}/ch3ono2_uv_l ] || [ ! -s $SW_DATA/ch3ono2_lbl.nc ] ; then
+if [ ! -s ${sp_dir}/ch3ono2_uv_l ] || [ ! -s ${sp_dir}/ch3ono2_lbl.nc ] ; then
   echo 'CH3ONO2 (UV)'
   rm -f ${sp_dir}/ch3ono2_uv_l*
   Ccorr_k -F $PT_SINGLE -UVX $UV_CH3ONO2 \
     -R 192 345 -i 1.0 -l 67 2.0e-3 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/ch3ono2_uv_l -m ${sp_dir}/ch3ono2_uv_lm \
-    -L $SW_DATA/ch3ono2_lbl.nc -np $procs \
+    -L ${sp_dir}/ch3ono2_lbl.nc -np $procs \
      > ${sp_dir}/ch3ono2_uv_log
 fi
 
