@@ -113,9 +113,8 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
             index_absorb = Sp%Gas%index_absorb(1, band)
             IF (Sp%Gas%n_sub_band_gas(band, index_absorb) > 1) THEN
               sub_bands(band) = Sp%Gas%n_sub_band_gas(band, index_absorb)
-              wavelength(:, 1:sub_bands(band), band) = &
-                Sp%Gas%wavelength_sub_band(:, 1:sub_bands(band), &
-                                           band, index_absorb)
+              wavelength(:, 1:sub_bands(band), band) = Sp%Gas% &
+                sub_band(band, index_absorb)%wavelength(:, 1:sub_bands(band))
             END IF
           END IF
         END DO
@@ -125,7 +124,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
       IF (Sp%Gas%n_sub_band_gas(band, index_absorb) > 1) THEN
         sub_bands(band) = Sp%Gas%n_sub_band_gas(band, index_absorb)
         wavelength(:, 1:sub_bands(band), band) = &
-          Sp%Gas%wavelength_sub_band(:, 1:sub_bands(band), band, index_absorb)
+          Sp%Gas%sub_band(band, index_absorb)%wavelength(:, 1:sub_bands(band))
       ELSE
         number_term = Sp%Gas%i_band_k(band, index_absorb)
         sub_bands(band)=number_term
@@ -199,7 +198,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
           index_absorb = Sp%Gas%index_absorb(1, band)
           IF (Sp%Gas%n_sub_band_gas(band, index_absorb) > 1) THEN
             Sp%Var%index_sub_band(2, sub_band) = &
-              Sp%Gas%sub_band_k(i, band, index_absorb)
+              Sp%Gas%sub_band(band, index_absorb)%k(i)
           ELSE
             Sp%Var%index_sub_band(2, sub_band) = i
           END IF
@@ -270,7 +269,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
       i_sub_band_gas(i_band) = i_sub_band_gas(i_band) + 1
       Sp%Var%solar_flux_sub_band(i_sub, 0) &
         = Sp%Solar%solar_flux_band(i_band) &
-        * Sp%Gas%sub_band_w(i_sub_band_gas(i_band), i_band, i_gas)
+        * Sp%Gas%sub_band(i_band, i_gas)%w(i_sub_band_gas(i_band))
     END IF
   END DO
 

@@ -622,6 +622,10 @@ DO i=1, Sp%Aerosol%n_aerosol
     idum, Sp%Aerosol%type_aerosol(i), chdum
 END DO
 
+! Minimum of one sub-band per band
+ALLOCATE(Sp%Gas%sub_band(nd_band, nd_species))
+Sp%Gas%sub_band%nd_sub_band=1
+
 END SUBROUTINE read_block_0_0_1_int
 
 
@@ -728,6 +732,10 @@ ALLOCATE(Sp%Basic%n_band_exclude(nd_band))
 ! This must be zeroed lest block 14 should not be present and
 ! the array be filled with random values.
 Sp%Basic%n_band_exclude(1:nd_band) = 0
+
+! Minimum of one sub-band per band
+ALLOCATE(Sp%Gas%sub_band(nd_band, nd_species))
+Sp%Gas%sub_band%nd_sub_band=1
 
 END SUBROUTINE read_block_0_0_2_int
 
@@ -1265,16 +1273,12 @@ ALLOCATE(Sp%Gas%n_t_lookup_gas(nd_species))
 ALLOCATE(Sp%Gas%index_sb(nd_species))
 ALLOCATE(Sp%Gas%l_self_broadening(nd_species))
 ALLOCATE(Sp%Gas%n_sub_band_gas(nd_band, nd_species))
-ALLOCATE(Sp%Gas%sub_band_k(nd_sub_band_gas, nd_band, nd_species))
-ALLOCATE(Sp%Gas%sub_band_w(nd_sub_band_gas, nd_band, nd_species))
-ALLOCATE(Sp%Gas%wavelength_sub_band(2, nd_sub_band_gas, nd_band, nd_species))
 ALLOCATE(Sp%Gas%lookup(nd_species, nd_band))
 Sp%Gas%num_ref_p=0
 Sp%Gas%num_ref_t=0
 Sp%Gas%n_t_lookup_gas=0
 Sp%Gas%index_sb=0
 Sp%Gas%n_sub_band_gas=1
-Sp%Gas%sub_band_k=0
 l_lookup=.FALSE.
 l_t_lookup=.FALSE.
 
@@ -1632,14 +1636,19 @@ IF (nd_sub_band_gas > 1) THEN
       READ(iu_spc1, '(6x,i4,7x,i4,13x,i6)') &
         idum_band, idum_species, n_sub_band_gas
       Sp%Gas%n_sub_band_gas(idum_band, idum_species)=n_sub_band_gas
+      Sp%Gas%sub_band(idum_band, idum_species)%nd_sub_band=n_sub_band_gas
+      ALLOCATE(Sp%Gas%sub_band(idum_band, idum_species)%k( n_sub_band_gas ))
+      ALLOCATE(Sp%Gas%sub_band(idum_band, idum_species)%w( n_sub_band_gas ))
+      ALLOCATE(Sp%Gas%sub_band(idum_band, idum_species)%wavelength( 2, &
+                                                           n_sub_band_gas ))
       READ(iu_spc1, *)
       DO isb=1, n_sub_band_gas
         READ(iu_spc1, '(8x, i8, 3(2x,1PE16.9))', IOSTAT=ios) &
-          Sp%Gas%sub_band_k(isb, idum_band, idum_species), &
-          Sp%Gas%sub_band_w(isb, idum_band, idum_species), &
-          Sp%Gas%wavelength_sub_band(:, isb, idum_band, idum_species)
+          Sp%Gas%sub_band(idum_band, idum_species)%k(isb), &
+          Sp%Gas%sub_band(idum_band, idum_species)%w(isb), &
+          Sp%Gas%sub_band(idum_band, idum_species)%wavelength(:, isb)
       END DO
-      IF (MAXVAL(Sp%Gas%sub_band_k(1:n_sub_band_gas, idum_band, idum_species)) &
+      IF (MAXVAL(Sp%Gas%sub_band(idum_band, idum_species)%k(1:n_sub_band_gas)) &
           > Sp%Gas%i_band_k(idum_band, idum_species)) THEN
         WRITE(cmessage,'(a, i0, a, i0, a)') &
           '*** Error in subroutine read_block_5_0_1: ' // &
@@ -3470,7 +3479,7 @@ DO
         i_sub_band_gas(i_band) = i_sub_band_gas(i_band) + 1
         Sp%Var%solar_flux_sub_band(i, 0) &
           = Sp%Solar%solar_flux_band(i_band) &
-          * Sp%Gas%sub_band_w(i_sub_band_gas(i_band), i_band, i_gas)
+          * Sp%Gas%sub_band(i_band, i_gas)%w(i_sub_band_gas(i_band))
       END IF
     END DO
 

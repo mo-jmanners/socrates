@@ -12,25 +12,25 @@ procs=24
 . ./env_earth
 
 # HITRAN2024 line data
-HITRAN_N2O="${ARCHIVE_DATA}/HITRAN2024/n2o_200126.par"
+HITRAN_O2="${ARCHIVE_DATA}/HITRAN2024/o2_200126.par"
 
 mkdir -p ${SW_DATA}
 
 skelfile="${SW_DATA}/sp_2000_earth_skel"
 ./mk_sp_2000_earth_skel $skelfile > /dev/null
 
-if [ ! -s $N2O_LBL ] ; then
+if [ ! -s $O2_LBL ] ; then
   ii=0
-  echo "Generating N2O line absorption data"
-  for ((i = 138; i < 401; i++))
+  echo "Generating O2 line absorption data"
+  for ((i = 36; i < 401; i++))
   do
     i_begin=$((i*5-4))
     i_end=$((i*5))
-    lbl_base="${SW_DATA}/n2o_blbl_${i_begin}_${i_end}_${PT_FILE}"
+    lbl_base="${SW_DATA}/o2_blbl_${i_begin}_${i_end}_${PT_FILE}"
     if [ ! -s ${lbl_base}.nc ] || [ ! -f ${lbl_base}.done ] ; then
       rm -f ${lbl_base}*
-      ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -D $HITRAN_N2O \
-        -lo $IP_N2O -R ${i_end} ${i_begin} -c 50000.0 -i 0.1 \
+      ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -D $HITRAN_O2 \
+        -lo $IP_O2 -R ${i_end} ${i_begin} -c 50000.0 -i 0.1 \
         -s $skelfile -m ${lbl_base}_lm -L ${lbl_base}.nc \
         -np $procs"
       if command -v sbatch &> /dev/null ; then
@@ -49,11 +49,11 @@ if [ ! -s $N2O_LBL ] ; then
   finished="true"
 
   echo "Checking all bands have been completed"
-  for ((i = 138; i < 401; i++))
+  for ((i = 36; i < 401; i++))
   do
     i_begin=$((i*5-4))
     i_end=$((i*5))
-    lbl_base="${SW_DATA}/n2o_blbl_${i_begin}_${i_end}_${PT_FILE}"
+    lbl_base="${SW_DATA}/o2_blbl_${i_begin}_${i_end}_${PT_FILE}"
     if [ ! -f ${lbl_base}.done ] ; then
       echo "Bands" ${i_begin} "-" ${i_end} "not done"
       finished="false" 
@@ -61,13 +61,13 @@ if [ ! -s $N2O_LBL ] ; then
   done
   if [ $finished == "true" ] ; then
     echo "Concatenating band data into a single file"
-    lblcat ${SW_DATA}/n2o_blbl_*_${PT_FILE}.nc $N2O_LBL
+    lblcat ${SW_DATA}/o2_blbl_*_${PT_FILE}.nc $O2_LBL
   else
     echo "Not concatenating band data: check for errors and rerun"
     exit 1
   fi
 else
-  echo "File exists:" $N2O_LBL
+  echo "File exists:" $O2_LBL
 fi
 
 # Check job progress using:

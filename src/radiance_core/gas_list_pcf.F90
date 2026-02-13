@@ -103,7 +103,7 @@ INTEGER, PARAMETER :: IP_o = 39
 !   Identifier for atomic oxygen
 INTEGER, PARAMETER :: IP_n = 40
 !   Identifier for atomic nitrogen
-INTEGER, PARAMETER :: IP_no3  = 41
+INTEGER, PARAMETER :: IP_no3 = 41
 !   Identifier for nitrate radical
 INTEGER, PARAMETER :: IP_n2o5 = 42
 !   Identifier for dinitrogen pentoxide

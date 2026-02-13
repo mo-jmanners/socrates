@@ -94,13 +94,8 @@ SUBROUTINE change_block_0(Sp)
     Sp%Gas%f_mix(1:nb) = Sp%Gas%f_mix(fb:lb)
   IF (ALLOCATED(Sp%Gas%n_sub_band_gas)) &
     Sp%Gas%n_sub_band_gas(1:nb,:) = Sp%Gas%n_sub_band_gas(fb:lb,:)
-  IF (ALLOCATED(Sp%Gas%sub_band_k)) &
-    Sp%Gas%sub_band_k(:,1:nb,:) = Sp%Gas%sub_band_k(:,fb:lb,:)
-  IF (ALLOCATED(Sp%Gas%sub_band_w)) &
-    Sp%Gas%sub_band_w(:,1:nb,:) = Sp%Gas%sub_band_w(:,fb:lb,:)
-  IF (ALLOCATED(Sp%Gas%wavelength_sub_band)) &
-    Sp%Gas%wavelength_sub_band(:,:,1:nb,:) = &
-    Sp%Gas%wavelength_sub_band(:,:,fb:lb,:)
+  IF (ALLOCATED(Sp%Gas%sub_band)) &
+    Sp%Gas%sub_band(1:nb,:) = Sp%Gas%sub_band(fb:lb,:)
   ! Planck
   IF (ALLOCATED(Sp%Planck%thermal_coeff)) &
     Sp%Planck%thermal_coeff(:,1:nb) = Sp%Planck%thermal_coeff(:,fb:lb)

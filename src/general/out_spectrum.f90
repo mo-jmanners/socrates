@@ -75,11 +75,15 @@ SUBROUTINE out_spectrum(file_spectral, Spectrum, ierr)
   ENDIF
 
 ! Determine if an extended file is required and open it if so.
-  l_exist_k = Spectrum%Planck%l_planck_tbl &
-         .OR. Spectrum%Dim%nd_sub_band_gas > 1
+  l_exist_k = Spectrum%Planck%l_planck_tbl
+  IF (ALLOCATED(Spectrum%Gas%n_sub_band_gas)) THEN
+    l_exist_k = l_exist_k .OR. &
+      ANY(Spectrum%Gas%n_sub_band_gas(1:Spectrum%Basic%n_band, &
+                                      1:Spectrum%Gas%n_absorb) > 1)
+  END IF
   IF (ALLOCATED(Spectrum%Gas%i_scale_fnc)) THEN
     l_exist_k = l_exist_k .OR. &
-     ANY(Spectrum%Gas%i_scale_fnc == ip_scale_lookup)
+      ANY(Spectrum%Gas%i_scale_fnc == ip_scale_lookup)
   END IF
   IF (ALLOCATED(Spectrum%ContGen%i_band_k_cont)) THEN
     l_exist_k = l_exist_k .OR. &
@@ -647,9 +651,9 @@ CONTAINS
               'Sub-band','k-term','weight','wavelength_short','wavelength_long'
             DO isb=1, SpGas%n_sub_band_gas(i, i_index)
               WRITE(iu_spc1, '(2i8, 3(2x,1PE16.9))') isb, &
-                SpGas%sub_band_k(isb, i, i_index), &
-                SpGas%sub_band_w(isb, i, i_index), &
-                SpGas%wavelength_sub_band(:, isb, i, i_index)
+                SpGas%sub_band(i, i_index)%k(isb), &
+                SpGas%sub_band(i, i_index)%w(isb), &
+                SpGas%sub_band(i, i_index)%wavelength(:, isb)
             END DO
           END IF
         END DO
