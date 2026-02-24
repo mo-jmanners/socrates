@@ -833,7 +833,63 @@ if [ ! -s $sp_dir/o2_uvl_l ] ; then
     fi
   fi
 fi
-
+if [ ! -s $sp_dir/o2_nir_l ] ; then
+  if [ ! -s $O2_LBL ] ; then
+    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+    exit 1
+  else
+    echo "O2: near infra-red"
+    rm -f $sp_dir/o2_nir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 560 919 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+      -s $skelfile +S $SOLSPEC -lk \
+      -o $sp_dir/o2_nir_l -m $sp_dir/o2_nir_lm \
+      -L $O2_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/o2_nir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/o2_nir_log
+    fi
+  fi
+fi
+if [ ! -s $sp_dir/o2_mir_l ] ; then
+  if [ ! -s $O2_LBL ] ; then
+    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+    exit 1
+  else
+    echo "O2: mid infra-red"
+    rm -f $sp_dir/o2_mir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 988 1500 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/o2_mir_l -m $sp_dir/o2_mir_lm \
+      -L $O2_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/o2_mir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/o2_mir_log
+    fi
+  fi
+fi
+if [ ! -s $sp_dir/o2_fir_l ] ; then
+  if [ ! -s $O2_LBL ] ; then
+    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+    exit 1
+  else
+    echo "O2: far infra-red"
+    rm -f $sp_dir/o2_fir_l*
+    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+      -R 1501 2000 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+      -s $skelfile -u -lk \
+      -o $sp_dir/o2_fir_l -m $sp_dir/o2_fir_lm \
+      -L $O2_LBL -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o $sp_dir/o2_fir_log -t 360 ${ck_args} &
+    else
+      ${ck_args} > $sp_dir/o2_fir_log
+    fi
+  fi
+fi
 
 ##########################################################################
 #################### got to here #########################################
@@ -980,7 +1036,16 @@ y
 ${sp_dir}/o2_fuv_l
 5
 y
-${sp_dir}/o2_uvl_l
+${sp_dir}/o2_uv_l
+5
+y
+${sp_dir}/o2_nir_l
+5
+y
+${sp_dir}/o2_mir_l
+5
+y
+${sp_dir}/o2_fir_l
 -1
 EOF
 
