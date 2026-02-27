@@ -17,15 +17,16 @@ HITRAN_SO2="${ARCHIVE_DATA}/HITRAN2024/so2_200126.par"
 mkdir -p ${LBL_DATA}
 
 skelfile="${LBL_DATA}/sp_2000_earth_skel"
+rm -f $skelfile
 ./mk_sp_2000_earth_skel $skelfile > /dev/null
 
 if [ ! -s $SO2_LBL ] ; then
   ii=0
   echo "Generating SO2 line absorption data"
-  for ((i = 307; i < 401; i++))
+  for ((i = 765; i < 1001; i++))
   do
-    i_begin=$((i*5-4))
-    i_end=$((i*5))
+    i_begin=$((i*2-1))
+    i_end=$((i*2))
     lbl_base="${LBL_DATA}/so2_blbl_${i_begin}_${i_end}_${PT_FILE}"
     if [ ! -s ${lbl_base}.nc ] || [ ! -f ${lbl_base}.done ] ; then
       rm -f ${lbl_base}*
@@ -49,10 +50,10 @@ if [ ! -s $SO2_LBL ] ; then
   finished="true"
 
   echo "Checking all bands have been completed"
-  for ((i = 307; i < 401; i++))
+  for ((i = 765; i < 1001; i++))
   do
-    i_begin=$((i*5-4))
-    i_end=$((i*5))
+    i_begin=$((i*2-1))
+    i_end=$((i*2))
     lbl_base="${LBL_DATA}/so2_blbl_${i_begin}_${i_end}_${PT_FILE}"
     if [ ! -f ${lbl_base}.done ] ; then
       echo "Bands" ${i_begin} "-" ${i_end} "not done"

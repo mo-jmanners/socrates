@@ -6,9 +6,8 @@ ARCHIVE_DATA=$SOCRATES_DATA_DIR
 # UoE
 # ARCHIVE_DATA="/data/jm606/socrates"
 
-# SW_DATA and LW_DATA must be writable if generating lbl cross-section files
-SW_DATA="${ARCHIVE_DATA}/jm_earth_hr_data"
-LW_DATA="${ARCHIVE_DATA}/jm_earth_hr_data"
+# LBL_DATA must be writable if generating lbl cross-section files
+LBL_DATA="${ARCHIVE_DATA}/jm_earth_hr_data"
 
 SOLFILE="cmip7_cyc23_whi_lya_mean_tfit"
 SOLSPEC="${RAD_DATA}/solar/${SOLFILE}"
@@ -20,7 +19,9 @@ COL_MASS_K_N2O="5.0e-3"
 COL_MASS_K_CO="2.0e-3"
 COL_MASS_K_CH4="1.0e-2"
 COL_MASS_K_O2="2.3e3"
+COL_MASS_K_NO="1.0e-3"
 COL_MASS_K_SO2="3.0e-4"
+COL_MASS_K_NO2="5.0e-4"
 
 COL_H2OC="1.0e2"
 COL_CO2C="1.0e4"
@@ -30,23 +31,23 @@ GAS_DATA_DIR="${RAD_DATA}/gases"
 CONT_H2O_S260="${RAD_DATA}/continua/absco-ref_wv-mt-ckd4p3.nc"
 CONT_H2O_S296="${RAD_DATA}/continua/absco-ref_wv-mt-ckd4p3.nc"
 CONT_CO2_CO2="${RAD_DATA}/continua/CO2-CO2_2018.cia"
-HITRAN_UV_SO2="$GAS_DATA_DIR/SO2_UV08.xsc"
 
 PT_FILE="pt_earth"
 PT_SINGLE="$RAD_DATA/gases/pt_single"
-SO2_PT_FILE="$RAD_DATA/gases/pt_so2_uv"
 REF_PT_FILE="$RAD_DATA/gases/ref_pt"
 CONT_PT_FILE="$RAD_DATA/continua/pt_cont_100_400"
 
-H2O_LBL_VIS="$SW_DATA/h2o_lbl_vis_${PT_FILE}.nc"
-H2O_LBL_IRF="$SW_DATA/h2o_lbl_irf_${PT_FILE}.nc"
-CO2_LBL="$SW_DATA/co2_lbl_${PT_FILE}.nc"
-O3_LBL="$SW_DATA/o3_lbl_${PT_FILE}.nc"
-N2O_LBL="$SW_DATA/n2o_lbl_${PT_FILE}.nc"
-CO_LBL="$SW_DATA/co_lbl_${PT_FILE}.nc"
-CH4_LBL="$SW_DATA/ch4_lbl_${PT_FILE}.nc"
-O2_LBL="$SW_DATA/o2_lbl_${PT_FILE}.nc"
-SO2_LBL="$SW_DATA/so2_lbl_${PT_FILE}.nc"
+H2O_LBL_VIS="$LBL_DATA/h2o_lbl_vis_${PT_FILE}.nc"
+H2O_LBL_IRF="$LBL_DATA/h2o_lbl_irf_${PT_FILE}.nc"
+CO2_LBL="$LBL_DATA/co2_lbl_${PT_FILE}.nc"
+O3_LBL="$LBL_DATA/o3_lbl_${PT_FILE}.nc"
+N2O_LBL="$LBL_DATA/n2o_lbl_${PT_FILE}.nc"
+CO_LBL="$LBL_DATA/co_lbl_${PT_FILE}.nc"
+CH4_LBL="$LBL_DATA/ch4_lbl_${PT_FILE}.nc"
+O2_LBL="$LBL_DATA/o2_lbl_${PT_FILE}.nc"
+NO_LBL="$LBL_DATA/no_lbl_${PT_FILE}.nc"
+NO_UVLBL="$LBL_DATA/no_uvlbl_${PT_FILE}.nc"
+SO2_LBL="$LBL_DATA/so2_lbl_${PT_FILE}.nc"
 
 IP_H2O='1'
 IP_CO2='2'

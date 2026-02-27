@@ -17,6 +17,7 @@ HITRAN_NO="${ARCHIVE_DATA}/HITRAN2024/no_200126.par"
 mkdir -p ${LBL_DATA}
 
 skelfile="${LBL_DATA}/sp_2000_earth_skel"
+rm -f $skelfile
 ./mk_sp_2000_earth_skel $skelfile > /dev/null
 
 if [ ! -s $NO_LBL ] ; then
