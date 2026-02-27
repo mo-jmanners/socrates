@@ -1240,6 +1240,126 @@ if [ ! -s ${sp_dir}/no2_uv_l ] || [ ! -s ${sp_dir}/no2_lbl_uv.nc ] ; then
   fi
 fi
 
+# ----------------------------
+# Ammonia (NH3)
+# ----------------------------
+uv_nh3=${sp_dir}/nh3.uvxsc
+rm -f $uv_nh3
+dat2xsc --offset nh3_Venot2012.dat $uv_nh3  #  7.5 - 229.5 nm
+if [ ! -s ${sp_dir}/nh3_xuv_l ] || [ ! -s ${sp_dir}/nh3_lbl_xuv.nc ] ; then
+  echo 'NH3: XUV cross-section'
+  rm -f ${sp_dir}/nh3_xuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_nh3 \
+    -R 8 10 -i 1000.0 -l $IP_NH3 ${COL_MASS_K_NH3} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/nh3_xuv_l -m ${sp_dir}/nh3_xuv_lm \
+    -L ${sp_dir}/nh3_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/nh3_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/nh3_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/nh3_euv_l ] || [ ! -s ${sp_dir}/nh3_lbl_euv.nc ] ; then
+  echo 'NH3: EUV cross-section'
+  rm -f ${sp_dir}/nh3_euv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_nh3 \
+    -R 11 100 -i 10.0 -l $IP_NH3 ${COL_MASS_K_NH3} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/nh3_euv_l -m ${sp_dir}/nh3_euv_lm \
+    -L ${sp_dir}/nh3_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/nh3_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/nh3_euv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/nh3_fuv_l ] || [ ! -s ${sp_dir}/nh3_lbl_fuv.nc ] ; then
+  echo 'NH3: FUV cross-section'
+  rm -f ${sp_dir}/nh3_fuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_nh3 \
+    -R 101 230 -i 1.0 -l $IP_NH3 ${COL_MASS_K_NH3} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/nh3_fuv_l -m ${sp_dir}/nh3_fuv_lm \
+    -L ${sp_dir}/nh3_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/nh3_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/nh3_fuv_log
+  fi
+fi
+
+# ----------------------------
+# Nitric Acid (HNO3)
+# ----------------------------
+uv_hno3=${sp_dir}/hno3_200-315K.uvxsc  #  105 - 350 nm
+hno3_pt_file="pt_hno3"
+
+if [ ! -s $uv_hno3 ] ; then
+  rm -f hno3_???K.dat hno3_???K.uvxsc
+  calc_hno3_xsc
+  dat2xsc -t 200 hno3_200K.dat hno3_200K.uvxsc
+  dat2xsc -t 220 hno3_220K.dat hno3_220K.uvxsc
+  dat2xsc -t 240 hno3_240K_Burkholder93.dat hno3_240K.uvxsc
+  dat2xsc -t 260 hno3_260K_Burkholder93.dat hno3_260K.uvxsc
+  dat2xsc -t 280 hno3_280K_Burkholder93.dat hno3_280K.uvxsc
+  dat2xsc -t 298 hno3_298K_SutuLee84_Burkholder93.dat hno3_298K.uvxsc
+  dat2xsc -t 315 hno3_315K_Burkholder93.dat hno3_315K.uvxsc
+  cat hno3_200K.uvxsc hno3_220K.uvxsc hno3_240K.uvxsc hno3_260K.uvxsc \
+      hno3_280K.uvxsc hno3_298K.uvxsc hno3_315K.uvxsc > $uv_hno3
+  rm -f hno3_???K.dat hno3_???K.uvxsc
+fi
+
+if [ ! -s ${sp_dir}/hno3_uv_l ] || [ ! -s ${sp_dir}/hno3_lbl_uv.nc ] ; then
+  echo 'HNO3: UV cross-section'
+  rm -f ${sp_dir}/hno3_uv_l*
+  ck_args="Ccorr_k -F $hno3_pt_file -UVX $uv_hno3 \
+    -R 105 351 -i 1.0 -l $IP_HNO3 ${COL_MASS_K_HNO3} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/hno3_uv_l -m ${sp_dir}/hno3_uv_lm \
+    -L ${sp_dir}/hno3_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/hno3_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/hno3_uv_log
+  fi
+fi
+
+# ----------------------------
+# Nitrogen (N2)
+# ----------------------------
+uv_n2=${sp_dir}/n2.uvxsc
+rm -f $uv_n2
+dat2xsc n2_Manners2024.dat $uv_n2  #  0.04 - 98.6 nm
+if [ ! -s ${sp_dir}/n2_xuv_l ] || [ ! -s ${sp_dir}/n2_lbl_xuv.nc ] ; then
+  echo 'N2: XUV cross-section'
+  rm -f ${sp_dir}/n2_xuv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2 \
+    -R 1 10 -i 1000.0 -l $IP_N2 ${COL_MASS_K_N2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/n2_xuv_l -m ${sp_dir}/n2_xuv_lm \
+    -L ${sp_dir}/n2_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/n2_euv_l ] || [ ! -s ${sp_dir}/n2_lbl_euv.nc ] ; then
+  echo 'N2: EUV cross-section'
+  rm -f ${sp_dir}/n2_euv_l*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2 \
+    -R 11 99 -i 10.0 -l $IP_N2 ${COL_MASS_K_N2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/n2_euv_l -m ${sp_dir}/n2_euv_lm \
+    -L ${sp_dir}/n2_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2_euv_log
+  fi
+fi
+
 ##########################################################################
 #################### got to here #########################################
 wait
@@ -1458,86 +1578,30 @@ ${sp_dir}/no2_fuv_l
 5
 y
 ${sp_dir}/no2_uv_l
+5
+y
+${sp_dir}/nh3_xuv_l
+5
+y
+${sp_dir}/nh3_euv_l
+5
+y
+${sp_dir}/nh3_fuv_l
+5
+y
+${sp_dir}/hno3_uv_l
+5
+y
+${sp_dir}/n2_xuv_l
+5
+y
+${sp_dir}/n2_euv_l
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-#Ammonia (NH3)
-UV_NH3="${hj}/nh3.uvxsc"  #   7nm - 229 nm
-if [ ! -s ${sp_dir}/nh3_xuv_l ] || [ ! -s ${sp_dir}/nh3_lbl_xuv.nc ] ; then
-  echo 'NH3 (XUV)'
-  rm -f ${sp_dir}/nh3_xuv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_NH3 \
-    -R 7 10 -i 1000.0 -l 11 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/nh3_xuv_l -m ${sp_dir}/nh3_xuv_lm \
-    -L ${sp_dir}/nh3_lbl_xuv.nc -np $procs \
-     > ${sp_dir}/nh3_xuv_log
-fi
-if [ ! -s ${sp_dir}/nh3_euv_l ] || [ ! -s ${sp_dir}/nh3_lbl_euv.nc ] ; then
-  echo 'NH3 (EUV)'
-  rm -f ${sp_dir}/nh3_euv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_NH3 \
-    -R 11 100 -i 10.0 -l 11 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/nh3_euv_l -m ${sp_dir}/nh3_euv_lm \
-    -L ${sp_dir}/nh3_lbl_euv.nc -np $procs \
-     > ${sp_dir}/nh3_euv_log
-fi
-if [ ! -s ${sp_dir}/nh3_uv_l ] || [ ! -s ${sp_dir}/nh3_lbl_uv.nc ] ; then
-  echo 'NH3 (UV)'
-  rm -f ${sp_dir}/nh3_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_NH3 \
-    -R 101 230 -i 1.0 -l 11 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/nh3_uv_l -m ${sp_dir}/nh3_uv_lm \
-    -L ${sp_dir}/nh3_lbl_uv.nc -np $procs \
-     > ${sp_dir}/nh3_uv_log
-fi
-
-#Nitric Acid (HNO3)
-#rm -f hno3.uvxsc
-#dat2xsc HNO3.dat hno3.uvxsc
-UV_HNO3='hno3_cat.uvxsc' #   105nm - 350 nm
-hno3_pt_file='pt_hno3'
-if [ ! -s ${sp_dir}/hno3_uv_l ] || [ ! -s ${sp_dir}/hno3_lbl.nc ] ; then
-  echo 'HNO3 (UV)'
-  rm -f ${sp_dir}/hno3_uv_l*
-  Ccorr_k -F $hno3_pt_file -UVX $UV_HNO3 \
-    -R 105 350 -i 1.0 -l 12 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/hno3_uv_l -m ${sp_dir}/hno3_uv_lm \
-    -L ${sp_dir}/hno3_lbl.nc -np $procs \
-     > ${sp_dir}/hno3_uv_log
-fi
-
-# Nitrogen (N2)
-rm -f n2_hires.uvxsc
-dat2xsc N2.dat n2_hires.uvxsc
-UV_N2_HIRES='n2_hires.uvxsc' # 0.04 - 102.7 nm
-if [ ! -s ${sp_dir}/n2_xuvhr_l ] || [ ! -s ${sp_dir}/n2_lbl_xuvhr.nc ] ; then
-  echo 'N2 (XUV continuum)'
-  rm -f ${sp_dir}/n2_xuvhr_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_N2_HIRES \
-    -R 1 10 -i 1000.0 -l 13 7.5e3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/n2_xuvhr_l -m ${sp_dir}/n2_xuvhr_lm \
-    -L ${sp_dir}/n2_lbl_xuvhr.nc -np $procs \
-     > ${sp_dir}/n2_xuvhr_log
-fi
-if [ ! -s ${sp_dir}/n2_euvhr_l ] || [ ! -s ${sp_dir}/n2_lbl_euvhr.nc ] ; then
-  echo 'N2 (EUV continuum)'
-  rm -f ${sp_dir}/n2_euvhr_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_N2_HIRES \
-    -R 11 100 -i 10.0 -l 13 7.5e3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/n2_euvhr_l -m ${sp_dir}/n2_euvhr_lm \
-    -L ${sp_dir}/n2_lbl_euvhr.nc -np $procs \
-     > ${sp_dir}/n2_euvhr_log
-fi
 
 # Hydrogen (H2)
 rm -f h2.uvxsc

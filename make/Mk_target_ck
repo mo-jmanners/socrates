@@ -2,7 +2,7 @@
 # Full list of c-k programs
 #
 TARGET_CK: corr_k tune_weights convert_elsey_shine dat2xsc xsc2xsc \
-	   qtxt2parsum lblcat calc_n2o_xsc
+	   qtxt2parsum lblcat calc_n2o_xsc calc_hno3_xsc
 
 corr_k: corr_k.o cklib.$(LIBSUFFIX)
 	$(LINK) $(OMPARG) -L$(LIBCDF_PATH) -o corr_k corr_k.o \
@@ -44,3 +44,6 @@ lblcat: lblcat.o cklib.$(LIBSUFFIX)
 
 calc_n2o_xsc: calc_n2o_xsc.o
 	$(LINK) -o calc_n2o_xsc calc_n2o_xsc.o
+
+calc_hno3_xsc: calc_hno3_xsc.o
+	$(LINK) -o calc_hno3_xsc calc_hno3_xsc.o

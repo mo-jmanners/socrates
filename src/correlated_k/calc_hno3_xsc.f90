@@ -198,7 +198,8 @@ do j=1, n_t
   open(newunit=io, file=filename(j), status='new', action='write', &
     iostat=stat, iomsg=msg)
   if (stat /= 0) then
-    stop trim(msg)
+    write(*,'(a)') trim(msg)
+    stop
   end if
 
   do i=1, n_jpl_wl
