@@ -34,9 +34,9 @@ rm -f $skelfile
 uv_h2o=${sp_dir}/h2o.uvxsc
 rm -f $uv_h2o
 dat2xsc h2o_298K_Hebrard2022.dat $uv_h2o  #  6 - 216 nm
-if [ ! -s ${sp_dir}/h2o_xuv_l ] || [ ! -s ${sp_dir}/h2o_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/h2o_xuv_l ] ; then
   echo 'H2O: XUV - cross-section'
-  rm -f ${sp_dir}/h2o_xuv_l*
+  rm -f ${sp_dir}/h2o_xuv_l* ${sp_dir}/h2o_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o \
     -R 6 10 -i 1000.0 -l $IP_H2O 1.0e-5 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -48,9 +48,9 @@ if [ ! -s ${sp_dir}/h2o_xuv_l ] || [ ! -s ${sp_dir}/h2o_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/h2o_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/h2o_euv_l ] || [ ! -s ${sp_dir}/h2o_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/h2o_euv_l ] ; then
   echo 'H2O: extreme UV - cross-section'
-  rm -f ${sp_dir}/h2o_euv_l*
+  rm -f ${sp_dir}/h2o_euv_l* ${sp_dir}/h2o_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o \
     -R 11 100 -i 10.0 -l $IP_H2O 1.0e-5 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -62,9 +62,9 @@ if [ ! -s ${sp_dir}/h2o_euv_l ] || [ ! -s ${sp_dir}/h2o_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/h2o_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/h2o_fuv_l ] || [ ! -s ${sp_dir}/h2o_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/h2o_fuv_l ] ; then
   echo 'H2O: far UV - cross-section'
-  rm -f ${sp_dir}/h2o_fuv_l*
+  rm -f ${sp_dir}/h2o_fuv_l* ${sp_dir}/h2o_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o \
     -R 101 217 -i 1.0 -l $IP_H2O 1.0e-5 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -246,9 +246,9 @@ fi
 uv_co2=${sp_dir}/co2.uvxsc
 rm -f $uv_co2
 dat2xsc co2_300K_HuestisBerkowitz2010.dat $uv_co2  #  0.1254-201.6nm
-if [ ! -s ${sp_dir}/co2_xuv_l ] || [ ! -s ${sp_dir}/co2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/co2_xuv_l ] ; then
   echo 'CO2: XUV - cross-section'
-  rm -f ${sp_dir}/co2_xuv_l*
+  rm -f ${sp_dir}/co2_xuv_l* ${sp_dir}/co2_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co2 \
     -R 1 10 -i 1000.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -260,9 +260,9 @@ if [ ! -s ${sp_dir}/co2_xuv_l ] || [ ! -s ${sp_dir}/co2_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/co2_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/co2_euv_l ] || [ ! -s ${sp_dir}/co2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/co2_euv_l ] ; then
   echo 'CO2: extreme UV - cross-section'
-  rm -f ${sp_dir}/co2_euv_l*
+  rm -f ${sp_dir}/co2_euv_l* ${sp_dir}/co2_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co2 \
     -R 11 100 -i 10.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -274,9 +274,9 @@ if [ ! -s ${sp_dir}/co2_euv_l ] || [ ! -s ${sp_dir}/co2_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/co2_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/co2_fuv_l ] || [ ! -s ${sp_dir}/co2_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/co2_fuv_l ] ; then
   echo 'CO2: far UV - cross-section'
-  rm -f ${sp_dir}/co2_fuv_l*
+  rm -f ${sp_dir}/co2_fuv_l* ${sp_dir}/co2_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co2 \
     -R 101 202 -i 1.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -352,9 +352,9 @@ fi
 # ----------------------------
 uv_o3="$RAD_DATA/gases/O3_110nm-1100nm.xsc"
 o3_pt_file="$RAD_DATA/gases/pt_o3_uv"
-if [ ! -s ${sp_dir}/o3_uv_l ] || [ ! -s ${sp_dir}/o3_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/o3_uv_l ] ; then
   echo 'O3: far-UV - near-IR cross-section'
-  rm -f ${sp_dir}/o3_uv_l*
+  rm -f ${sp_dir}/o3_uv_l* ${sp_dir}/o3_lbl_uv*
   ck_args="Ccorr_k -F $o3_pt_file -X $uv_o3 \
     -R 111 1091 -i 1.0 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-3 \
     -s $skelfile +S $SOLSPEC -lk \
@@ -423,9 +423,9 @@ if [ ! -s $uv_n2o ] ; then
   rm -f n2o_???K.dat n2o_???K.uvxsc n2o_298K_ext.uvxsc n2o_298K_ext.dat
 fi
 
-if [ ! -s ${sp_dir}/n2o_xuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/n2o_xuv_l ] ; then
   echo 'N2O: XUV cross-section'
-  rm -f ${sp_dir}/n2o_xuv_l*
+  rm -f ${sp_dir}/n2o_xuv_l* ${sp_dir}/n2o_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2o \
     -R 7 10 -i 1000.0 -l $IP_N2O ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -437,9 +437,9 @@ if [ ! -s ${sp_dir}/n2o_xuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/n2o_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/n2o_euv_l ] || [ ! -s ${sp_dir}/n2o_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/n2o_euv_l ] ; then
   echo 'N2O: EUV cross-section'
-  rm -f ${sp_dir}/n2o_euv_l*
+  rm -f ${sp_dir}/n2o_euv_l* ${sp_dir}/n2o_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2o \
     -R 11 100 -i 10.0 -l $IP_N2O ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -451,9 +451,9 @@ if [ ! -s ${sp_dir}/n2o_euv_l ] || [ ! -s ${sp_dir}/n2o_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/n2o_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/n2o_fuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/n2o_fuv_l ] ; then
   echo 'N2O: FUV cross-section'
-  rm -f ${sp_dir}/n2o_fuv_l*
+  rm -f ${sp_dir}/n2o_fuv_l* ${sp_dir}/n2o_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2o \
     -R 101 160 -i 1.0 -l $IP_N2O ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -465,9 +465,9 @@ if [ ! -s ${sp_dir}/n2o_fuv_l ] || [ ! -s ${sp_dir}/n2o_lbl_fuv.nc ] ; then
     ${ck_args} > ${sp_dir}/n2o_fuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/n2o_uv_l ] || [ ! -s ${sp_dir}/n2o_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/n2o_uv_l ] ; then
   echo 'N2O: UV cross-section'
-  rm -f ${sp_dir}/n2o_uv_l*
+  rm -f ${sp_dir}/n2o_uv_l* ${sp_dir}/n2o_lbl_uv*
   ck_args="Ccorr_k -F $n2o_pt_file -UVX $uv_n2o \
     -R 161 250 -i 1.0 -l $IP_N2O ${COL_MASS_K_N2O} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -lk \
@@ -544,9 +544,9 @@ fi
 uv_co=${sp_dir}/co.uvxsc
 rm -f $uv_co
 dat2xsc --offset co_Venot2012.dat $uv_co  #  7.5 - 163.5 nm
-if [ ! -s ${sp_dir}/co_xuv_l ] || [ ! -s ${sp_dir}/co_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/co_xuv_l ] ; then
   echo 'CO: XUV cross-section'
-  rm -f ${sp_dir}/co_xuv_l*
+  rm -f ${sp_dir}/co_xuv_l* ${sp_dir}/co_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co \
     -R 8 10 -i 1000.0 -l $IP_CO ${COL_MASS_K_CO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -558,9 +558,9 @@ if [ ! -s ${sp_dir}/co_xuv_l ] || [ ! -s ${sp_dir}/co_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/co_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/co_euv_l ] || [ ! -s ${sp_dir}/co_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/co_euv_l ] ; then
   echo 'CO: EUV cross-section'
-  rm -f ${sp_dir}/co_euv_l*
+  rm -f ${sp_dir}/co_euv_l* ${sp_dir}/co_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co \
     -R 11 100 -i 10.0 -l $IP_CO ${COL_MASS_K_CO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -572,9 +572,9 @@ if [ ! -s ${sp_dir}/co_euv_l ] || [ ! -s ${sp_dir}/co_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/co_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/co_fuv_l ] || [ ! -s ${sp_dir}/co_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/co_fuv_l ] ; then
   echo 'CO: FUV cross-section'
-  rm -f ${sp_dir}/co_fuv_l*
+  rm -f ${sp_dir}/co_fuv_l* ${sp_dir}/co_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co \
     -R 101 164 -i 1.0 -l $IP_CO ${COL_MASS_K_CO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -651,9 +651,9 @@ fi
 uv_ch4=${sp_dir}/ch4.uvxsc
 rm -f $uv_ch4
 dat2xsc --offset ch4_Venot2012.dat $uv_ch4  #  6.5 - 151.5 nm
-if [ ! -s ${sp_dir}/ch4_xuv_l ] || [ ! -s ${sp_dir}/ch4_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/ch4_xuv_l ] ; then
   echo 'CH4: XUV cross-section'
-  rm -f ${sp_dir}/ch4_xuv_l*
+  rm -f ${sp_dir}/ch4_xuv_l* ${sp_dir}/ch4_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch4 \
     -R 7 10 -i 1000.0 -l $IP_CH4 ${COL_MASS_K_CH4} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -665,9 +665,9 @@ if [ ! -s ${sp_dir}/ch4_xuv_l ] || [ ! -s ${sp_dir}/ch4_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/ch4_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/ch4_euv_l ] || [ ! -s ${sp_dir}/ch4_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/ch4_euv_l ] ; then
   echo 'CH4: EUV cross-section'
-  rm -f ${sp_dir}/ch4_euv_l*
+  rm -f ${sp_dir}/ch4_euv_l* ${sp_dir}/ch4_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch4 \
     -R 11 100 -i 10.0 -l $IP_CH4 ${COL_MASS_K_CH4} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -679,9 +679,9 @@ if [ ! -s ${sp_dir}/ch4_euv_l ] || [ ! -s ${sp_dir}/ch4_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/ch4_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/ch4_fuv_l ] || [ ! -s ${sp_dir}/ch4_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/ch4_fuv_l ] ; then
   echo 'CH4: FUV cross-section'
-  rm -f ${sp_dir}/ch4_fuv_l*
+  rm -f ${sp_dir}/ch4_fuv_l* ${sp_dir}/ch4_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch4 \
     -R 101 152 -i 1.0 -l $IP_CH4 ${COL_MASS_K_CH4} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -758,9 +758,9 @@ fi
 uv_o2=${sp_dir}/o2.uvxsc
 rm -f $uv_o2
 dat2xsc o2_Manners2024.dat $uv_o2  #  0.04 - 294 nm
-if [ ! -s ${sp_dir}/o2_xuv_l ] || [ ! -s ${sp_dir}/o2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/o2_xuv_l ] ; then
   echo 'O2: XUV cross-section'
-  rm -f ${sp_dir}/o2_xuv_l*
+  rm -f ${sp_dir}/o2_xuv_l* ${sp_dir}/o2_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
     -R 1 10 -i 1000.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
     -s $skelfile +S $SOLSPEC \
@@ -772,9 +772,9 @@ if [ ! -s ${sp_dir}/o2_xuv_l ] || [ ! -s ${sp_dir}/o2_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/o2_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/o2_euv_l ] || [ ! -s ${sp_dir}/o2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/o2_euv_l ] ; then
   echo 'O2: EUV cross-section'
-  rm -f ${sp_dir}/o2_euv_l*
+  rm -f ${sp_dir}/o2_euv_l* ${sp_dir}/o2_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
     -R 11 100 -i 10.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
     -s $skelfile +S $SOLSPEC \
@@ -786,9 +786,9 @@ if [ ! -s ${sp_dir}/o2_euv_l ] || [ ! -s ${sp_dir}/o2_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/o2_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/o2_fuv_l ] || [ ! -s ${sp_dir}/o2_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/o2_fuv_l ] ; then
   echo 'O2: FUV cross-section'
-  rm -f ${sp_dir}/o2_fuv_l*
+  rm -f ${sp_dir}/o2_fuv_l* ${sp_dir}/o2_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
     -R 101 181 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
     -s $skelfile +S $SOLSPEC \
@@ -800,9 +800,9 @@ if [ ! -s ${sp_dir}/o2_fuv_l ] || [ ! -s ${sp_dir}/o2_lbl_fuv.nc ] ; then
     ${ck_args} > ${sp_dir}/o2_fuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/o2_duv_l ] || [ ! -s ${sp_dir}/o2_lbl_duv.nc ] ; then
+if [ ! -s ${sp_dir}/o2_duv_l ] ; then
   echo 'O2: UV - cross-section between NO delta bands'
-  rm -f ${sp_dir}/o2_duv_l*
+  rm -f ${sp_dir}/o2_duv_l* ${sp_dir}/o2_lbl_duv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
     -R 185 189 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
     -s $skelfile +S $SOLSPEC \
@@ -814,9 +814,9 @@ if [ ! -s ${sp_dir}/o2_duv_l ] || [ ! -s ${sp_dir}/o2_lbl_duv.nc ] ; then
     ${ck_args} > ${sp_dir}/o2_duv_log
   fi
 fi
-if [ ! -s ${sp_dir}/o2_uv_l ] || [ ! -s ${sp_dir}/o2_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/o2_uv_l ] ; then
   echo 'O2: UV - cross-section'
-  rm -f ${sp_dir}/o2_uv_l*
+  rm -f ${sp_dir}/o2_uv_l* ${sp_dir}/o2_lbl_uv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
     -R 193 295 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
     -s $skelfile +S $SOLSPEC \
@@ -932,9 +932,9 @@ fi
 uv_no=${sp_dir}/no.uvxsc
 rm -f $uv_no
 dat2xsc no_298K_Iida86_Chang93.dat $uv_no  #  6.5 - 228.5 nm
-if [ ! -s ${sp_dir}/no_xuv_l ] || [ ! -s ${sp_dir}/no_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/no_xuv_l ] ; then
   echo 'NO: XUV cross-section'
-  rm -f ${sp_dir}/no_xuv_l*
+  rm -f ${sp_dir}/no_xuv_l* ${sp_dir}/no_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no \
     -R 7 10 -i 1000.0 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -946,9 +946,9 @@ if [ ! -s ${sp_dir}/no_xuv_l ] || [ ! -s ${sp_dir}/no_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/no_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/no_euv_l ] || [ ! -s ${sp_dir}/no_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/no_euv_l ] ; then
   echo 'NO: EUV cross-section'
-  rm -f ${sp_dir}/no_euv_l*
+  rm -f ${sp_dir}/no_euv_l* ${sp_dir}/no_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no \
     -R 11 100 -i 10.0 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -960,9 +960,9 @@ if [ ! -s ${sp_dir}/no_euv_l ] || [ ! -s ${sp_dir}/no_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/no_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/no_fuv_l ] || [ ! -s ${sp_dir}/no_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/no_fuv_l ] ; then
   echo 'NO: FUV cross-section'
-  rm -f ${sp_dir}/no_fuv_l*
+  rm -f ${sp_dir}/no_fuv_l* ${sp_dir}/no_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no \
     -R 101 181 -i 1.0 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -974,9 +974,9 @@ if [ ! -s ${sp_dir}/no_fuv_l ] || [ ! -s ${sp_dir}/no_lbl_fuv.nc ] ; then
     ${ck_args} > ${sp_dir}/no_fuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/no_duv_l ] || [ ! -s ${sp_dir}/no_lbl_duv.nc ] ; then
+if [ ! -s ${sp_dir}/no_duv_l ] ; then
   echo 'NO: UV cross-section between delta bands'
-  rm -f ${sp_dir}/no_duv_l*
+  rm -f ${sp_dir}/no_duv_l* ${sp_dir}/no_lbl_duv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no \
     -R 185 189 -i 1.0 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -988,9 +988,9 @@ if [ ! -s ${sp_dir}/no_duv_l ] || [ ! -s ${sp_dir}/no_lbl_duv.nc ] ; then
     ${ck_args} > ${sp_dir}/no_duv_log
   fi
 fi
-if [ ! -s ${sp_dir}/no_uv_l ] || [ ! -s ${sp_dir}/no_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/no_uv_l ] ; then
   echo 'NO: UV cross-section'
-  rm -f ${sp_dir}/no_uv_l*
+  rm -f ${sp_dir}/no_uv_l* ${sp_dir}/no_lbl_uv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no \
     -R 193 229 -i 1.0 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1106,9 +1106,9 @@ fi
 uv_so2=${sp_dir}/so2.uvxsc
 rm -f $uv_so2
 dat2xsc so2_Feng99_Holland2005_ManattLane93.dat $uv_so2  #  4.7 - 403.7 nm
-if [ ! -s ${sp_dir}/so2_xuv_l ] || [ ! -s ${sp_dir}/so2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/so2_xuv_l ] ; then
   echo 'SO2: XUV cross-section'
-  rm -f ${sp_dir}/so2_xuv_l*
+  rm -f ${sp_dir}/so2_xuv_l* ${sp_dir}/so2_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_so2 \
     -R 5 10 -i 1000.0 -l $IP_SO2 ${COL_MASS_K_SO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1120,9 +1120,9 @@ if [ ! -s ${sp_dir}/so2_xuv_l ] || [ ! -s ${sp_dir}/so2_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/so2_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/so2_euv_l ] || [ ! -s ${sp_dir}/so2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/so2_euv_l ] ; then
   echo 'SO2: EUV cross-section'
-  rm -f ${sp_dir}/so2_euv_l*
+  rm -f ${sp_dir}/so2_euv_l* ${sp_dir}/so2_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_so2 \
     -R 11 100 -i 10.0 -l $IP_SO2 ${COL_MASS_K_SO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1134,9 +1134,9 @@ if [ ! -s ${sp_dir}/so2_euv_l ] || [ ! -s ${sp_dir}/so2_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/so2_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/so2_uv_l ] || [ ! -s ${sp_dir}/so2_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/so2_uv_l ] ; then
   echo 'SO2: UV cross-section'
-  rm -f ${sp_dir}/so2_uv_l*
+  rm -f ${sp_dir}/so2_uv_l* ${sp_dir}/so2_lbl_uv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_so2 \
     -R 101 404 -i 1.0 -l $IP_SO2 ${COL_MASS_K_SO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1183,9 +1183,9 @@ if [ ! -s $uv_no2 ] ; then
   rm -f no2_???K.uvxsc
 fi
 
-if [ ! -s ${sp_dir}/no2_xuv_l ] || [ ! -s ${sp_dir}/no2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/no2_xuv_l ] ; then
   echo 'NO2: XUV cross-section'
-  rm -f ${sp_dir}/no2_xuv_l*
+  rm -f ${sp_dir}/no2_xuv_l* ${sp_dir}/no2_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no2 \
     -R 7 10 -i 1000.0 -l $IP_NO2 ${COL_MASS_K_NO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1197,9 +1197,9 @@ if [ ! -s ${sp_dir}/no2_xuv_l ] || [ ! -s ${sp_dir}/no2_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/no2_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/no2_euv_l ] || [ ! -s ${sp_dir}/no2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/no2_euv_l ] ; then
   echo 'NO2: EUV cross-section'
-  rm -f ${sp_dir}/no2_euv_l*
+  rm -f ${sp_dir}/no2_euv_l* ${sp_dir}/no2_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no2 \
     -R 11 100 -i 10.0 -l $IP_NO2 ${COL_MASS_K_NO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1211,9 +1211,9 @@ if [ ! -s ${sp_dir}/no2_euv_l ] || [ ! -s ${sp_dir}/no2_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/no2_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/no2_fuv_l ] || [ ! -s ${sp_dir}/no2_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/no2_fuv_l ] ; then
   echo 'NO2: FUV cross-section'
-  rm -f ${sp_dir}/no2_fuv_l*
+  rm -f ${sp_dir}/no2_fuv_l* ${sp_dir}/no2_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no2 \
     -R 101 238 -i 1.0 -l $IP_NO2 ${COL_MASS_K_NO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1225,9 +1225,9 @@ if [ ! -s ${sp_dir}/no2_fuv_l ] || [ ! -s ${sp_dir}/no2_lbl_fuv.nc ] ; then
     ${ck_args} > ${sp_dir}/no2_fuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/no2_uv_l ] || [ ! -s ${sp_dir}/no2_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/no2_uv_l ] ; then
   echo 'NO2: UV cross-section'
-  rm -f ${sp_dir}/no2_uv_l*
+  rm -f ${sp_dir}/no2_uv_l* ${sp_dir}/no2_lbl_uv*
   ck_args="Ccorr_k -F $no2_pt_file -UVX $uv_no2 \
     -R 239 667 -i 1.0 -l $IP_NO2 ${COL_MASS_K_NO2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -lk \
@@ -1246,9 +1246,9 @@ fi
 uv_nh3=${sp_dir}/nh3.uvxsc
 rm -f $uv_nh3
 dat2xsc --offset nh3_Venot2012.dat $uv_nh3  #  7.5 - 229.5 nm
-if [ ! -s ${sp_dir}/nh3_xuv_l ] || [ ! -s ${sp_dir}/nh3_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/nh3_xuv_l ] ; then
   echo 'NH3: XUV cross-section'
-  rm -f ${sp_dir}/nh3_xuv_l*
+  rm -f ${sp_dir}/nh3_xuv_l* ${sp_dir}/nh3_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_nh3 \
     -R 8 10 -i 1000.0 -l $IP_NH3 ${COL_MASS_K_NH3} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1260,9 +1260,9 @@ if [ ! -s ${sp_dir}/nh3_xuv_l ] || [ ! -s ${sp_dir}/nh3_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/nh3_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/nh3_euv_l ] || [ ! -s ${sp_dir}/nh3_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/nh3_euv_l ] ; then
   echo 'NH3: EUV cross-section'
-  rm -f ${sp_dir}/nh3_euv_l*
+  rm -f ${sp_dir}/nh3_euv_l* ${sp_dir}/nh3_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_nh3 \
     -R 11 100 -i 10.0 -l $IP_NH3 ${COL_MASS_K_NH3} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1274,9 +1274,9 @@ if [ ! -s ${sp_dir}/nh3_euv_l ] || [ ! -s ${sp_dir}/nh3_lbl_euv.nc ] ; then
     ${ck_args} > ${sp_dir}/nh3_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/nh3_fuv_l ] || [ ! -s ${sp_dir}/nh3_lbl_fuv.nc ] ; then
+if [ ! -s ${sp_dir}/nh3_fuv_l ] ; then
   echo 'NH3: FUV cross-section'
-  rm -f ${sp_dir}/nh3_fuv_l*
+  rm -f ${sp_dir}/nh3_fuv_l* ${sp_dir}/nh3_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_nh3 \
     -R 101 230 -i 1.0 -l $IP_NH3 ${COL_MASS_K_NH3} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1310,9 +1310,9 @@ if [ ! -s $uv_hno3 ] ; then
   rm -f hno3_???K.dat hno3_???K.uvxsc
 fi
 
-if [ ! -s ${sp_dir}/hno3_uv_l ] || [ ! -s ${sp_dir}/hno3_lbl_uv.nc ] ; then
+if [ ! -s ${sp_dir}/hno3_uv_l ] ; then
   echo 'HNO3: UV cross-section'
-  rm -f ${sp_dir}/hno3_uv_l*
+  rm -f ${sp_dir}/hno3_uv_l* ${sp_dir}/hno3_lbl_uv*
   ck_args="Ccorr_k -F $hno3_pt_file -UVX $uv_hno3 \
     -R 105 351 -i 1.0 -l $IP_HNO3 ${COL_MASS_K_HNO3} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC -lk \
@@ -1331,9 +1331,9 @@ fi
 uv_n2=${sp_dir}/n2.uvxsc
 rm -f $uv_n2
 dat2xsc n2_Manners2024.dat $uv_n2  #  0.04 - 98.6 nm
-if [ ! -s ${sp_dir}/n2_xuv_l ] || [ ! -s ${sp_dir}/n2_lbl_xuv.nc ] ; then
+if [ ! -s ${sp_dir}/n2_xuv_l ] ; then
   echo 'N2: XUV cross-section'
-  rm -f ${sp_dir}/n2_xuv_l*
+  rm -f ${sp_dir}/n2_xuv_l* ${sp_dir}/n2_lbl_xuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2 \
     -R 1 10 -i 1000.0 -l $IP_N2 ${COL_MASS_K_N2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1345,9 +1345,9 @@ if [ ! -s ${sp_dir}/n2_xuv_l ] || [ ! -s ${sp_dir}/n2_lbl_xuv.nc ] ; then
     ${ck_args} > ${sp_dir}/n2_xuv_log
   fi
 fi
-if [ ! -s ${sp_dir}/n2_euv_l ] || [ ! -s ${sp_dir}/n2_lbl_euv.nc ] ; then
+if [ ! -s ${sp_dir}/n2_euv_l ] ; then
   echo 'N2: EUV cross-section'
-  rm -f ${sp_dir}/n2_euv_l*
+  rm -f ${sp_dir}/n2_euv_l* ${sp_dir}/n2_lbl_euv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_n2 \
     -R 11 99 -i 10.0 -l $IP_N2 ${COL_MASS_K_N2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
@@ -1357,6 +1357,97 @@ if [ ! -s ${sp_dir}/n2_euv_l ] || [ ! -s ${sp_dir}/n2_lbl_euv.nc ] ; then
     sbatch -W -n $procs -o ${sp_dir}/n2_euv_log -t 60 ${ck_args} &
   else
     ${ck_args} > ${sp_dir}/n2_euv_log
+  fi
+fi
+
+# ----------------------------
+# CFC-11 (CCl3F)
+# ----------------------------
+if [ ! -s ${sp_dir}/cfc11_ir_l ] ; then
+  echo "CFC-11 (CCl3F)"
+  rm -f ${sp_dir}/cfc11_ir_l* ${sp_dir}/cfc11_lbl_ir*
+  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_CFC11} \
+    -R 1872 1929 -i 1.0 -l $IP_CFC11 ${COL_MASS_K_CFC11} -t 1.0e-4 \
+    -s $skelfile -u -lk \
+    -o ${sp_dir}/cfc11_ir_l -m ${sp_dir}/cfc11_ir_lm \
+    -L ${sp_dir}/cfc11_lbl_ir.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/cfc11_ir_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/cfc11_ir_log
+  fi
+fi
+
+# ----------------------------
+# CFC-12 (CCl2F2)
+# ----------------------------
+if [ ! -s ${sp_dir}/cfc12_ir_l ] ; then
+  echo "CFC-12 (CCl2F2)"
+  rm -f ${sp_dir}/cfc12_ir_l* ${sp_dir}/cfc12_lbl_ir*
+  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_CFC12} \
+    -R 1873 1921 -i 1.0 -l $IP_CFC12 ${COL_MASS_K_CFC12} -t 1.0e-4 \
+    -s $skelfile -u -lk \
+    -o ${sp_dir}/cfc12_ir_l -m ${sp_dir}/cfc12_ir_lm \
+    -L ${sp_dir}/cfc12_lbl_ir.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/cfc12_ir_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/cfc12_ir_log
+  fi
+fi
+
+# ----------------------------
+# CFC-113 (C2Cl3F3)
+# ----------------------------
+cfc113_pt_file="pt_cfc113"
+if [ ! -s ${sp_dir}/cfc113_ir_l ] ; then
+  echo "CFC-113 (C2Cl3F3)"
+  rm -f ${sp_dir}/cfc113_ir_l* ${sp_dir}/cfc113_lbl_ir*
+  ck_args="Ccorr_k -F $cfc113_pt_file -X ${HITRAN_CFC113} \
+    -R 1876 1940 -i 1.0 -l $IP_CFC113 ${COL_MASS_K_CFC113} -t 1.0e-4 \
+    -s $skelfile -u -lk \
+    -o ${sp_dir}/cfc113_ir_l -m ${sp_dir}/cfc113_ir_lm \
+    -L ${sp_dir}/cfc113_lbl_ir.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/cfc113_ir_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/cfc113_ir_log
+  fi
+fi
+
+# ----------------------------
+# HCFC-22 (CHClF2)
+# ----------------------------
+if [ ! -s ${sp_dir}/hcfc22_ir_l ] ; then
+  echo "HCFC-22 (CHClF2)"
+  rm -f ${sp_dir}/hcfc22_ir_l* ${sp_dir}/hcfc22_lbl_ir*
+  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_HCFC22} \
+    -R 1863 1927 -i 1.0 -l $IP_HCFC22 ${COL_MASS_K_HCFC22} -t 1.0e-4 \
+    -s $skelfile -u -lk \
+    -o ${sp_dir}/hcfc22_ir_l -m ${sp_dir}/hcfc22_ir_lm \
+    -L ${sp_dir}/hcfc22_lbl_ir.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/hcfc22_ir_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/hcfc22_ir_log
+  fi
+fi
+
+# ----------------------------
+# HFC-134a (CFH2CF3)
+# ----------------------------
+if [ ! -s ${sp_dir}/hfc134a_ir_l ] ; then
+  echo "HFC-134a (CFH2CF3)"
+  rm -f ${sp_dir}/hfc134a_ir_l* ${sp_dir}/hfc134a_lbl_ir*
+  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_HFC134A} \
+    -R 1840 1925 -i 1.0 -l $IP_HFC134A ${COL_MASS_K_HFC134A} -t 1.0e-4 \
+    -s $skelfile -u -lk \
+    -o ${sp_dir}/hfc134a_ir_l -m ${sp_dir}/hfc134a_ir_lm \
+    -L ${sp_dir}/hfc134a_lbl_ir.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/hfc134a_ir_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/hfc134a_ir_log
   fi
 fi
 
@@ -1596,6 +1687,21 @@ ${sp_dir}/n2_xuv_l
 5
 y
 ${sp_dir}/n2_euv_l
+5
+y
+${sp_dir}/cfc11_ir_l
+5
+y
+${sp_dir}/cfc12_ir_l
+5
+y
+${sp_dir}/cfc113_ir_l
+5
+y
+${sp_dir}/hcfc22_ir_l
+5
+y
+${sp_dir}/hfc134a_ir_l
 -1
 EOF
 
