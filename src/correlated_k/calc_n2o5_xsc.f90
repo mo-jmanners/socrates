@@ -1,3 +1,8 @@
+! *****************************COPYRIGHT*******************************
+! (C) Crown copyright Met Office. All rights reserved.
+! For further details please refer to the file COPYRIGHT.txt
+! which you should have received as part of this distribution.
+! *****************************COPYRIGHT*******************************
 program calc_n2o5_xsc
 
 ! JPL 19-5 recommended cross-section for N2O5: 200-420nm
@@ -327,12 +332,11 @@ real(RealK), parameter :: jpl_b(n_jpl_t_wl) = [ &
 -1.160_RealK, &
 -1.160_RealK  ]
 
-integer, parameter :: n_t = 5
+integer, parameter :: n_t = 4
 real(RealK), parameter :: temperature(n_t) = [ &
-  233.0_RealK, 235.0_RealK, 255.0_RealK, 275.0_RealK, 295.0_RealK ]
+  233.0_RealK, 255.0_RealK, 275.0_RealK, 295.0_RealK ]
 character(*), parameter :: filename(n_t) = [ &
-  'n2o5_215K.dat', 'n2o5_235K.dat', 'n2o5_255K.dat', &
-  'n2o5_275K.dat', 'n2o5_295K.dat' ]
+  'n2o5_233K.dat', 'n2o5_255K.dat', 'n2o5_275K.dat', 'n2o5_295K.dat' ]
 
 real(RealK) :: wl, xsc, a, b
 
@@ -345,7 +349,8 @@ do j=1, n_t
   open(newunit=io, file=filename(j), status='new', action='write', &
     iostat=stat, iomsg=msg)
   if (stat /= 0) then
-    stop trim(msg)
+    write(*,'(a)') trim(msg)
+    stop
   end if
 
   if (filename(j) == 'n2o5_295K.dat') then
