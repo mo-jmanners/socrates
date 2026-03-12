@@ -1746,6 +1746,113 @@ if [ ! -s ${sp_dir}/n2o5_uv_l ] ; then
   fi
 fi
 
+# ----------------------------
+# Nitrous Acid (HONO)
+# ----------------------------
+uv_hono=${sp_dir}/hono.uvxsc
+rm -f $uv_hono
+dat2xsc hono_298K_JPL2010_Stutz2000.dat $uv_hono  #  184 - 400.5 nm
+if [ ! -s ${sp_dir}/hono_uv_l ] ; then
+  echo 'HONO: UV cross-section'
+  rm -f ${sp_dir}/hono_uv_l* ${sp_dir}/hono_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_hono \
+    -R 184 401 -i 1.0 -l $IP_HONO ${COL_MASS_K_HONO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/hono_uv_l -m ${sp_dir}/hono_uv_lm \
+    -L ${sp_dir}/hono_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/hono_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/hono_uv_log
+  fi
+fi
+
+# ----------------------------
+# Peroxynitric Acid (HO2NO2)
+# ----------------------------
+uv_ho2no2=${sp_dir}/ho2no2.uvxsc
+rm -f $uv_ho2no2
+dat2xsc ho2no2_298K_JPL2015.dat $uv_ho2no2  #  190 - 350 nm
+if [ ! -s ${sp_dir}/ho2no2_uv_l ] ; then
+  echo 'HO2NO2: UV cross-section'
+  rm -f ${sp_dir}/ho2no2_uv_l* ${sp_dir}/ho2no2_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ho2no2 \
+    -R 190 351 -i 1.0 -l $IP_HO2NO2 ${COL_MASS_K_HO2NO2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ho2no2_uv_l -m ${sp_dir}/ho2no2_uv_lm \
+    -L ${sp_dir}/ho2no2_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ho2no2_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ho2no2_uv_log
+  fi
+fi
+
+# ----------------------------
+# Hydrogen Peroxide (H2O2)
+# ----------------------------
+uv_h2o2=${sp_dir}/h2o2_200-320K.uvxsc  #  106 - 410 nm
+h2o2_pt_file="pt_h2o2"
+
+if [ ! -s $uv_h2o2 ] ; then
+  rm -f h2o2_???K.dat h2o2_???K.uvxsc h2o2_298K_SutoLee83_Kahan2012.dat
+  calc_h2o2_xsc
+  cat h2o2_SutoLee83_106-190nm.dat h2o2_298K.dat \
+      h2o2_Kahan2012_353-410nm.dat > h2o2_298K_SutoLee83_Kahan2012.dat
+  dat2xsc -t 200 h2o2_200K.dat h2o2_200K.uvxsc
+  dat2xsc -t 220 h2o2_220K.dat h2o2_220K.uvxsc
+  dat2xsc -t 240 h2o2_240K.dat h2o2_240K.uvxsc
+  dat2xsc -t 260 h2o2_260K.dat h2o2_260K.uvxsc
+  dat2xsc -t 280 h2o2_280K.dat h2o2_280K.uvxsc
+  dat2xsc -t 298 h2o2_298K_SutoLee83_Kahan2012.dat h2o2_298K.uvxsc
+  dat2xsc -t 320 h2o2_320K.dat h2o2_320K.uvxsc
+  cat h2o2_???K.uvxsc > $uv_h2o2
+  rm -f h2o2_???K.dat h2o2_???K.uvxsc h2o2_298K_SutoLee83_Kahan2012.dat
+fi
+
+if [ ! -s ${sp_dir}/h2o2_fuv_l ] ; then
+  echo 'H2O2: Far-UV cross-section'
+  rm -f ${sp_dir}/h2o2_fuv_l* ${sp_dir}/h2o2_lbl_fuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o2 \
+    -R 106 189 -i 1.0 -l $IP_H2O2 ${COL_MASS_K_H2O2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2o2_fuv_l -m ${sp_dir}/h2o2_fuv_lm \
+    -L ${sp_dir}/h2o2_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2o2_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2o2_fuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2o2_uv_l ] ; then
+  echo 'H2O2: UV cross-section'
+  rm -f ${sp_dir}/h2o2_uv_l* ${sp_dir}/h2o2_lbl_uv*
+  ck_args="Ccorr_k -F $h2o2_pt_file -UVX $uv_h2o2 \
+    -R 190 352 -i 1.0 -l $IP_H2O2 ${COL_MASS_K_H2O2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/h2o2_uv_l -m ${sp_dir}/h2o2_uv_lm \
+    -L ${sp_dir}/h2o2_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2o2_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2o2_uv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2o2_nuv_l ] ; then
+  echo 'H2O2: Near-UV cross-section'
+  rm -f ${sp_dir}/h2o2_nuv_l* ${sp_dir}/h2o2_lbl_nuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o2 \
+    -R 353 411 -i 1.0 -l $IP_H2O2 ${COL_MASS_K_H2O2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2o2_nuv_l -m ${sp_dir}/h2o2_nuv_lm \
+    -L ${sp_dir}/h2o2_lbl_nuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2o2_nuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2o2_nuv_log
+  fi
+fi
+
 ##########################################################################
 #################### got to here #########################################
 wait
@@ -2042,66 +2149,27 @@ ${sp_dir}/no3_vis_l
 5
 y
 ${sp_dir}/n2o5_uv_l
+5
+y
+${sp_dir}/hono_uv_l
+5
+y
+${sp_dir}/ho2no2_uv_l
+5
+y
+${sp_dir}/h2o2_fuv_l
+5
+y
+${sp_dir}/h2o2_uv_l
+5
+y
+${sp_dir}/h2o2_nuv_l
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-#Nitrous Acid (HONO)
-rm -f hono.uvxsc
-dat2xsc HONO.dat hono.uvxsc
-UV_HONO='hono.uvxsc' #   184nm - 396 nm
-if [ ! -s ${sp_dir}/hono_uv_l ] || [ ! -s ${sp_dir}/hono_lbl.nc ] ; then
-  echo 'HONO (UV)'
-  rm -f ${sp_dir}/hono_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_HONO \
-    -R 184 397 -i 1.0 -l 43 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/hono_uv_l -m ${sp_dir}/hono_uv_lm \
-    -L ${sp_dir}/hono_lbl.nc -np $procs \
-     > ${sp_dir}/hono_uv_log
-fi
-
-#Peroxynitric Acid (HO2NO2)
-#rm -f ho2no2.uvxsc
-#dat2xsc HO2NO2.dat ho2no2.uvxsc
-UV_HO2NO2='ho2no2_cat.uvxsc' #   190nm - 349 nm
-ho2no2_pt_file='pt_ho2no2'
-if [ ! -s ${sp_dir}/ho2no2_uv_l ] || [ ! -s ${sp_dir}/ho2no2_lbl.nc ] ; then
-  echo 'HO2NO2 (UV)'
-  rm -f ${sp_dir}/ho2no2_uv_l*
-  Ccorr_k -F $ho2no2_pt_file -UVX $UV_HO2NO2 \
-    -R 190 1376 -i 1.0 -l 44 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/ho2no2_uv_l -m ${sp_dir}/ho2no2_uv_lm \
-    -L ${sp_dir}/ho2no2_lbl.nc -np $procs \
-     > ${sp_dir}/ho2no2_uv_log
-fi
-
-#Hydrogen Peroxide (H2O2)
-calc_h2o2_xsc
-dat2xsc -t 200 h2o2_200K.dat h2o2_200K.uvxsc
-dat2xsc -t 220 h2o2_220K.dat h2o2_220K.uvxsc
-dat2xsc -t 240 h2o2_240K.dat h2o2_240K.uvxsc
-dat2xsc -t 260 h2o2_260K.dat h2o2_260K.uvxsc
-dat2xsc -t 280 h2o2_280K.dat h2o2_280K.uvxsc
-dat2xsc -t 298 h2o2_298K.dat h2o2_298K.uvxsc
-dat2xsc -t 320 h2o2_320K.dat h2o2_320K.uvxsc
-cat h2o2_???K.uvxsc > h2o2.uvxsc
-uv_h2o2='h2o2.uvxsc' #   190nm - 350 nm
-h2o2_pt_file='pt_h2o2'
-if [ ! -s ${sp_dir}/h2o2_uv_l ] || [ ! -s ${sp_dir}/h2o2_lbl.nc ] ; then
-  echo 'H2O2 (UV)'
-  rm -f ${sp_dir}/h2o2_uv_l*
-  Ccorr_k -F $h2o2_pt_file -UVX $uv_h2o2 \
-    -R 190 350 -i 1.0 -l 45 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/h2o2_uv_l -m ${sp_dir}/h2o2_uv_lm \
-    -L ${sp_dir}/h2o2_lbl.nc -np $procs \
-     > ${sp_dir}/h2o2_uv_log
-fi
 
 #Ethane (C2H6)
 UV_C2H6="${hj}/c2h6.uvxsc"  #   6nm - 159 nm

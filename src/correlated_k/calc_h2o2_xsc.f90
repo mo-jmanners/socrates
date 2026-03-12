@@ -1,3 +1,8 @@
+! *****************************COPYRIGHT*******************************
+! (C) Crown copyright Met Office. All rights reserved.
+! For further details please refer to the file COPYRIGHT.txt
+! which you should have received as part of this distribution.
+! *****************************COPYRIGHT*******************************
 program calc_h2o2_xsc
 
 ! JPL 19-5 recommended cross-section for H2O2
@@ -67,7 +72,8 @@ do j=1, n_t
   open(newunit=io, file=filename(j), status='new', action='write', &
     iostat=stat, iomsg=msg)
   if (stat /= 0) then
-    stop trim(msg)
+    write(*,'(a)') trim(msg)
+    stop
   end if
 
   if (filename(j) == 'h2o2_298K.dat') then
