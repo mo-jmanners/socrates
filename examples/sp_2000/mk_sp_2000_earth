@@ -1923,6 +1923,108 @@ if [ ! -s ${sp_dir}/ch3_uv_l ] ; then
   fi
 fi
 
+# ----------------------------
+# Methanal / Formaldehyde (H2CO / CH2O)
+# ----------------------------
+fuv_h2co=${sp_dir}/h2co_fuv.uvxsc  #  6.2 - 180 nm
+rm -f $fuv_h2co
+dat2xsc h2co_Cooper1996_Suto1986.dat $fuv_h2co
+
+uv_h2co=${sp_dir}/h2co_223-298K.uvxsc  #  224.56 - 376.00 nm
+h2co_pt_file="pt_h2co"
+if [ ! -s $uv_h2co ] ; then
+  # JPL 19-5 recommends scaling the Meller-Moortgat data up by 8%
+  dat2xsc -t 223 -s 1.08 h2co_223K_MellerMoortgat2000.dat h2co_223K.uvxsc
+  dat2xsc -t 298 -s 1.08 h2co_298K_MellerMoortgat2000.dat h2co_298K.uvxsc
+  cat h2co_223K.uvxsc h2co_298K.uvxsc > $uv_h2co
+  rm -f h2co_223K.uvxsc h2co_298K.uvxsc
+fi
+
+if [ ! -s ${sp_dir}/h2co_xuv_l ] ; then
+  echo 'H2CO: XUV cross-section'
+  rm -f ${sp_dir}/h2co_xuv_l* ${sp_dir}/h2co_lbl_xuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $fuv_h2co \
+    -R 7 10 -i 1000.0 -l $IP_H2CO ${COL_MASS_K_H2CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2co_xuv_l -m ${sp_dir}/h2co_xuv_lm \
+    -L ${sp_dir}/h2co_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2co_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2co_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2co_euv_l ] ; then
+  echo 'H2CO: EUV cross-section'
+  rm -f ${sp_dir}/h2co_euv_l* ${sp_dir}/h2co_lbl_euv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $fuv_h2co \
+    -R 11 100 -i 10.0 -l $IP_H2CO ${COL_MASS_K_H2CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2co_euv_l -m ${sp_dir}/h2co_euv_lm \
+    -L ${sp_dir}/h2co_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2co_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2co_euv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2co_fuv_l ] ; then
+  echo 'H2CO: FUV cross-section'
+  rm -f ${sp_dir}/h2co_fuv_l* ${sp_dir}/h2co_lbl_fuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $fuv_h2co \
+    -R 101 180 -i 1.0 -l $IP_H2CO ${COL_MASS_K_H2CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2co_fuv_l -m ${sp_dir}/h2co_fuv_lm \
+    -L ${sp_dir}/h2co_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2co_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2co_fuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2co_uv_l ] ; then
+  echo 'H2CO: UV cross-section'
+  rm -f ${sp_dir}/h2co_uv_l* ${sp_dir}/h2co_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2co \
+    -R 225 249 -i 1.0 -l $IP_H2CO ${COL_MASS_K_H2CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2co_uv_l -m ${sp_dir}/h2co_uv_lm \
+    -L ${sp_dir}/h2co_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2co_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2co_uv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2co_nuv_l ] ; then
+  echo 'H2CO: NUV cross-section'
+  rm -f ${sp_dir}/h2co_nuv_l* ${sp_dir}/h2co_lbl_nuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2co \
+    -R 358 376 -i 1.0 -l $IP_H2CO ${COL_MASS_K_H2CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2co_nuv_l -m ${sp_dir}/h2co_nuv_lm \
+    -L ${sp_dir}/h2co_lbl_nuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2co_nuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2co_nuv_log
+  fi
+fi
+
+if [ ! -s ${sp_dir}/h2co_uvt_l ] ; then
+  echo 'H2CO: UV T-dependent cross-section'
+  rm -f ${sp_dir}/h2co_uvt_l* ${sp_dir}/h2co_lbl_uvt*
+  ck_args="Ccorr_k -F $h2co_pt_file -UVX $uv_h2co \
+    -R 250 357 -i 1.0 -l $IP_H2CO ${COL_MASS_K_H2CO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/h2co_uvt_l -m ${sp_dir}/h2co_uvt_lm \
+    -L ${sp_dir}/h2co_lbl_uvt.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2co_uvt_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2co_uvt_log
+  fi
+fi
 
 ##########################################################################
 #################### got to here #########################################
@@ -2247,46 +2349,30 @@ ${sp_dir}/c2h6_fuv_l
 5
 y
 ${sp_dir}/ch3_uv_l
+5
+y
+${sp_dir}/h2co_xuv_l
+5
+y
+${sp_dir}/h2co_euv_l
+5
+y
+${sp_dir}/h2co_fuv_l
+5
+y
+${sp_dir}/h2co_uv_l
+5
+y
+${sp_dir}/h2co_nuv_l
+5
+y
+${sp_dir}/h2co_uvt_l
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-#Methanal (H2CO)
-UV_H2CO='h2co.uvxsc' #   226nm - 370 nm
-h2co_pt_file='pt_h2co'
-if [ ! -s ${sp_dir}/h2co_xuv_l ] || [ ! -s ${sp_dir}/h2co_lbl_xuv.nc ] ; then
-  echo 'H2CO (XUV)'
-  rm -f ${sp_dir}/h2co_xuv_l*
-  Ccorr_k -F $h2co_pt_file -UVX $UV_H2CO \
-    -R 7 10 -i 1000.0 -l 48 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/h2co_xuv_l -m ${sp_dir}/h2co_xuv_lm \
-    -L ${sp_dir}/h2co_lbl_xuv.nc -np $procs \
-     > ${sp_dir}/h2co_xuv_log
-fi
-if [ ! -s ${sp_dir}/h2co_euv_l ] || [ ! -s ${sp_dir}/h2co_lbl_euv.nc ] ; then
-  echo 'H2CO (EUV)'
-  rm -f ${sp_dir}/h2co_euv_l*
-  Ccorr_k -F $h2co_pt_file -UVX $UV_H2CO \
-    -R 11 100 -i 10.0 -l 48 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/h2co_euv_l -m ${sp_dir}/h2co_euv_lm \
-    -L ${sp_dir}/h2co_lbl_euv.nc -np $procs \
-     > ${sp_dir}/h2co_euv_log
-fi
-if [ ! -s ${sp_dir}/h2co_uv_l ] || [ ! -s ${sp_dir}/h2co_lbl_uv.nc ] ; then
-  echo 'H2CO (UV)'
-  rm -f ${sp_dir}/h2co_uv_l*
-  Ccorr_k -F $h2co_pt_file -UVX $UV_H2CO \
-    -R 101 376 -i 1.0 -l 48 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/h2co_uv_l -m ${sp_dir}/h2co_uv_lm \
-    -L ${sp_dir}/h2co_lbl_uv.nc -np $procs \
-     > ${sp_dir}/h2co_uv_log
-fi
 
 #Acetaldehyde (CH3CHO)
 rm -f ch3cho.uvxsc

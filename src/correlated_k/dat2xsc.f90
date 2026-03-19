@@ -31,7 +31,8 @@ PROGRAM dat2xsc
   REAL (RealK), ALLOCATABLE :: in_wn(:)
   REAL (RealK), ALLOCATABLE :: out_wn(:, :)
   REAL (RealK), ALLOCATABLE :: xsc_data(:), xsc_wn(:)
-  REAL (RealK) :: temperature = 298.0
+  REAL (RealK) :: temperature = 298.0_RealK
+  REAL (RealK) :: scaling = 1.0_RealK
 
   l_infile = .FALSE.
   l_outfile = .FALSE.
@@ -46,6 +47,10 @@ PROGRAM dat2xsc
       i=i+1
       CALL get_command_argument(i, arg)
       READ(arg, *) temperature
+    CASE ('-s','--scale')
+      i=i+1
+      CALL get_command_argument(i, arg)
+      READ(arg, *) scaling
     CASE ('--offset','--eric')
       l_offset = .TRUE.
     CASE default
@@ -63,17 +68,13 @@ PROGRAM dat2xsc
   END DO
   IF (.NOT.l_outfile) THEN
     WRITE(iu_err, '(a)') &
-      'Usage: dat2xsc [-t <temperature>] [--offset] infile.dat outfile.[uv]xsc'
+      'Usage: dat2xsc [-t <temperature>] [-s <scaling>] [--offset]'// &
+      ' infile.dat outfile.[uv]xsc'
     STOP
   END IF
 
 ! Open the cross-section data file
-  CALL get_free_unit(ierr, iu_dat)
-  IF (ierr > 0) THEN
-    WRITE(iu_err, '(A, i5)') 'Error in get_free_unit: ', ierr
-    STOP
-  END IF
-  OPEN(UNIT=iu_dat, FILE=infile, IOSTAT=ierr, STATUS='OLD')
+  OPEN(NEWUNIT=iu_dat, FILE=infile, IOSTAT=ierr, STATUS='OLD')
   IF (ierr > 0) THEN
     WRITE(iu_err, '(A, i5, A, A)') 'Error', ierr, ' opening file ', infile
     STOP
@@ -98,7 +99,7 @@ PROGRAM dat2xsc
   CLOSE(iu_dat)
 
   in_wn = in_dat(1,:)
-  in_data = ABS(in_dat(2,:))
+  in_data = ABS(in_dat(2,:))*scaling
 
   DEALLOCATE ( in_dat )
   ALLOCATE ( out_wn(2, data_length) )
@@ -141,12 +142,7 @@ PROGRAM dat2xsc
   xsc%re_no = 0
 
 ! Open a file for the output HITRAN xsc database
-  CALL get_free_unit(ierr, iu_xsc)
-  IF (ierr > 0) THEN
-    WRITE(iu_err, '(A, i5)') 'Error in get_free_unit: ', ierr
-    STOP
-  END IF
-  OPEN(UNIT=iu_xsc, FILE=outfile, IOSTAT=ierr, STATUS='UNKNOWN')
+  OPEN(NEWUNIT=iu_xsc, FILE=outfile, IOSTAT=ierr, STATUS='UNKNOWN')
   IF (ierr > 0) THEN
     WRITE(iu_err, '(A, i5, A, A)') 'Error', ierr, ' opening file ', outfile
     STOP
