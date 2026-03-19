@@ -670,7 +670,7 @@ CHARACTER(LEN=56), PARAMETER :: photol_products(npd_products, npd_gases) &
   "C2H6 -> CH4 + CH2(1)          ",  &
   "C2H6 -> CH3 + CH3             ",  &
   (blank, i=1, npd_products-5)    ,  & ! C2H6
-  "CH3 -> CH2(1) + H             ",  & !
+  "CH3 -> CH2(1 1A1) + H(2S)     ",  & !
   (blank, i=1, npd_products-1)    ,  & ! CH3
   "H2CO -> H + HCO               ",  &
   "H2CO -> H2 + CO               ",  &
@@ -1019,8 +1019,8 @@ REAL (RealK), PARAMETER :: threshold_wavelength(npd_products, npd_gases) &
    272.6E-09_RealK,                 & ! C2H6 -> CH4 + CH2(1) :Huebner 92
    322.0E-09_RealK,                 & ! C2H6 -> CH3 + CH3 :Huebner 92
   (0.0_RealK, i=1, npd_products-5), & ! C2H6
-   216.0E-09_RealK,                 & ! CH3 -> CH2(1) + H
-  (0.0_RealK, i=1, npd_products-1), & ! CH3- Venot 2012-highest non zero qy
+   243.6E-09_RealK,                 & ! CH3 -> CH2(1 1A1) + H(2S) :Poullain 2016
+  (0.0_RealK, i=1, npd_products-1), & ! CH3
    330.0E-09_RealK,                 & ! H2CO -> H + HCO : JPL 19-5
    361.0E-09_RealK,                 & ! H2CO -> H2 + CO : JPL 19-5
    283.0E-09_RealK,                 & ! H2CO -> H + H + CO : JPL 19-5
@@ -1111,16 +1111,17 @@ REAL (RealK), PARAMETER :: threshold_wavelength(npd_products, npd_gases) &
 ! Unless otherwise stated, data comes from JPL publication No. 15-10:
 ! Chemical Kinetics and Photochemical Data for Use in Atmospheric Studies
 ! Other references:
-!  * JPL 19-5   : JPL publication No. 19-5
-!  * Heubner 92 : Heubner et al (1992, p120) DOI: 10.1007/978-94-017-3023-5_1
 !  * Becker 95 : Becker et al (1995) DOI: 10.1016/0301-0104(95)00114-4
-!  * Zborowska 21 : Zborowska et al (2021) DOI: 10.1016/j.atmosenv.2021.118383
+!  * Chang 2020 : Chang et al (2020) DOI: 10.1039/D0SC01746A 
+!  * Heubner 92 : Heubner et al (1992, p120) DOI: 10.1007/978-94-017-3023-5_1
 !  * IUPAC Task Group on Atmospheric Chemical Kinetic Data Evaluation:
 !    * http://iupac.pole-ether.fr
 !    * HNO3: PNOx2: https://iupac-aeris.ipsl.fr/datasheets/pdf/PNOx2.pdf
 !    * PAN: P21: https://iupac-aeris.ipsl.fr/datasheets/pdf/P21.pdf
+!  * JPL 19-5 : JPL publication No. 19-5
+!  * Lias 70 : Lias et al (1970) DOI: 10.1063/1.1673226
+!  * Poullain 2016 : Poullain et al (2016) DOI: 10.1039/c6cp01558a
 !  * Venot 2012 : Venot et al (2012) DOI: 10.1051/0004-6361/201219310
-!  * Lias 70   : Lias et al (1970) DOI: 10.1063/1.1673226
-!  * Chang 2020   : Chang et al (2020) DOI: 10.1039/D0SC01746A 
+!  * Zborowska 21 : Zborowska et al (2021) DOI: 10.1016/j.atmosenv.2021.118383
 
 END MODULE gas_list_pcf
