@@ -2047,6 +2047,59 @@ if [ ! -s ${sp_dir}/ch3cho_uv_l ] ; then
   fi
 fi
 
+# ----------------------------
+# Methylhydroperoxide (CH3OOH)
+# ----------------------------
+uv_ch3ooh=${sp_dir}/ch3ooh.uvxsc
+rm -f $uv_ch3ooh
+dat2xsc ch3ooh_298K_JPL2010.dat $uv_ch3ooh  #  210 - 405 nm
+if [ ! -s ${sp_dir}/ch3ooh_uv_l ] ; then
+  echo 'CH3OOH: UV cross-section'
+  rm -f ${sp_dir}/ch3ooh_uv_l* ${sp_dir}/ch3ooh_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch3ooh \
+    -R 210 406 -i 1.0 -l $IP_CH3OOH ${COL_MASS_K_CH3OOH} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ch3ooh_uv_l -m ${sp_dir}/ch3ooh_uv_lm \
+    -L ${sp_dir}/ch3ooh_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch3ooh_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch3ooh_uv_log
+  fi
+fi
+
+# ----------------------------
+# Acetone (CH3COCH3)
+# ----------------------------
+uv_ch3coch3=${sp_dir}/ch3coch3_235-298K.uvxsc  #  215 - 349 nm
+ch3coch3_pt_file="pt_ch3coch3"
+
+if [ ! -s $uv_ch3coch3 ] ; then
+  rm -f ch3coch3_???K.uvxsc
+  dat2xsc -t 235 ch3coch3_235K_JPL2010.dat ch3coch3_235K.uvxsc
+  dat2xsc -t 254 ch3coch3_254K_JPL2010.dat ch3coch3_254K.uvxsc
+  dat2xsc -t 263 ch3coch3_263K_JPL2010.dat ch3coch3_263K.uvxsc
+  dat2xsc -t 280 ch3coch3_280K_JPL2010.dat ch3coch3_280K.uvxsc
+  dat2xsc -t 298 ch3coch3_298K_JPL2010.dat ch3coch3_298K.uvxsc
+  cat ch3coch3_???K.uvxsc > $uv_ch3coch3
+  rm -f ch3coch3_???K.uvxsc
+fi
+
+if [ ! -s ${sp_dir}/ch3coch3_uv_l ] ; then
+  echo 'CH3COCH3: UV cross-section'
+  rm -f ${sp_dir}/ch3coch3_uv_l* ${sp_dir}/ch3coch3_lbl_uv*
+  ck_args="Ccorr_k -F $ch3coch3_pt_file -UVX $uv_ch3coch3 \
+    -R 215 350 -i 1.0 -l $IP_CH3COCH3 ${COL_MASS_K_CH3COCH3} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/ch3coch3_uv_l -m ${sp_dir}/ch3coch3_uv_lm \
+    -L ${sp_dir}/ch3coch3_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch3coch3_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch3coch3_uv_log
+  fi
+fi
+
 ##########################################################################
 #################### got to here #########################################
 wait
@@ -2391,41 +2444,18 @@ ${sp_dir}/h2co_uvt_l
 5
 y
 ${sp_dir}/ch3cho_uv_l
+5
+y
+${sp_dir}/ch3ooh_uv_l
+5
+y
+${sp_dir}/ch3coch3_uv_l
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-#Methylhydroperoxide (CH3OOH)
-rm -f ch3ooh.uvxsc
-dat2xsc CH3OOH.dat ch3ooh.uvxsc
-UV_CH3OOH='ch3ooh.uvxsc' #   210nm - 405 nm
-if [ ! -s ${sp_dir}/ch3ooh_uv_l ] || [ ! -s ${sp_dir}/ch3ooh_lbl.nc ] ; then
-  echo 'CH3OOH (UV)'
-  rm -f ${sp_dir}/ch3ooh_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CH3OOH \
-    -R 210 406 -i 1.0 -l 57 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/ch3ooh_uv_l -m ${sp_dir}/ch3ooh_uv_lm \
-    -L ${sp_dir}/ch3ooh_lbl.nc -np $procs \
-     > ${sp_dir}/ch3ooh_uv_log
-fi
-
-#Acetone (CH3COCH3)
-UV_CH3COCH3='ch3coch3.uvxsc' #   215nm - 349 nm
-ch3coch3_pt_file='pt_ch3coch3'
-if [ ! -s ${sp_dir}/ch3coch3_uv_l ] || [ ! -s ${sp_dir}/ch3coch3_lbl.nc ] ; then
-  echo 'CH3COCH3 (UV)'
-  rm -f ${sp_dir}/ch3coch3_uv_l*
-  Ccorr_k -F $ch3coch3_pt_file -UVX $UV_CH3COCH3 \
-    -R 215 350 -i 1.0 -l 58 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/ch3coch3_uv_l -m ${sp_dir}/ch3coch3_uv_lm \
-    -L ${sp_dir}/ch3coch3_lbl.nc -np $procs \
-     > ${sp_dir}/ch3coch3_uv_log
-fi
 
 #Methylglyoxal (CH3COCHO)
 rm -f ch3cocho.uvxsc
