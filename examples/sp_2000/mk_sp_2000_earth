@@ -2100,6 +2100,90 @@ if [ ! -s ${sp_dir}/ch3coch3_uv_l ] ; then
   fi
 fi
 
+# ----------------------------
+# Methylglyoxal, MGLY (CH3COCHO)
+# ----------------------------
+uv_ch3cocho=${sp_dir}/ch3cocho.uvxsc
+rm -f $uv_ch3cocho
+dat2xsc ch3cocho_298K_JPL2010.dat $uv_ch3cocho  #  200 - 493 nm
+if [ ! -s ${sp_dir}/ch3cocho_uv_l ] ; then
+  echo 'CH3COCHO: UV cross-section'
+  rm -f ${sp_dir}/ch3cocho_uv_l* ${sp_dir}/ch3cocho_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch3cocho \
+    -R 200 494 -i 1.0 -l $IP_CH3COCHO ${COL_MASS_K_CH3COCHO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ch3cocho_uv_l -m ${sp_dir}/ch3cocho_uv_lm \
+    -L ${sp_dir}/ch3cocho_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch3cocho_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch3cocho_uv_log
+  fi
+fi
+
+# ----------------------------
+# Glyoxal (CHOCHO)
+# ----------------------------
+uv_chocho=${sp_dir}/chocho.uvxsc
+rm -f $uv_chocho
+dat2xsc chocho_296K_JPL2010.dat $uv_chocho  #  250 - 526 nm
+if [ ! -s ${sp_dir}/chocho_uv_l ] ; then
+  echo 'CHOCHO: UV cross-section'
+  rm -f ${sp_dir}/chocho_uv_l* ${sp_dir}/chocho_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_chocho \
+    -R 250 526 -i 1.0 -l $IP_CHOCHO ${COL_MASS_K_CHOCHO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/chocho_uv_l -m ${sp_dir}/chocho_uv_lm \
+    -L ${sp_dir}/chocho_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/chocho_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/chocho_uv_log
+  fi
+fi
+
+# ----------------------------
+# Glycolaldehyde (HOCH2CHO)
+# ----------------------------
+uv_hoch2cho=${sp_dir}/hoch2cho.uvxsc
+rm -f $uv_hoch2cho
+dat2xsc hoch2cho_298K_JPL2010.dat $uv_hoch2cho  #  208 - 332 nm
+if [ ! -s ${sp_dir}/hoch2cho_uv_l ] ; then
+  echo 'HOCH2CHO: UV cross-section'
+  rm -f ${sp_dir}/hoch2cho_uv_l* ${sp_dir}/hoch2cho_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_hoch2cho \
+    -R 208 333 -i 1.0 -l $IP_HOCH2CHO ${COL_MASS_K_HOCH2CHO} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/hoch2cho_uv_l -m ${sp_dir}/hoch2cho_uv_lm \
+    -L ${sp_dir}/hoch2cho_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/hoch2cho_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/hoch2cho_uv_log
+  fi
+fi
+
+# ----------------------------
+# Methacrolein (MACR)
+# ----------------------------
+uv_macr=${sp_dir}/macr.uvxsc
+rm -f $uv_macr
+dat2xsc macr_Lee2007_Meller90_Gierczak97.dat $uv_macr  #  106 - 395 nm
+if [ ! -s ${sp_dir}/macr_uv_l ] ; then
+  echo 'MACR: UV cross-section'
+  rm -f ${sp_dir}/macr_uv_l* ${sp_dir}/macr_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_macr \
+    -R 107 396 -i 1.0 -l $IP_MACR ${COL_MASS_K_MACR} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/macr_uv_l -m ${sp_dir}/macr_uv_lm \
+    -L ${sp_dir}/macr_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/macr_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/macr_uv_log
+  fi
+fi
+
 ##########################################################################
 #################### got to here #########################################
 wait
@@ -2450,72 +2534,24 @@ ${sp_dir}/ch3ooh_uv_l
 5
 y
 ${sp_dir}/ch3coch3_uv_l
+5
+y
+${sp_dir}/ch3cocho_uv_l
+5
+y
+${sp_dir}/chocho_uv_l
+5
+y
+${sp_dir}/hoch2cho_uv_l
+5
+y
+${sp_dir}/macr_uv_l
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-#Methylglyoxal (CH3COCHO)
-rm -f ch3cocho.uvxsc
-dat2xsc CH3COCHO.dat ch3cocho.uvxsc
-UV_CH3COCHO='ch3cocho.uvxsc' # 200 - 493 nm
-if [ ! -s ${sp_dir}/ch3cocho_uv_l ] || [ ! -s ${sp_dir}/ch3cocho_lbl.nc ] ; then
-  echo 'CH3COCHO (UV)'
-  rm -f ${sp_dir}/ch3cocho_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CH3COCHO \
-    -R 200 494 -i 1.0 -l 59 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/ch3cocho_uv_l -m ${sp_dir}/ch3cocho_uv_lm \
-    -L ${sp_dir}/ch3cocho_lbl.nc -np $procs \
-     > ${sp_dir}/ch3cocho_uv_log
-fi
-
-#Glyoxal (CHOCHO)
-rm -f chocho.uvxsc
-dat2xsc CHOCHO.dat chocho.uvxsc
-UV_CHOCHO='chocho.uvxsc' #   250nm - 526 nm
-if [ ! -s ${sp_dir}/chocho_uv_l ] || [ ! -s ${sp_dir}/chocho_lbl.nc ] ; then
-  echo 'CHOCHO (UV)'
-  rm -f ${sp_dir}/chocho_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CHOCHO \
-    -R 250 527 -i 1.0 -l 60 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/chocho_uv_l -m ${sp_dir}/chocho_uv_lm \
-    -L ${sp_dir}/chocho_lbl.nc -np $procs \
-     > ${sp_dir}/chocho_uv_log
-fi
-
-#Glycolaldehyde (HOCH2CHO)
-rm -f hoch2cho.uvxsc
-dat2xsc HOCH2CHO.dat hoch2cho.uvxsc
-UV_HOCH2CHO='hoch2cho.uvxsc' #   208nm - 332 nm
-if [ ! -s ${sp_dir}/hoch2cho_uv_l ] || [ ! -s ${sp_dir}/hoch2cho_lbl.nc ] ; then
-  echo 'HOCH2CHO (UV)'
-  rm -f ${sp_dir}/hoch2cho_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_HOCH2CHO \
-    -R 208 333 -i 1.0 -l 62 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/hoch2cho_uv_l -m ${sp_dir}/hoch2cho_uv_lm \
-    -L ${sp_dir}/hoch2cho_lbl.nc -np $procs \
-     > ${sp_dir}/hoch2cho_uv_log
-fi
-
-#Methacrolein (MACR)
-#rm -f macr.uvxsc
-#dat2xsc MACR.dat macr.uvxsc
-#UV_MACR='macr.uvxsc' #   250nm - 395 nm
-#if [ ! -s ${sp_dir}/macr_uv_l ] || [ ! -s ${sp_dir}/macr_lbl.nc ] ; then
-#  echo 'MACR (UV)'
-#  rm -f ${sp_dir}/macr_uv_l*
-#  Ccorr_k -F $PT_SINGLE -UVX $UV_MACR \
-#    -R 250 396 -i 1.0 -l 65 2.0e-3 -t 1.0e-3  \
-#    -s $skelfile +S $SOLSPEC \
-#    -o ${sp_dir}/macr_uv_l -m ${sp_dir}/macr_uv_lm \
-#    -L ${sp_dir}/macr_lbl.nc -np $procs \
-#     > ${sp_dir}/macr_uv_log
-#fi
 
 #Polyacrylonitrile (PAN)
 UV_PAN='pan.uvxsc' #   196nm - 350 nm

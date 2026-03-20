@@ -15,7 +15,7 @@ if [ ! -s ${skelfile} ] ; then
 prep_spec << EOF > ${skelfile}_log
 ${skelfile}
 2000
-49
+50
 1
 2
 3
@@ -56,6 +56,7 @@ ${skelfile}
 59
 60
 62
+65
 66
 67
 68
