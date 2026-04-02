@@ -2184,8 +2184,97 @@ if [ ! -s ${sp_dir}/macr_uv_l ] ; then
   fi
 fi
 
-##########################################################################
-#################### got to here #########################################
+# ----------------------------
+# Polyacrylonitrile (PAN)
+# ----------------------------
+uv_pan=${sp_dir}/pan_250-298K.uvxsc  #  196 - 350 nm
+pan_pt_file="pt_pan"
+
+if [ ! -s $uv_pan ] ; then
+  rm -f pan_???K.uvxsc
+  dat2xsc -t 250 pan_250K_Talukdar95.dat pan_250K.uvxsc
+  dat2xsc -t 273 pan_273K_Talukdar95.dat pan_273K.uvxsc
+  dat2xsc -t 298 pan_298K_Talukdar95.dat pan_298K.uvxsc
+  cat pan_???K.uvxsc > $uv_pan
+  rm -f pan_???K.uvxsc
+fi
+
+if [ ! -s ${sp_dir}/pan_uv_l ] ; then
+  echo 'PAN: UV cross-section'
+  rm -f ${sp_dir}/pan_uv_l* ${sp_dir}/pan_lbl_uv*
+  ck_args="Ccorr_k -F $pan_pt_file -UVX $uv_pan \
+    -R 196 351 -i 1.0 -l $IP_PAN ${COL_MASS_K_PAN} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/pan_uv_l -m ${sp_dir}/pan_uv_lm \
+    -L ${sp_dir}/pan_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/pan_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/pan_uv_log
+  fi
+fi
+
+# ----------------------------
+# Methylnitrate (CH3ONO2)
+# ----------------------------
+uv_ch3ono2=${sp_dir}/ch3ono2_240-320K.uvxsc  #  190 - 344 nm
+ch3ono2_pt_file="pt_ch3ono2"
+
+if [ ! -s $uv_ch3ono2 ] ; then
+  rm -f ch3ono2_???K.uvxsc
+  dat2xsc -t 240 ch3ono2_240K_Talukdar97.dat ch3ono2_240K.uvxsc
+  dat2xsc -t 260 ch3ono2_260K_Talukdar97.dat ch3ono2_260K.uvxsc
+  dat2xsc -t 280 ch3ono2_280K_Talukdar97.dat ch3ono2_280K.uvxsc
+  dat2xsc -t 298 ch3ono2_298K_JPL2010.dat ch3ono2_298K.uvxsc
+  dat2xsc -t 320 ch3ono2_320K_Talukdar97.dat ch3ono2_320K.uvxsc
+  cat ch3ono2_???K.uvxsc > $uv_ch3ono2
+  rm -f ch3ono2_???K.uvxsc
+fi
+
+if [ ! -s ${sp_dir}/ch3ono2_fuv_l ] ; then
+  echo 'CH3ONO2: FUV cross-section'
+  rm -f ${sp_dir}/ch3ono2_fuv_l* ${sp_dir}/ch3ono2_lbl_fuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch3ono2 \
+    -R 189 235 -i 1.0 -l $IP_CH3ONO2 ${COL_MASS_K_CH3ONO2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ch3ono2_fuv_l -m ${sp_dir}/ch3ono2_fuv_lm \
+    -L ${sp_dir}/ch3ono2_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch3ono2_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch3ono2_fuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/ch3ono2_uv_l ] ; then
+  echo 'CH3ONO2: UV cross-section'
+  rm -f ${sp_dir}/ch3ono2_uv_l* ${sp_dir}/ch3ono2_lbl_uv*
+  ck_args="Ccorr_k -F $ch3ono2_pt_file -UVX $uv_ch3ono2 \
+    -R 236 335 -i 1.0 -l $IP_CH3ONO2 ${COL_MASS_K_CH3ONO2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/ch3ono2_uv_l -m ${sp_dir}/ch3ono2_uv_lm \
+    -L ${sp_dir}/ch3ono2_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch3ono2_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch3ono2_uv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/ch3ono2_nuv_l ] ; then
+  echo 'CH3ONO2: NUV cross-section'
+  rm -f ${sp_dir}/ch3ono2_nuv_l* ${sp_dir}/ch3ono2_lbl_nuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_ch3ono2 \
+    -R 336 345 -i 1.0 -l $IP_CH3ONO2 ${COL_MASS_K_CH3ONO2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/ch3ono2_nuv_l -m ${sp_dir}/ch3ono2_nuv_lm \
+    -L ${sp_dir}/ch3ono2_lbl_nuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/ch3ono2_nuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/ch3ono2_nuv_log
+  fi
+fi
+
+
 wait
 
 # Create the spectral file from the data calculated above
@@ -2546,243 +2635,24 @@ ${sp_dir}/hoch2cho_uv_l
 5
 y
 ${sp_dir}/macr_uv_l
+5
+y
+${sp_dir}/pan_uv_l
+5
+y
+${sp_dir}/ch3ono2_fuv_l
+5
+y
+${sp_dir}/ch3ono2_uv_l
+5
+y
+${sp_dir}/ch3ono2_nuv_l
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-#Polyacrylonitrile (PAN)
-UV_PAN='pan.uvxsc' #   196nm - 350 nm
-pan_pt_file='pt_pan'
-if [ ! -s ${sp_dir}/pan_uv_l ] || [ ! -s ${sp_dir}/pan_lbl.nc ] ; then
-  echo 'PAN (UV)'
-  rm -f ${sp_dir}/pan_uv_l*
-  Ccorr_k -F $pan_pt_file -UVX $UV_PAN \
-    -R 196 351 -i 1.0 -l 66 1.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC -q -r $REF_PT_FILE \
-    -o ${sp_dir}/pan_uv_l -m ${sp_dir}/pan_uv_lm \
-    -L ${sp_dir}/pan_lbl.nc -np $procs \
-     > ${sp_dir}/pan_uv_log
-fi
-
-#Methylnitrate (CH3ONO2)
-rm -f ch3ono2.uvxsc
-dat2xsc CH3ONO2.dat ch3ono2.uvxsc
-UV_CH3ONO2='ch3ono2.uvxsc' #   192nm - 344 nm
-if [ ! -s ${sp_dir}/ch3ono2_uv_l ] || [ ! -s ${sp_dir}/ch3ono2_lbl.nc ] ; then
-  echo 'CH3ONO2 (UV)'
-  rm -f ${sp_dir}/ch3ono2_uv_l*
-  Ccorr_k -F $PT_SINGLE -UVX $UV_CH3ONO2 \
-    -R 192 345 -i 1.0 -l 67 2.0e-3 -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/ch3ono2_uv_l -m ${sp_dir}/ch3ono2_uv_lm \
-    -L ${sp_dir}/ch3ono2_lbl.nc -np $procs \
-     > ${sp_dir}/ch3ono2_uv_log
-fi
-
-wait
-
-# Create the spectral file from the data calculated above
-# -------------------------------------------------------
-echo 'Constructing spectral file'
-mv ${specfile} ${specfile}_old 2> /dev/null
-mv ${specfile}_k ${specfile}_old_k 2> /dev/null
-prep_spec << EOF > ${specfile}_log1 2>&1
-$skelfile
-n
-$specfile
-2
-n
-${SOLSPEC}
-n
-3
-a
-5
-${sp_dir}/o2_xuvhr_l
-5
-y
-${sp_dir}/o2_euvhr_l
-5
-y
-${sp_dir}/o2_uvhr_l
-5
-y
-${sp_dir}/o3_uvhr_l
-5
-y
-${sp_dir}/ch4_xuv_l
-5
-y
-${sp_dir}/ch4_euv_l
-5
-y
-${sp_dir}/ch4_uv_l
-5
-y
-${sp_dir}/co2_xuv_l
-5
-y
-${sp_dir}/co2_euv_l
-5
-y
-${sp_dir}/co2_uv_l
-5
-y
-${sp_dir}/co_xuv_l
-5
-y
-${sp_dir}/co_euv_l
-5
-y
-${sp_dir}/co_uv_l
-5
-y
-${sp_dir}/h2_xuv_l
-5
-y
-${sp_dir}/h2_euv_l
-5
-y
-${sp_dir}/h2_uv_l
-5
-y
-${sp_dir}/h2o_xuv_l
-5
-y
-${sp_dir}/h2o_euv_l
-5
-y
-${sp_dir}/h2o_uv_l
-5
-y
-${sp_dir}/n2_xuvhr_l
-5
-y
-${sp_dir}/n2_euvhr_l
-5
-y
-${sp_dir}/n2o_xuv_l
-5
-y
-${sp_dir}/n2o_euv_l
-5
-y
-${sp_dir}/n2o_fuv_l
-5
-y
-${sp_dir}/n2o_uv_l
-5
-y
-${sp_dir}/no2_xuv_l
-5
-y
-${sp_dir}/no2_euv_l
-5
-y
-${sp_dir}/no2_uv_l
-5
-y
-${sp_dir}/o_xuvhr_l
-5
-y
-${sp_dir}/o_euvhr_l
-5
-y
-${sp_dir}/n_xuvhr_l
-5
-y
-${sp_dir}/n_euvhr_l
-5
-y
-${sp_dir}/h2o2_uv_l
-5
-y
-${sp_dir}/no3_uv_l
-5
-y
-${sp_dir}/n2o5_uv_l
-5
-y
-${sp_dir}/ho2no2_uv_l
-5
-y
-${sp_dir}/hno3_uv_l
-5
-y
-${sp_dir}/ch3ooh_uv_l
-5
-y
-${sp_dir}/hono_uv_l
-5
-y
-${sp_dir}/ch3cho_uv_l
-5
-y
-${sp_dir}/h2co_xuv_l
-5
-y
-${sp_dir}/h2co_euv_l
-5
-y
-${sp_dir}/h2co_uv_l
-5
-y
-${sp_dir}/chocho_uv_l
-5
-y
-${sp_dir}/ocs_uv_l
-5
-y
-${sp_dir}/ch3ono2_uv_l
-5
-y
-${sp_dir}/hoch2cho_uv_l
-5
-y
-${sp_dir}/pan_uv_l
-5
-y
-${sp_dir}/ch3cocho_uv_l
-5
-y
-${sp_dir}/ch3coch3_uv_l
-5
-y
-${sp_dir}/c2h2_xuv_l
-5
-y
-${sp_dir}/c2h2_euv_l
-5
-y
-${sp_dir}/c2h2_uv_l
-5
-y
-${sp_dir}/hcn_euv_l
-5
-y
-${sp_dir}/hcn_uv_l
-5
-y
-${sp_dir}/c2h6_xuv_l
-5
-y
-${sp_dir}/c2h6_euv_l
-5
-y
-${sp_dir}/c2h6_uv_l
-5
-y
-${sp_dir}/nh3_xuv_l
-5
-y
-${sp_dir}/nh3_euv_l
-5
-y
-${sp_dir}/nh3_uv_l
--1
-EOF
 
 # Rearrange so the major gas is listed first for each band
 echo 'Determining major absorbers'
