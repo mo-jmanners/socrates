@@ -1,8 +1,8 @@
 #
 # Pathnames for compilers and global options for naming files
 #
-FORTCOMP        = gfortran -c -fcheck=all,no-recursion -fbacktrace -g -Wtabs -Werror -std=f2018
-LINK            = gfortran -fcheck=all,no-recursion -fbacktrace -g -Wtabs -Werror -std=f2018
+FORTCOMP        = gfortran -c -fcheck=all,no-recursion -fbacktrace -g -Wtabs -Werror -std=f2023
+LINK            = gfortran -fcheck=all,no-recursion -fbacktrace -g -Wtabs -Werror -std=f2023
 LIBLINK         = ar rvu
 INCCDF_PATH     = /usr/include
 LIBCDF_PATH     = /usr/lib
