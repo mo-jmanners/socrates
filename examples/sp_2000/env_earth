@@ -19,6 +19,17 @@ HITRAN_HFC134A="${ARCHIVE_DATA}/HITRAN2024/hfc134a_Harrison2015.xsc"
 SOLFILE="cmip7_cyc23_whi_lya_mean_tfit"
 SOLSPEC="${RAD_DATA}/solar/${SOLFILE}"
 
+# Column ammounts integrated down to stratopause
+# used to determine major gas in band
+COL_MASS_MAJOR_H2O="0.156458E-04"
+COL_MASS_MAJOR_CO2="0.251123E-02"
+COL_MASS_MAJOR_O3="0.784418E-05"
+COL_MASS_MAJOR_N2O="0.138654E-07"
+COL_MASS_MAJOR_CH4="0.399384E-06"
+COL_MASS_MAJOR_O2="0.107215E+01"
+COL_MASS_MAJOR_N2="0.351191E+01"
+
+# Max column ammounts used to determine k-terms
 COL_MASS_K_H2O="1.0e2"
 COL_MASS_K_CO2="1.0e1"
 COL_MASS_K_O3="1.0e-2"

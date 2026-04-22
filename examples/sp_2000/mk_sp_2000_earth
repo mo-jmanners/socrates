@@ -2274,6 +2274,76 @@ if [ ! -s ${sp_dir}/ch3ono2_nuv_l ] ; then
   fi
 fi
 
+# ----------------------------
+# Vinyl Radical (C2H3)
+# ----------------------------
+uv_c2h3=${sp_dir}/c2h3.uvxsc
+rm -f $uv_c2h3
+dat2xsc --offset c2h3_Venot2012.dat $uv_c2h3  #  225.5 - 236.5 nm
+if [ ! -s ${sp_dir}/c2h3_uv_l ] ; then
+  echo 'C2H3: UV cross-section'
+  rm -f ${sp_dir}/c2h3_uv_l* ${sp_dir}/c2h3_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_c2h3 \
+    -R 226 237 -i 1.0 -l $IP_C2H3 ${COL_MASS_K_C2H3} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/c2h3_uv_l -m ${sp_dir}/c2h3_uv_lm \
+    -L ${sp_dir}/c2h3_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/c2h3_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/c2h3_uv_log
+  fi
+fi
+
+# ----------------------------
+# Ethylene (C2H4)
+# ----------------------------
+uv_c2h4=${sp_dir}/c2h4.uvxsc
+rm -f $uv_c2h4
+dat2xsc --offset c2h4_Venot2012.dat $uv_c2h4  #  7.5 - 207.5 nm
+
+if [ ! -s ${sp_dir}/c2h4_xuv_l ] ; then
+  echo 'C2H4: XUV cross-section'
+  rm -f ${sp_dir}/c2h4_xuv_l* ${sp_dir}/c2h4_lbl_xuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_c2h4 \
+    -R 8 10 -i 1000.0 -l $IP_C2H4 ${COL_MASS_K_C2H4} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/c2h4_xuv_l -m ${sp_dir}/c2h4_xuv_lm \
+    -L ${sp_dir}/c2h4_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/c2h4_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/c2h4_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/c2h4_euv_l ] ; then
+  echo 'C2H4: EUV cross-section'
+  rm -f ${sp_dir}/c2h4_euv_l* ${sp_dir}/c2h4_lbl_euv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_c2h4 \
+    -R 11 100 -i 10.0 -l $IP_C2H4 ${COL_MASS_K_C2H4} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/c2h4_euv_l -m ${sp_dir}/c2h4_euv_lm \
+    -L ${sp_dir}/c2h4_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/c2h4_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/c2h4_euv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/c2h4_uv_l ] ; then
+  echo 'C2H4: UV cross-section'
+  rm -f ${sp_dir}/c2h4_uv_l* ${sp_dir}/c2h4_lbl_uv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_c2h4 \
+    -R 101 208 -i 1.0 -l $IP_C2H4 ${COL_MASS_K_C2H4} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/c2h4_uv_l -m ${sp_dir}/c2h4_uv_lm \
+    -L ${sp_dir}/c2h4_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/c2h4_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/c2h4_uv_log
+  fi
+fi
 
 wait
 
@@ -2647,88 +2717,83 @@ ${sp_dir}/ch3ono2_uv_l
 5
 y
 ${sp_dir}/ch3ono2_nuv_l
+5
+y
+${sp_dir}/c2h3_uv_l
+5
+y
+${sp_dir}/c2h4_xuv_l
+5
+y
+${sp_dir}/c2h4_euv_l
+5
+y
+${sp_dir}/c2h4_uv_l
+-1
+EOF
+
+# Rearrange so the major gas is listed first for each band
+echo 'Determining major absorbers'
+tidy_90 <<EOF > ${specfile}_tidy_log
+${specfile}
+o
+6
+${COL_MASS_MAJOR_H2O}
+${COL_MASS_MAJOR_CO2}
+${COL_MASS_MAJOR_O3}
+${COL_MASS_MAJOR_N2O}
+0.0
+${COL_MASS_MAJOR_CH4}
+${COL_MASS_MAJOR_O2}
+0.0
+0.0
+0.0
+0.0
+0.0
+${COL_MASS_MAJOR_N2}
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
 -1
 EOF
 
 exit 0
 ##########################################################################
 ##########################################################################
-
-# Rearrange so the major gas is listed first for each band
-echo 'Determining major absorbers'
-# Column ammounts integrated down to     stratopause  |  mesopause
-# Column amount for Water Vapour         0.156458E-04    0.630611E-08
-# Column amount for Carbon Dioxide       0.251123E-02    0.708379E-05
-# Column amount for Ozone                0.784418E-05    0.128860E-07
-# Column amount for Dinitrogen Oxide     0.138654E-07    0.103199E-10
-# Column amount for Carbon monoxide      0.112071E-05    0.208955E-06
-# Column amount for Methane              0.399384E-06    0.123864E-08
-# Column amount for Oxygen               0.107215E+01    0.332647E-02
-# Column amount for Nitrogen monoxide            0.356393E-05
-# Column amount for Nitrogen dioxide     0.205777E-08    0.482538E-11
-# Column amount for Ammonia                          0.0
-# Column amount for Nitric acid                      0.0
-# Column amount for Nitrogen             0.351191E+01    0.130265E-01
-# Column amount for Hydrogen                         0.0
-# Column amount for Carbonyl sulphide                0.0
-# Column amount for Acetylene                        0.0
-# Column amount for Hydrogen cyanide                 0.0
-# Column amount for Atomic Oxygen        0.262064E-03    0.228072E-03
-# Column amount for Atomic Nitrogen      0.299410E-09    0.260047E-09
-# Column amount for Nitrate radical                  0.0
-# Column amount for Dinitrogen pentoxide             0.0
-# Column amount for Nitrous acid                     0.0
-# Column amount for Peroxynitric acid                0.0
-# Column amount for Hydrogen peroxide                0.0
-# Column amount for Ethane                           0.0
-# Column amount for Formaldehyde                     0.0
-# Column amount for Acetaldehyde                     0.0
-# Column amount for Methylhydroperoxide              0.0
-# Column amount for Acetone                          0.0
-# Column amount for Methylglyoxal                    0.0
-# Column amount for Glyoxal                          0.0
-# Column amount for Glycolaldehyde                   0.0
-# Column amount for Peroxyacetyl nitrate             0.0
-# Column amount for Methylnitrate                    0.0
-tidy_90 <<EOF > ${specfile}_tidy_log
-${specfile}
-o
-6
-0.630611E-08
-0.708379E-05
-0.128860E-07
-0.103199E-10
-0.208955E-06
-0.123864E-08
-0.332647E-02
-0.356393E-05
-0.482538E-11
-0.0
-0.0
-0.130265E-01
-0.0
-0.0
-0.0
-0.0
-0.228072E-03
-0.260047E-09
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
-0.0
--1
-EOF
 
 # Define sub-bands and photolysis reactions
 echo 'Adding photolysis reactions'
