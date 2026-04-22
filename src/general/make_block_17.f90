@@ -62,7 +62,7 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
   CHARACTER (LEN=4) :: dim_name
   CHARACTER (LEN=3) :: frequency
   INTEGER :: ncid, varid, dimid_time, dimid_wlen, time_len, wlen_len
-  INTEGER :: band, sub_band, number_term, index_absorb
+  INTEGER :: band, sub_band, number_term, index_absorb, max_band
   INTEGER :: sub_bands(Sp%Dim%nd_band), band_sort(Sp%Dim%nd_band)
   INTEGER :: n_times, yearstart=imdi, monthstart, daystart
   INTEGER, ALLOCATABLE :: calyear(:), calmonth(:), calday(:), seconds(:)
@@ -107,8 +107,13 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
         'Enter band to be sub-divided (0 to finish, -1 to use gas sub-bands): '
       READ(*, *, IOSTAT=ios) band
       IF (band == 0) EXIT
-      IF (band == -1) THEN
-        DO band=1, Sp%Basic%n_band
+      IF (band < 0) THEN
+        IF (band == -1) THEN
+          max_band = Sp%Basic%n_band
+        ELSE
+          max_band = -band
+        END IF
+        DO band=1, max_band
           IF (Sp%Gas%n_band_absorb(band) > 0) THEN
             index_absorb = Sp%Gas%index_absorb(1, band)
             IF (Sp%Gas%n_sub_band_gas(band, index_absorb) > 1) THEN
