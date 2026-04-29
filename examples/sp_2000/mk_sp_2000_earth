@@ -1452,6 +1452,55 @@ if [ ! -s ${sp_dir}/hfc134a_ir_l ] ; then
 fi
 
 # ----------------------------
+# Hydrogen (H2)
+# ----------------------------
+uv_h2=${sp_dir}/h2.uvxsc
+rm -f $uv_h2
+dat2xsc --offset h2_Hebrard.dat $uv_h2  #  5.5 - 116.5 nm
+if [ ! -s ${sp_dir}/h2_xuv_l ] ; then
+  echo 'H2: XUV cross-section'
+  rm -f ${sp_dir}/h2_xuv_l* ${sp_dir}/h2_lbl_xuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2 \
+    -R 6 10 -i 1000.0 -l $IP_H2 ${COL_MASS_K_H2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2_xuv_l -m ${sp_dir}/h2_xuv_lm \
+    -L ${sp_dir}/h2_lbl_xuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2_xuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2_xuv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2_euv_l ] ; then
+  echo 'H2: EUV cross-section'
+  rm -f ${sp_dir}/h2_euv_l* ${sp_dir}/h2_lbl_euv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2 \
+    -R 11 100 -i 10.0 -l $IP_H2 ${COL_MASS_K_H2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2_euv_l -m ${sp_dir}/h2_euv_lm \
+    -L ${sp_dir}/h2_lbl_euv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2_euv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2_euv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/h2_fuv_l ] ; then
+  echo 'H2: FUV cross-section'
+  rm -f ${sp_dir}/h2_fuv_l* ${sp_dir}/h2_lbl_fuv*
+  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2 \
+    -R 101 117 -i 1.0 -l $IP_H2 ${COL_MASS_K_H2} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC \
+    -o ${sp_dir}/h2_fuv_l -m ${sp_dir}/h2_fuv_lm \
+    -L ${sp_dir}/h2_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/h2_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/h2_fuv_log
+  fi
+fi
+
+# ----------------------------
 # Carbonyl Sulphide (OCS)
 # ----------------------------
 uv_ocs=${sp_dir}/ocs_225-295K.uvxsc  #  186 - 292 nm
@@ -2345,6 +2394,35 @@ if [ ! -s ${sp_dir}/c2h4_uv_l ] ; then
   fi
 fi
 
+# ----------------------------
+# Hydroxyl radical (OH)
+# ----------------------------
+uv_oh=${sp_dir}/oh_200-300K.uvxsc  #  96.8 - 323.5 nm
+oh_pt_file="pt_oh"
+
+if [ ! -s $uv_oh ] ; then
+  rm -f oh_???K.uvxsc
+  dat2xsc -t 200 oh_200K_Mitev2024.dat oh_200K.uvxsc
+  dat2xsc -t 300 oh_300K_Mitev2024.dat oh_300K.uvxsc
+  cat oh_200K.uvxsc oh_300K.uvxsc > $uv_oh
+  rm -f oh_???K.uvxsc
+fi
+
+if [ ! -s ${sp_dir}/oh_uv_l ] ; then
+  echo 'OH: UV cross-section'
+  rm -f ${sp_dir}/oh_uv_l* ${sp_dir}/oh_lbl_uv*
+  ck_args="Ccorr_k -F $oh_pt_file -UVX $uv_oh \
+    -R 97 324 -i 1.0 -l $IP_OH ${COL_MASS_K_OH} -t 1.0e-3  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/oh_uv_l -m ${sp_dir}/oh_uv_lm \
+    -L ${sp_dir}/oh_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/oh_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/oh_uv_log
+  fi
+fi
+
 wait
 
 # Create the spectral file from the data calculated above
@@ -2596,6 +2674,15 @@ y
 ${sp_dir}/hfc134a_ir_l
 5
 y
+${sp_dir}/h2_xuv_l
+5
+y
+${sp_dir}/h2_euv_l
+5
+y
+${sp_dir}/h2_fuv_l
+5
+y
 ${sp_dir}/ocs_uv_l
 5
 y
@@ -2729,6 +2816,9 @@ ${sp_dir}/c2h4_euv_l
 5
 y
 ${sp_dir}/c2h4_uv_l
+5
+y
+${sp_dir}/oh_uv_l
 -1
 EOF
 
@@ -3096,182 +3186,148 @@ y
 y
 co2_Venot2012_2.qy
 
--1
-EOF
-
-echo -n 'Finished mk_sp_2000_earth: '; date
-exit 0
-
-##########################################################################
-##########################################################################
-
-
 20
 y
 34
 1
 y
-${hj}/C2H2_1.qy
+c2h2_Venot2012_1.qy
 
 20
 y
 6
 1
 y
-${hj}/CH4_1.qy
+ch4_Venot2012_1.qy
 
 20
 y
 6
 2
 y
-${hj}/CH4_2.qy
+ch4_Venot2012_2.qy
 
 20
 y
 6
 3
 y
-${hj}/CH4_3.qy
+ch4_Venot2012_3.qy
 
 20
 y
 6
 4
 y
-${hj}/CH4_4.qy
+ch4_Venot2012_4.qy
 
 20
 y
 35
 1
 y
-${hj}/HCN_1.qy
+
 
 20
 y
 46
 1
 y
-${hj}/C2H6_1.qy
+c2h6_Venot2012_1.qy
 
 20
 y
 46
 2
 y
-${hj}/C2H6_2.qy
+c2h6_Venot2012_2.qy
 
 20
 y
 46
 3
 y
-${hj}/C2H6_3.qy
+c2h6_Venot2012_3.qy
 
 20
 y
 46
 4
 y
-${hj}/C2H6_4.qy
+c2h6_Venot2012_4.qy
 
 20
 y
 46
 5
 y
-${hj}/C2H6_5.qy
+c2h6_Venot2012_5.qy
 
 20
 y
 11
 1
 y
-${hj}/NH3_1.qy
+
 
 20
 y
 68
 1
 y
-${hj}/C2H3_1.qy
+
 
 20
 y
 47
 1
 y
-${hj}/CH3_1.qy
+
 
 20
 y
 69
 1
 y
-${hj}/C2H4_1.qy
+c2h4_Venot2012_1.qy
 
 20
 y
 69
 2
 y
-${hj}/C2H4_2.qy
+c2h4_Venot2012_2.qy
 
 20
 y
 70
 1
 y
-${hj}/OH_1.qy
+
 
 20
 y
 5
 1
 y
-${hj}/CO_1.qy
+
 
 20
 y
 23
 1
 y
-${hj}/H2_1.qy
 
-20
-y
-71
-1
-y
-${hj}/HCO_1.qy
-
-20
-y
-72
-1
-y
-${hj}/N2O4_1.qy
-
-20
-y
-73
-1
-y
-${hj}/C2N2_1.qy
-
-20
-y
-74
-1
-y
-${hj}/N2H4_1.qy
 
 20
 y
 8
 1
 y
-${hj}/NO_1.qy
+no_Akimoto2016_1.qy
 
 -1
+EOF
+
+echo -n 'Finished mk_sp_2000_earth: '; date
+exit 0
