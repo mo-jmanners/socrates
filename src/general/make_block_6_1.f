@@ -223,94 +223,98 @@
 !     For each band a table or a least squares fit in the scaled
 !     temperature is performed.
       DO i=1, n_band
-        IF (l_planck_tbl) THEN
-          CALL calc_planck_tbl(ierr
-     &      , n_deg_fit
-     &      , wave_length_short(i), wave_length_long(i)
-     &      , theta_planck_tbl
-     &      , alpha, q
-     &      , thermal_coefficient(:,i))
-!
-!         If regions of the band are excluded, the corresponding
-!         regions must be removed from the Planck table.
-          IF (l_exclude) THEN
-            DO j=1, n_band_exclude(i)
-              i_exclude=index_exclude(j, i)
-              CALL calc_planck_tbl(ierr
-     &          , n_deg_fit
-     &          , wave_length_short(i_exclude)
-     &          , wave_length_long(i_exclude)
-     &          , theta_planck_tbl 
-     &          , alpha, q
-     &          , b_exclude)
-              IF (ierr /= i_normal) RETURN
-              thermal_coefficient(:,i)=
-     &          thermal_coefficient(:,i)-b_exclude(:)
-            ENDDO
-          ENDIF
-        ELSE
-          CALL calc_thermal_coeff(ierr
-     &      , n_deg_fit
-     &      , wave_length_short(i), wave_length_long(i)
-     &      , t_fit_low, t_fit_high
-     &      , alpha, q
-     &      , a, b)
-          IF (ierr /= i_normal) RETURN
-!
-!         If regions of the band are excluded, the corresponding
-!         regions must be removed from B.
-          IF (l_exclude) THEN
-            DO j=1, n_band_exclude(i)
-              i_exclude=index_exclude(j, i)
-              CALL calc_thermal_coeff(ierr
-     &          , n_deg_fit
-     &          , wave_length_short(i_exclude)
-     &          , wave_length_long(i_exclude)
-     &          , t_fit_low, t_fit_high
-     &          , alpha, q
-     &          , a_exclude, b_exclude)
-              IF (ierr /= i_normal) RETURN
-              DO k=0, n_deg_fit
-                b(k)=b(k)-b_exclude(k)
+        IF (wave_length_short(i) < 175.0e-9_RealK) THEN
+          thermal_coefficient(:,i)=0.0_RealK
+        ELSE  
+          IF (l_planck_tbl) THEN
+            CALL calc_planck_tbl(ierr
+     &        , n_deg_fit
+     &        , wave_length_short(i), wave_length_long(i)
+     &        , theta_planck_tbl
+     &        , alpha, q
+     &        , thermal_coefficient(:,i))
+!         
+!           If regions of the band are excluded, the corresponding
+!           regions must be removed from the Planck table.
+            IF (l_exclude) THEN
+              DO j=1, n_band_exclude(i)
+                i_exclude=index_exclude(j, i)
+                CALL calc_planck_tbl(ierr
+     &            , n_deg_fit
+     &            , wave_length_short(i_exclude)
+     &            , wave_length_long(i_exclude)
+     &            , theta_planck_tbl 
+     &            , alpha, q
+     &            , b_exclude)
+                IF (ierr /= i_normal) RETURN
+                thermal_coefficient(:,i)=
+     &            thermal_coefficient(:,i)-b_exclude(:)
               ENDDO
-            ENDDO
-          ENDIF
-!
-!       Perform an SVD decomposition of the matrix.
-          CALL svd_decompose(ierr
-     &      , a, n_coefficient, n_coefficient
-     &      , npd_thermal_coeff, npd_thermal_coeff
-     &      , w, v, wrk
-     &    )
-          IF (ierr /= i_normal) RETURN
-  !
-  !       Zero very small terms of the diagonal matrix.
-          wmax=0.0_RealK
-          DO j=0, n_deg_fit
-            IF (w(j) > wmax) THEN
-              wmax=w(j)
             ENDIF
-          ENDDO
-          threshold=1.0e+03_RealK*epsilon(wmax)*wmax
-          DO j=0, n_deg_fit
-            IF (w(j) < threshold) THEN
-              w(j)=0.0_RealK
+          ELSE
+            CALL calc_thermal_coeff(ierr
+     &        , n_deg_fit
+     &        , wave_length_short(i), wave_length_long(i)
+     &        , t_fit_low, t_fit_high
+     &        , alpha, q
+     &        , a, b)
+            IF (ierr /= i_normal) RETURN
+!         
+!           If regions of the band are excluded, the corresponding
+!           regions must be removed from B.
+            IF (l_exclude) THEN
+              DO j=1, n_band_exclude(i)
+                i_exclude=index_exclude(j, i)
+                CALL calc_thermal_coeff(ierr
+     &            , n_deg_fit
+     &            , wave_length_short(i_exclude)
+     &            , wave_length_long(i_exclude)
+     &            , t_fit_low, t_fit_high
+     &            , alpha, q
+     &            , a_exclude, b_exclude)
+                IF (ierr /= i_normal) RETURN
+                DO k=0, n_deg_fit
+                  b(k)=b(k)-b_exclude(k)
+                ENDDO
+              ENDDO
             ENDIF
-          ENDDO      
-!
-!       Solve the equations by back-substitution.
-          CALL back_substitute(a, w, v
-     &      , n_coefficient, n_coefficient
-     &      , npd_thermal_coeff, npd_thermal_coeff
-     &      , b, thermal_coefficient(0, i), wrk
+!         
+!         Perform an SVD decomposition of the matrix.
+            CALL svd_decompose(ierr
+     &        , a, n_coefficient, n_coefficient
+     &        , npd_thermal_coeff, npd_thermal_coeff
+     &        , w, v, wrk
      &      )
-!
-  
-!        do k=0,npd_thermal_coeff-1
-!          print*,i,k,THERMAL_COEFFICIENT(k,I)
-!        enddo
-  
-        ENDIF
+            IF (ierr /= i_normal) RETURN
+  !       
+  !         Zero very small terms of the diagonal matrix.
+            wmax=0.0_RealK
+            DO j=0, n_deg_fit
+              IF (w(j) > wmax) THEN
+                wmax=w(j)
+              ENDIF
+            ENDDO
+            threshold=1.0e+03_RealK*epsilon(wmax)*wmax
+            DO j=0, n_deg_fit
+              IF (w(j) < threshold) THEN
+                w(j)=0.0_RealK
+              ENDIF
+            ENDDO      
+!         
+!         Solve the equations by back-substitution.
+            CALL back_substitute(a, w, v
+     &        , n_coefficient, n_coefficient
+     &        , npd_thermal_coeff, npd_thermal_coeff
+     &        , b, thermal_coefficient(0, i), wrk
+     &        )
+!         
+          
+!          do k=0,npd_thermal_coeff-1
+!            print*,i,k,THERMAL_COEFFICIENT(k,I)
+!          enddo
+          
+          END IF
+        END IF
 !
       ENDDO
 !

@@ -33,7 +33,7 @@ MODULE dimensions_pp_ucf
 !   Size allocated for scattering wavelengths
   INTEGER, Parameter ::  npd_mie_block = 1500
 !   Size allocated for blocks of Mie scattering data
-  INTEGER, Parameter ::  npd_thermal_abscissa = 3000000
+  INTEGER, Parameter ::  npd_thermal_abscissa = 30000000
 !   Size allocated for number of points for integration with
 !   respect to temperature
   INTEGER, Parameter ::  npd_general_data = 100
