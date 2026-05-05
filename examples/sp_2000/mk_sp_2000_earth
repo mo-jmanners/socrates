@@ -786,84 +786,103 @@ if [ ! -s ${sp_dir}/o2_euv_l ] ; then
     ${ck_args} > ${sp_dir}/o2_euv_log
   fi
 fi
-if [ ! -s ${sp_dir}/o2_fuv_l ] ; then
-  echo 'O2: FUV cross-section'
-  rm -f ${sp_dir}/o2_fuv_l* ${sp_dir}/o2_lbl_fuv*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
-    -R 101 181 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/o2_fuv_l -m ${sp_dir}/o2_fuv_lm \
-    -L ${sp_dir}/o2_lbl_fuv.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/o2_fuv_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/o2_fuv_log
-  fi
-fi
-if [ ! -s ${sp_dir}/o2_duv_l ] ; then
-  echo 'O2: UV - cross-section between NO delta bands'
-  rm -f ${sp_dir}/o2_duv_l* ${sp_dir}/o2_lbl_duv*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
-    -R 185 189 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/o2_duv_l -m ${sp_dir}/o2_duv_lm \
-    -L ${sp_dir}/o2_lbl_duv.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/o2_duv_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/o2_duv_log
-  fi
-fi
-if [ ! -s ${sp_dir}/o2_uv_l ] ; then
-  echo 'O2: UV - cross-section'
-  rm -f ${sp_dir}/o2_uv_l* ${sp_dir}/o2_lbl_uv*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
-    -R 193 295 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/o2_uv_l -m ${sp_dir}/o2_uv_lm \
-    -L ${sp_dir}/o2_lbl_uv.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/o2_uv_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/o2_uv_log
-  fi
-fi
 
-if [ ! -s $sp_dir/o2_d1l_l ] ; then
-  if [ ! -s $O2_LBL ] ; then
-    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
-    exit 1
-  else
-    echo "O2: UV NO d(1-0) - lines"
-    rm -f $sp_dir/o2_d1l_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 182 184 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/o2_d1l_l -m $sp_dir/o2_d1l_lm \
-      -L $O2_LBL -np $procs"
+use_o2_lines_in_no_delta_bands=false
+if $use_o2_lines_in_no_delta_bands; then
+  if [ ! -s ${sp_dir}/o2_fuv_l ] ; then
+    echo 'O2: FUV cross-section'
+    rm -f ${sp_dir}/o2_fuv_l* ${sp_dir}/o2_lbl_fuv*
+    ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
+      -R 101 181 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
+      -s $skelfile +S $SOLSPEC \
+      -o ${sp_dir}/o2_fuv_l -m ${sp_dir}/o2_fuv_lm \
+      -L ${sp_dir}/o2_lbl_fuv.nc -np $procs"
     if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/o2_d1l_log -t 360 ${ck_args} &
+      sbatch -W -n $procs -o ${sp_dir}/o2_fuv_log -t 60 ${ck_args} &
     else
-      ${ck_args} > $sp_dir/o2_d1l_log
+      ${ck_args} > ${sp_dir}/o2_fuv_log
     fi
   fi
-fi
-if [ ! -s $sp_dir/o2_d0l_l ] ; then
-  if [ ! -s $O2_LBL ] ; then
-    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
-    exit 1
-  else
-    echo "O2: UV NO d(0-0) - lines"
-    rm -f $sp_dir/o2_d0l_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 190 192 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/o2_d0l_l -m $sp_dir/o2_d0l_lm \
-      -L $O2_LBL -np $procs"
+  if [ ! -s ${sp_dir}/o2_duv_l ] ; then
+    echo 'O2: UV - cross-section between NO delta bands'
+    rm -f ${sp_dir}/o2_duv_l* ${sp_dir}/o2_lbl_duv*
+    ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
+      -R 185 189 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
+      -s $skelfile +S $SOLSPEC \
+      -o ${sp_dir}/o2_duv_l -m ${sp_dir}/o2_duv_lm \
+      -L ${sp_dir}/o2_lbl_duv.nc -np $procs"
     if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/o2_d0l_log -t 360 ${ck_args} &
+      sbatch -W -n $procs -o ${sp_dir}/o2_duv_log -t 60 ${ck_args} &
     else
-      ${ck_args} > $sp_dir/o2_d0l_log
+      ${ck_args} > ${sp_dir}/o2_duv_log
+    fi
+  fi
+  if [ ! -s ${sp_dir}/o2_nuv_l ] ; then
+    echo 'O2: NUV - cross-section'
+    rm -f ${sp_dir}/o2_nuv_l* ${sp_dir}/o2_lbl_nuv*
+    ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
+      -R 193 295 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
+      -s $skelfile +S $SOLSPEC \
+      -o ${sp_dir}/o2_nuv_l -m ${sp_dir}/o2_nuv_lm \
+      -L ${sp_dir}/o2_lbl_nuv.nc -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o ${sp_dir}/o2_nuv_log -t 60 ${ck_args} &
+    else
+      ${ck_args} > ${sp_dir}/o2_nuv_log
+    fi
+  fi
+  
+  if [ ! -s $sp_dir/o2_d1l_l ] ; then
+    if [ ! -s $O2_LBL ] ; then
+      echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+      exit 1
+    else
+      echo "O2: UV NO d(1-0) - lines"
+      rm -f $sp_dir/o2_d1l_l*
+      ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+        -R 182 184 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+        -s $skelfile +S $SOLSPEC -lk \
+        -o $sp_dir/o2_d1l_l -m $sp_dir/o2_d1l_lm \
+        -L $O2_LBL -np $procs"
+      if command -v sbatch &> /dev/null ; then
+        sbatch -W -n $procs -o $sp_dir/o2_d1l_log -t 360 ${ck_args} &
+      else
+        ${ck_args} > $sp_dir/o2_d1l_log
+      fi
+    fi
+  fi
+  if [ ! -s $sp_dir/o2_d0l_l ] ; then
+    if [ ! -s $O2_LBL ] ; then
+      echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+      exit 1
+    else
+      echo "O2: UV NO d(0-0) - lines"
+      rm -f $sp_dir/o2_d0l_l*
+      ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+        -R 190 192 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+        -s $skelfile +S $SOLSPEC -lk \
+        -o $sp_dir/o2_d0l_l -m $sp_dir/o2_d0l_lm \
+        -L $O2_LBL -np $procs"
+      if command -v sbatch &> /dev/null ; then
+        sbatch -W -n $procs -o $sp_dir/o2_d0l_log -t 360 ${ck_args} &
+      else
+        ${ck_args} > $sp_dir/o2_d0l_log
+      fi
+    fi
+  fi
+else
+  if [ ! -s ${sp_dir}/o2_uv_l ] ; then
+    echo 'O2: UV - cross-section'
+    rm -f ${sp_dir}/o2_uv_l* ${sp_dir}/o2_lbl_uv*
+    ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
+      -R 101 295 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
+      -s $skelfile +S $SOLSPEC \
+      -o ${sp_dir}/o2_uv_l -m ${sp_dir}/o2_uv_lm \
+      -L ${sp_dir}/o2_lbl_uv.nc -np $procs"
+    if command -v sbatch &> /dev/null ; then
+      sbatch -W -n $procs -o ${sp_dir}/o2_uv_log -t 60 ${ck_args} &
+    else
+      ${ck_args} > ${sp_dir}/o2_uv_log
     fi
   fi
 fi
@@ -2423,6 +2442,67 @@ if [ ! -s ${sp_dir}/oh_uv_l ] ; then
   fi
 fi
 
+
+# ----------------------------
+# Aerosols
+# ----------------------------
+if [ ! -s ${sp_dir}/sulphuric_2000.avg ] ; then
+  echo 'Aerosol optical properties: sulphuric'
+  Cscatter_average -s $skelfile -P 1 -w -u \
+    -a ${sp_dir}/sulphuric_2000.avg $RAD_DATA/aerosol/sulphuric.mon
+fi
+if [ ! -s ${sp_dir}/dust_div1_2000.avg ] ; then
+  echo 'Aerosol optical properties: dust_div1'
+  Cscatter_average -s $skelfile -P 1 -w -u \
+    -a ${sp_dir}/dust_div1_2000.avg $RAD_DATA/aerosol/dust_div1.mon
+fi
+if [ ! -s ${sp_dir}/dust_div2_2000.avg ] ; then
+  echo 'Aerosol optical properties: dust_div2'
+  Cscatter_average -s $skelfile -P 1 -w -u \
+    -a ${sp_dir}/dust_div2_2000.avg $RAD_DATA/aerosol/dust_div2.mon
+fi
+if [ ! -s ${sp_dir}/dust_div3_2000.avg ] ; then
+  echo 'Aerosol optical properties: dust_div3'
+  Cscatter_average -s $skelfile -P 1 -w -u \
+    -a ${sp_dir}/dust_div3_2000.avg $RAD_DATA/aerosol/dust_div3.mon
+fi
+if [ ! -s ${sp_dir}/dust_div4_2000.avg ] ; then
+  echo 'Aerosol optical properties: dust_div4'
+  Cscatter_average -s $skelfile -P 1 -w -u \
+    -a ${sp_dir}/dust_div4_2000.avg $RAD_DATA/aerosol/dust_div4.mon
+fi
+if [ ! -s ${sp_dir}/dust_div5_2000.avg ] ; then
+  echo 'Aerosol optical properties: dust_div5'
+  Cscatter_average -s $skelfile -P 1 -w -u \
+    -a ${sp_dir}/dust_div5_2000.avg $RAD_DATA/aerosol/dust_div5.mon
+fi
+if [ ! -s ${sp_dir}/dust_div6_2000.avg ] ; then
+  echo 'Aerosol optical properties: dust_div6'
+  Cscatter_average -s $skelfile -P 1 -w -u \
+    -a ${sp_dir}/dust_div6_2000.avg $RAD_DATA/aerosol/dust_div6.mon
+fi
+
+
+# ----------------------------
+# Cloud
+# ----------------------------
+if [ ! -s ${sp_dir}/fit_drop_2000 ] ; then
+  echo 'Cloud droplet optical properties'
+  rm -f ${sp_dir}/fit_drop_2000 ${sp_dir}/mon_drop_2000
+  Cscatter_average -s $skelfile -P 1 -t -u \
+    -f 5 ${sp_dir}/fit_drop_2000 ${sp_dir}/mon_drop_2000 1.e3 \
+    $RAD_DATA/cloud/scatter_drop_ext
+fi
+if [ ! -s ${sp_dir}/fit_thick_ice_casim_2022_2000 ] ; then
+  echo 'Cloud ice optical properties: Baran ice 2022'
+  rm -f ${sp_dir}/fit_thick_ice_casim_2022_2000 \
+        ${sp_dir}/mon_thick_ice_casim_2022_2000
+  Cscatter_average -s $skelfile -P 1 -t -u \
+    -f 20 ${sp_dir}/fit_thick_ice_casim_2022_2000 \
+          ${sp_dir}/mon_thick_ice_casim_2022_2000 917 \
+    $RAD_DATA/cloud/scatter_ice_casim_2022
+fi
+
 wait
 
 # Create the spectral file from the data calculated above
@@ -2563,19 +2643,7 @@ y
 ${sp_dir}/o2_euv_l
 5
 y
-${sp_dir}/o2_fuv_l
-5
-y
-${sp_dir}/o2_duv_l
-5
-y
 ${sp_dir}/o2_uv_l
-5
-y
-${sp_dir}/o2_d1l_l
-5
-y
-${sp_dir}/o2_d0l_l
 5
 y
 ${sp_dir}/o2_nir_l
@@ -2819,6 +2887,27 @@ ${sp_dir}/c2h4_uv_l
 5
 y
 ${sp_dir}/oh_uv_l
+10
+5
+${sp_dir}/fit_drop_2000
+1.50000E-06 5.00000E-05
+11
+${sp_dir}/sulphuric_2000.avg
+11
+${sp_dir}/dust_div1_2000.avg
+11
+${sp_dir}/dust_div2_2000.avg
+11
+${sp_dir}/dust_div3_2000.avg
+11
+${sp_dir}/dust_div4_2000.avg
+11
+${sp_dir}/dust_div5_2000.avg
+11
+${sp_dir}/dust_div6_2000.avg
+12
+13
+${sp_dir}/fit_thick_ice_casim_2022_2000
 -1
 EOF
 

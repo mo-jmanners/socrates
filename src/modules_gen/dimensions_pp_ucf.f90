@@ -27,7 +27,7 @@ MODULE dimensions_pp_ucf
   INTEGER, Parameter ::  npd_log_deriv = 250000
 !   Size allocated for size of array of logarithmic 
 !   derivatives in the Mie scattering code
-  INTEGER, Parameter ::  npd_refract = 600
+  INTEGER, Parameter ::  npd_refract = 1275
 !   Size allocated for (complex) refractive indices 
   INTEGER, Parameter ::  npd_wavelength_scat = 500
 !   Size allocated for scattering wavelengths
