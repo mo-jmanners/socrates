@@ -1877,7 +1877,7 @@ CONTAINS
       END IF
       ALLOCATE(cia_wavenumber(single_header%no_pts))
       ALLOCATE(cia_data(single_header%no_pts))
-      READ(iu_cia, cia_data_frmt, IOSTAT = io_status) &
+      READ(iu_cia, *, IOSTAT = io_status) &
         (cia_wavenumber(i), cia_data(i), i = 1, single_header%no_pts)
       DEALLOCATE(cia_wavenumber)
       DEALLOCATE(cia_data)
@@ -1893,7 +1893,7 @@ CONTAINS
         IF (io_status < 0) EXIT ! EOF
         ALLOCATE(cia_wavenumber(single_header%no_pts))
         ALLOCATE(cia_data(single_header%no_pts))
-        READ(iu_cia, cia_data_frmt, IOSTAT = io_status)  &
+        READ(iu_cia, *, IOSTAT = io_status)  &
           (cia_wavenumber(i), cia_data(i), i = 1, single_header%no_pts)
         IF (single_header%wavenumber_min <= upper_band_limit .AND. &
             single_header%wavenumber_max >= lower_band_limit) THEN

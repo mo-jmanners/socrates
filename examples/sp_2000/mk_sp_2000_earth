@@ -2444,6 +2444,81 @@ fi
 
 
 # ----------------------------
+# Collision-Induced Absorption
+# ----------------------------
+if [ ! -s ${sp_dir}/co2-co2_c ] ; then
+  echo "CO2-CO2 CIA"
+  rm -f ${sp_dir}/co2-co2_c*
+  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_CO2_CO2 \
+    -R 1550 2000 -i 1.0 -ct $IP_CO2 $IP_CO2 ${COL_CO2_CO2} -t 5.0e-4 \
+    -k -s $skelfile -u -lk \
+    -o ${sp_dir}/co2-co2_c -m ${sp_dir}/co2-co2_cm \
+    -L ${sp_dir}/co2-co2_clbl.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/co2-co2_clog -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/co2-co2_clog
+  fi
+fi
+if [ ! -s ${sp_dir}/o2-o2_c ] ; then
+  echo "O2-O2 CIA"
+  rm -f ${sp_dir}/o2-o2_c*
+  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_O2_O2 \
+    -R 297 1886 -i 1.0 -ct $IP_O2 $IP_O2 ${COL_O2_O2} -t 5.0e-4 \
+    -k -s $skelfile -u -lk \
+    -o ${sp_dir}/o2-o2_c -m ${sp_dir}/o2-o2_cm \
+    -L ${sp_dir}/o2-o2_clbl.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/o2-o2_clog -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/o2-o2_clog
+  fi
+fi
+if [ ! -s ${sp_dir}/o2-n2_c ] ; then
+  echo "O2-N2 CIA"
+  rm -f ${sp_dir}/o2-n2_c*
+  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_O2_N2 \
+    -R 722 1872 -i 1.0 -ct $IP_O2 $IP_N2 ${COL_O2_N2} -t 5.0e-4 \
+    -k -s $skelfile -u -lk \
+    -o ${sp_dir}/o2-n2_c -m ${sp_dir}/o2-n2_cm \
+    -L ${sp_dir}/o2-n2_clbl.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/o2-n2_clog -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/o2-n2_clog
+  fi
+fi
+if [ ! -s ${sp_dir}/n2-n2_c ] ; then
+  echo "N2-N2 CIA"
+  rm -f ${sp_dir}/n2-n2_c*
+  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_N2_N2 \
+    -R 1499 1998 -i 1.0 -ct $IP_N2 $IP_N2 ${COL_N2_N2} -t 5.0e-4 \
+    -k -s $skelfile -u -lk \
+    -o ${sp_dir}/n2-n2_c -m ${sp_dir}/n2-n2_cm \
+    -L ${sp_dir}/n2-n2_clbl.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2-n2_clog -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2-n2_clog
+  fi
+fi
+if [ ! -s ${sp_dir}/n2-n2_fir_c ] ; then
+  echo "N2-N2 Far-IR CIA"
+  rm -f ${sp_dir}/n2-n2_fir_c*
+  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_N2_N2 \
+    -R 1999 2000 -i 1.0 -ct $IP_N2 $IP_N2 ${COL_N2_N2} -n 2 \
+    -k -s $skelfile -u -lk \
+    -o ${sp_dir}/n2-n2_fir_c -m ${sp_dir}/n2-n2_fir_cm \
+    -L ${sp_dir}/n2-n2_fir_clbl.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/n2-n2_fir_clog -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/n2-n2_fir_clog
+  fi
+fi
+
+
+# ----------------------------
 # Aerosols
 # ----------------------------
 if [ ! -s ${sp_dir}/sulphuric_2000.avg ] ; then
@@ -2913,6 +2988,20 @@ ${sp_dir}/dust_div6_2000.avg
 12
 13
 ${sp_dir}/fit_thick_ice_casim_2022_2000
+19
+${sp_dir}/co2-co2_c
+19
+y
+${sp_dir}/o2-o2_c
+19
+y
+${sp_dir}/o2-n2_c
+19
+y
+${sp_dir}/n2-n2_c
+19
+y
+${sp_dir}/n2-n2_fir_c
 -1
 EOF
 
@@ -2921,6 +3010,62 @@ echo 'Determining major absorbers'
 tidy_90 <<EOF > ${specfile}_tidy_log
 ${specfile}
 o
+1
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+1.0e5
+0.99999999990
 6
 ${COL_MASS_MAJOR_H2O}
 ${COL_MASS_MAJOR_CO2}
@@ -2972,6 +3117,12 @@ ${COL_MASS_MAJOR_N2}
 0.0
 0.0
 0.0
+0.0
+0.0
+0.0
+0.0
+1.0e+5
+n
 -1
 EOF
 

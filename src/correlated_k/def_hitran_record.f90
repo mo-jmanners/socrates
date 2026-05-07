@@ -134,10 +134,10 @@ MODULE def_hitran_record
 
 ! Format for HITRAN CIA headers
   CHARACTER (LEN = 43), PARAMETER :: cia_header_frmt = &
-    "(a20,2f10.4,i7,f7.2,e7.3,1pe10.3,a5,a21,i3)"
+    "(a20,2f10.4,i7,f7.2,e10.3,a6,a27,i3)"
 
   CHARACTER (LEN = 16), PARAMETER :: cia_data_frmt = &
-    "(f10.4,1x,e10.3)"
+    "(f10.4,e12.4)"
 
   TYPE StrCIAHead
     CHARACTER(LEN=20)     :: chemical_symbol
@@ -145,8 +145,7 @@ MODULE def_hitran_record
     REAL (RealK)          :: wavenumber_max
     INTEGER               :: no_pts
     REAL (RealK)          :: temperature    ! K
-    REAL (RealK)          :: pressure       ! Torr
-    REAL (RealK)          :: max_xsc        ! cm2 molecule-1
+    REAL (RealK)          :: max_cia        ! cm5 molecule-2
     CHARACTER(LEN=5)      :: resolution     ! cm-1
     CHARACTER(LEN=21)     :: comments
     INTEGER               :: re_no

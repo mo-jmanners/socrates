@@ -10,7 +10,7 @@ AUX_CDL: l_run_cdl run_mono assign_subcols dentomix dentoq format_size \
 		fval gen_horiz_cdl gen_null gen_surf_cdl \
 		gen_view_cdl hmrsph inc_field ice_size interp \
 		merge mid_point nettohr phgt prep_opt_profile \
-		raw_input scale_field vert_int wadd \
+		raw_input scale_field vert_int vert_int_cia wadd \
 		samson2cdl cdl2samson runes_driver phoenix2sol \
 		whi2sol solar_tail_temperature orb_elem
 
@@ -145,6 +145,9 @@ scale_field: scale_field.o radlib.$(LIBSUFFIX)
 
 vert_int: vert_int.o radlib.$(LIBSUFFIX)
 	$(LINK) -o vert_int vert_int.o radlib.$(LIBSUFFIX)
+
+vert_int_cia: vert_int_cia.o radlib.$(LIBSUFFIX)
+	$(LINK) -o vert_int_cia vert_int_cia.o radlib.$(LIBSUFFIX)
 
 wadd: wadd.o radlib.$(LIBSUFFIX)
 	$(LINK) -o wadd wadd.o radlib.$(LIBSUFFIX)

@@ -11,7 +11,10 @@ skelfile=$1
 if [ ! -s ${skelfile} ] ; then
 
 # Create skeleton spectral file:
-# 2000 bands
+# 2000 bands: 1 nm resolution < 1000 nm, 10 cm-1 > 1000 nm
+# 50 gases
+# 4 CIA: CO2-CO2, O2-O2, O2-N2, N2-N2
+# 7 aerosols: sulphuric acid (6), 6-bin dust (17-22)
 prep_spec << EOF > ${skelfile}_log
 ${skelfile}
 2000
@@ -66,7 +69,11 @@ ${skelfile}
 72
 73
 74
-0
+4
+2 2
+7 7
+7 13
+13 13
 7
 6
 17

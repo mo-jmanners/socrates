@@ -574,118 +574,98 @@ CONTAINS
           ENDIF
         ENDIF
       ENDDO
+    ELSE
+!     If there are no continua the surface pressure is arbitrary
+      p_surf=1.0E+05_RealK
+      l_allow_cont_major=.FALSE.
     END IF
 
-    IF (Spectrum%ContGen%n_cont > 0) THEN
+    DO i_band=1,Spectrum%Basic%n_band
+      n_band_absorb=Spectrum%Gas%n_band_absorb(i_band)
+      n_band_cont=Spectrum%ContGen%n_band_cont(i_band)
 
-      DO i_band=1,Spectrum%Basic%n_band
-        n_band_absorb=Spectrum%Gas%n_band_absorb(i_band)
-        n_band_cont=Spectrum%ContGen%n_band_cont(i_band)
+!     Attempt to define major absorber from where the total optical depth
+!     reaches 1
+      p_level=p_toa
+      DO WHILE (p_level <= p_surf)
+        p_level=p_level*p_inc
 
-!       Attempt to define major absorber from where the total optical depth
-!       reaches 1
-        p_level=p_toa
-        DO WHILE (p_level <= p_surf)
-          p_level=p_level*p_inc
-
-!         Gaseous transmissions. Experience shows that the major absorber is
-!         best determined if any continua that are perfectly correlated with
-!         the gas are not included.
-          trans_column_gas=1.0_RealK
-          l_cont_added=.FALSE.
-          DO i=1,n_band_absorb
-            i_gas=Spectrum%Gas%index_absorb(i, i_band)
-            column_mass_gas(i)=column_gas(i)*p_level/p_surf
-            n_k=Spectrum%Gas%i_band_k(i_band, i_gas)
-            trans_column_gas(i)=SUM(Spectrum%Gas%w(1:n_k, i_band, i_gas) &
-              *EXP(-Spectrum%Gas%k(1:n_k, i_band, i_gas)*column_mass_gas(i)))
-          END DO
-
-!         Continuum transmissions.
-          trans_column_cont=1.0_RealK
-          DO j=1,n_band_cont
-            i_cont=Spectrum%ContGen%index_cont(j, i_band)
-!           Only consider continua whose overlap treatment is the same as that
-!           for gases.
-            IF (Spectrum%ContGen%i_cont_overlap_band(i_band, i_cont) == 0) THEN
-              column_mass_cont(j)=column_cont(j)*(p_level/p_surf)**2
-              n_k=Spectrum%ContGen%i_band_k_cont(i_band, i_cont)
-              trans_column_cont(j) &
-                  =SUM(Spectrum%ContGen%w_cont(1:n_k, i_band, i_cont) &
-                  *EXP(-Spectrum%ContGen%k_cont(1:n_k, i_band, i_cont) &
-                  *column_mass_cont(j)))
-            END IF
-          END DO
-
-!         Assume random overlap to calculate total band transmission and
-!         check if an optical depth of 1 has been reached
-          trans_column_tot=PRODUCT(trans_column_gas)*PRODUCT(trans_column_cont)
-          IF (trans_column_tot <= trans_def_major) EXIT
+!       Gaseous transmissions. Experience shows that the major absorber is
+!       best determined if any continua that are perfectly correlated with
+!       the gas are not included.
+        trans_column_gas=1.0_RealK
+        l_cont_added=.FALSE.
+        DO i=1,n_band_absorb
+          i_gas=Spectrum%Gas%index_absorb(i, i_band)
+          column_mass_gas(i)=column_gas(i_gas)*p_level/p_surf
+          n_k=Spectrum%Gas%i_band_k(i_band, i_gas)
+          trans_column_gas(i)=SUM(Spectrum%Gas%w(1:n_k, i_band, i_gas) &
+            *EXP(-Spectrum%Gas%k(1:n_k, i_band, i_gas)*column_mass_gas(i)))
         END DO
 
-!       Sort gases by increasing transmission
-        IF (n_band_absorb > 0) THEN
-          CALL map_heap_func(trans_column_gas(1:n_band_absorb), &
-            map(1:n_band_absorb))
-          Spectrum%Gas%index_absorb(1:n_band_absorb, i_band) = &
-            Spectrum%Gas%index_absorb(map(1:n_band_absorb), i_band)
-          trans_major_gas = trans_column_gas(map(1))
-        ELSE
-          trans_major_gas = 1.0_RealK
-        END IF
+!       Continuum transmissions.
+        trans_column_cont=1.0_RealK
+        DO j=1,n_band_cont
+          i_cont=Spectrum%ContGen%index_cont(j, i_band)
+!         Only consider continua whose overlap treatment is the same as that
+!         for gases.
+          IF (Spectrum%ContGen%i_cont_overlap_band(i_band, i_cont) == 0) THEN
+            column_mass_cont(j)=column_cont(i_cont)*(p_level/p_surf)**2
+            n_k=Spectrum%ContGen%i_band_k_cont(i_band, i_cont)
+            trans_column_cont(j) &
+                =SUM(Spectrum%ContGen%w_cont(1:n_k, i_band, i_cont) &
+                *EXP(-Spectrum%ContGen%k_cont(1:n_k, i_band, i_cont) &
+                *column_mass_cont(j)))
+          END IF
+        END DO
 
-!       Sort continua by increasing transmission
-        IF (n_band_cont > 0) THEN
-          CALL map_heap_func(trans_column_cont(1:n_band_cont), &
-            map(1:n_band_cont))
-          Spectrum%ContGen%index_cont(1:n_band_cont, i_band) &
-            =Spectrum%ContGen%index_cont(map(1:n_band_cont), i_band)
-          trans_major_cont=trans_column_cont(map(1))
-        ELSE
-          trans_major_cont = 1.0_RealK
-        END IF
-
-!       Determine if the a continuum is the major absorber
-        IF (l_allow_cont_major .AND. &
-            trans_major_cont < trans_major_gas) THEN
-          Spectrum%ContGen%l_cont_major(i_band)=.TRUE.
-        ELSE
-          Spectrum%ContGen%l_cont_major(i_band)=.FALSE.
-        END IF
-
+!       Assume random overlap to calculate total band transmission and
+!       check if an optical depth of 1 has been reached
+        trans_column_tot=PRODUCT(trans_column_gas)*PRODUCT(trans_column_cont)
+        IF (trans_column_tot <= trans_def_major) EXIT
       END DO
 
-    ELSE
-
-!     Go through the bands to find the transmission for each gas
-      DO i_band=1,Spectrum%Basic%n_band
-        n_band_absorb = Spectrum%Gas%n_band_absorb(i_band)
-        DO j=1,n_band_absorb
-          i_gas=Spectrum%Gas%index_absorb(j, i_band)
-          n_k=Spectrum%Gas%i_band_k(i_band, i_gas)
-          trans_column_gas(j)=SUM(Spectrum%Gas%w(1:n_k, i_band, i_gas) &
-            *EXP(-Spectrum%Gas%k(1:n_k, i_band, i_gas)*column_gas(i_gas)))
-        END DO
-        IF (n_band_absorb > 0) THEN
-          CALL map_heap_func(trans_column_gas(1:n_band_absorb), &
-            map(1:n_band_absorb))
-          Spectrum%Gas%index_absorb(1:n_band_absorb, i_band) = &
-              Spectrum%Gas%index_absorb(map(1:n_band_absorb), i_band)
-          trans_major_gas = trans_column_gas(map(1))
-        END IF
-        IF (n_band_absorb > 1) THEN
-          IF (-2.0_RealK*LOG(trans_column_gas(map(2))) &
-            > -LOG(trans_major_gas)) THEN
-            Spectrum%Gas%i_overlap(i_band) = 3
-          ELSE
-            Spectrum%Gas%i_overlap(i_band) = 4
-          END IF
-        ELSE
+!     Sort gases by increasing transmission
+      IF (n_band_absorb > 0) THEN
+        CALL map_heap_func(trans_column_gas(1:n_band_absorb), &
+          map(1:n_band_absorb))
+        Spectrum%Gas%index_absorb(1:n_band_absorb, i_band) = &
+          Spectrum%Gas%index_absorb(map(1:n_band_absorb), i_band)
+        trans_major_gas = trans_column_gas(map(1))
+      ELSE
+        trans_major_gas = 1.0_RealK
+      END IF
+      IF (n_band_absorb > 1) THEN
+        IF (-2.0_RealK*LOG(trans_column_gas(map(2))) &
+          > -LOG(trans_major_gas)) THEN
           Spectrum%Gas%i_overlap(i_band) = 3
+        ELSE
+          Spectrum%Gas%i_overlap(i_band) = 4
         END IF
-      ENDDO
+      ELSE
+        Spectrum%Gas%i_overlap(i_band) = 3
+      END IF
 
-    END IF
+!     Sort continua by increasing transmission
+      IF (n_band_cont > 0) THEN
+        CALL map_heap_func(trans_column_cont(1:n_band_cont), &
+          map(1:n_band_cont))
+        Spectrum%ContGen%index_cont(1:n_band_cont, i_band) &
+          =Spectrum%ContGen%index_cont(map(1:n_band_cont), i_band)
+        trans_major_cont=trans_column_cont(map(1))
+      ELSE
+        trans_major_cont = 1.0_RealK
+      END IF
+
+!     Determine if the a continuum is the major absorber
+      IF (l_allow_cont_major .AND. &
+          trans_major_cont < trans_major_gas) THEN
+        Spectrum%ContGen%l_cont_major(i_band)=.TRUE.
+      ELSE
+        Spectrum%ContGen%l_cont_major(i_band)=.FALSE.
+      END IF
+
+    END DO
 
   END SUBROUTINE set_major_gas_cont
 
