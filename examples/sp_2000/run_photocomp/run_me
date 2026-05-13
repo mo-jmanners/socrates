@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# See https://homepages.see.leeds.ac.uk/~lecmc/sparcj/ for details
+
+sp_dir="/data/users/james.manners/jm_earth_hr"
+specfile=${sp_dir}/sp_2000_earth
+
+./mk_atm
+
+Cl_run_cdf -B atm -s ${specfile} -S -R 1 2000 -g 3 -r -C 5 -sg
+fmove atm sp_2000_earth
+
+#with sub band channels
+Cl_run_cdf -B atm -s ${specfile} -S -R 1 2000 -g 3 -r -C 5 -sg -ch 11630
+fmove atm sp_2000_earth_subch
