@@ -13,11 +13,11 @@ rm -f $base.*
 # Calculate the 2000-band photolysis rates (using the Earth file)
 # ---------------------------------------------------------------
 echo -n 'Starting 2000-band calculation: '; date
-Cl_run_cdf -B $base -s ${specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg
+Cl_run_cdf -N planet.nml -B $base -s ${specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg
 fmove $base mars_2000
 
 echo -n 'Starting 11630 sub-band calculation: '; date
-Cl_run_cdf -B $base -s ${specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg -ch 11630
+Cl_run_cdf -N planet.nml -B $base -s ${specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg -ch 11630
 fmove $base mars_2000_subch
 echo -n 'Finished: ';date
 
