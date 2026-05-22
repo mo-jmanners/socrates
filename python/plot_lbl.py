@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     fig=plt.figure(figsize=(12,6))
     ax1 = fig.add_subplot(111)
-    ax1.plot(wl, kabs[475,:], color='green')
+    ax1.plot(wl, kabs[0,:], color='green')
     ax1.set_xlabel('Wavelength (nm)')
 #    ax1.plot(nu, kabs[475,:], color='green')
 #    ax1.set_xlabel('Wavenumber (m$^{-1}$)')

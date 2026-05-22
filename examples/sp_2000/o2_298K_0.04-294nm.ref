@@ -1,0 +1,24 @@
+  0.04 -   4.48 nm : O2_Henke(1993)_0.04-121.5nm.dat
+  4.53 - 102.70 nm : O2_ft.dat Fennelly and Torr (1992)
+103.10 - 107.70 nm : O2_MatsunagaWatanabe(1967)_298K_58.0-107.7nm.txt
+107.93 - 108.64 nm : O2_WatanabeMarmo(1956)_298K_85-110nm.txt
+108.75 - 121.38 nm : O2_OgawaOgawa(1975)_298K_108-160nm(X).txt
+121.40 - 121.90 nm : O2_Lewis(1983)_288K_121.4-121.9nm.txt
+122.00 - 131.10 nm : O2_OgawaOgawa(1975)_298K_108-160nm(X).txt
+131.30 - 179.20 nm : O2_Lu(2010)_303.7K_115-180nm.txt
+179.21330 - 202.58482 nm :
+                     O2_Yoshino(1992)_300K_179.2-180.2nm(12-0).txt
+                     O2_Yoshino(1992)_300K_180.2-181.4nm(11-0).txt
+                     O2_Yoshino(1992)_300K_181.4-182.9nm(10-0).txt
+                     O2_Yoshino(1992)_300K_182.9-184.3nm(9-0).txt
+                     O2_Yoshino(1992)_300K_184.3-186.1nm(8-0).txt
+                     O2_Yoshino(1992)_300K_186.1-187.8nm(7-0).txt
+                     O2_Yoshino(1992)_300K_187.8-189.9nm(6-0).txt
+                     O2_Yoshino(1992)_300K_189.9-192.4nm(5-0).txt
+                     O2_Yoshino(1992)_300K_192.4-195.7nm(4-0).txt
+                     O2_Yoshino(1992)_300K_195.7-197.2nm(3-0).txt
+                     O2_Yoshino(1992)_300K_197.2-199.8nm(2-0).txt
+                     O2_Yoshino(1992)_300K_199.8-202.6nm(1-0).txt
+203.00 - 204.00 nm : seO2MT.dat (Hebrard private comm.)
+205.00 - 240.00 nm : O2_JPL-2010(2011)_298K_205-245nm(rec).txt
+240.89 - 294.03 nm : O2_Fally(2000)_287-289K_240-294nm.txt

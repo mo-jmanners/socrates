@@ -1,7 +1,9 @@
 #!/bin/bash
 
-sp_dir="/data/users/james.manners/jm_earth_hr"
-specfile=${sp_dir}/sp_2000_earth
+sp_dir_earth="/data/users/james.manners/jm_earth_hr"
+sp_dir_mars="/data/users/james.manners/jm_mars_hr"
+earth_specfile=${sp_dir_earth}/sp_2000_earth
+mars_specfile=${sp_dir_mars}/sp_2000_mars
 
 base=mars
 
@@ -12,12 +14,23 @@ rm -f $base.*
 
 # Calculate the 2000-band photolysis rates (using the Earth file)
 # ---------------------------------------------------------------
-echo -n 'Starting 2000-band calculation: '; date
-Cl_run_cdf -N planet.nml -B $base -s ${specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg
+echo -n 'Earth 2000-band calculation: '; date
+Cl_run_cdf -N planet.nml -B $base -s ${earth_specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg
+fmove $base earth_2000
+
+echo -n 'Earth 11232 sub-band calculation: '; date
+Cl_run_cdf -N planet.nml -B $base -s ${earth_specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg -ch 11232
+fmove $base earth_2000_subch
+echo -n 'Finished: ';date
+
+# Calculate the 2000-band photolysis rates (using the Mars file)
+# ---------------------------------------------------------------
+echo -n 'Mars 2000-band calculation: '; date
+Cl_run_cdf -N planet.nml -B $base -s ${mars_specfile} -R 1 2000 -S +R -g 3 -r -u -a -C 5 -sg
 fmove $base mars_2000
 
-echo -n 'Starting 11630 sub-band calculation: '; date
-Cl_run_cdf -N planet.nml -B $base -s ${specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg -ch 11630
+echo -n 'Mars 2747 sub-band calculation: '; date
+Cl_run_cdf -N planet.nml -B $base -s ${mars_specfile} -R 1 2000 -S +R -g 3 -r -u -a -C 5 -sg -ch 2747
 fmove $base mars_2000_subch
 echo -n 'Finished: ';date
 

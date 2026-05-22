@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Convert the column data in mars_atm.raw into Socrates input file format
-rm -f mars_1*
-rm -f mars_2*
+rm -f mars_1* mars_2* mars_3*
 raw_input <<EOF > /dev/null
 mars_atm.raw
 mars
@@ -25,15 +24,19 @@ Ccdl2cdf -o mars.q mars_1.q
 Ccdl2cdf -o mars.co2 mars_1.co2
 Ccdl2cdf -o mars.n2 mars_1.n2
 Ccdl2cdf -o mars.ar mars_1.ar
+Ccdl2cdf -o mars.co mars_2.co
+Ccdl2cdf -o mars.o3 mars_2.o3
+Ccdl2cdf -o mars.o mars_2.o
+Ccdl2cdf -o mars.o2 mars_2.o2
+Ccdl2cdf -o mars.h2 mars_2.h2
 Ccdl2cdf -o mars.t mars_1.t
-Ccdl2cdf -o mars.tstar mars_2.tstar
+Ccdl2cdf -o mars.tstar mars_3.tstar
 Ccdl2cdf -o mars.szen mars_1.szen
 Ccdl2cdf -o mars.stoa mars_1.stoa
 Ccdl2cdf -o mars.surf mars_1.surfsw
-rm -f mars_1*
-rm -f mars_2*
+rm -f mars_1* mars_2* mars_3*
 
 # Generate temperature on levels
-python3 $RAD_DIR/python/ncout_tl.py mars
+python $RAD_DIR/python/ncout_tl.py mars
 
 exit 0

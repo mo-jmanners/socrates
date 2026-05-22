@@ -15,7 +15,7 @@ cp $base.surfsw $base.surf
 Cl_run_cdf -B $base -s ${specfile} -S -R 1 2000 -g 3 -r -c -u -C 5 -sg
 fmove $base sw_2000
 
-Cl_run_cdf -B $base -s ${specfile} -S -R 1 2000 -g 3 -r -c -u -C 5 -sg -ch 11630
+Cl_run_cdf -B $base -s ${specfile} -S -R 1 2000 -g 3 -r -c -u -C 5 -sg -ch 11232
 fmove $base sw_2000_subch
 
 Cl_run_cdf -B $base -s ${swref_file} -S -R 1 260 -g 3 -r -c -C 5 -sg
@@ -30,7 +30,7 @@ cp $base.surflw $base.surf
 Cl_run_cdf -B $base -s ${specfile} -I -R 1 2000 -g 2 -c -u -C 5
 fmove $base lw_2000
 
-Cl_run_cdf -B $base -s ${specfile} -I -R 1 2000 -g 2 -c -u -C 5 -ch 11630
+Cl_run_cdf -B $base -s ${specfile} -I -R 1 2000 -g 2 -c -u -C 5 -ch 11232
 fmove $base lw_2000_subch
 
 Cl_run_cdf -B $base -s ${lwref_file} -I -R 1 300 -g 2 -c -C 5

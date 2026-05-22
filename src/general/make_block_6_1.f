@@ -223,9 +223,9 @@
 !     For each band a table or a least squares fit in the scaled
 !     temperature is performed.
       DO i=1, n_band
-        IF (wave_length_short(i) < 175.0e-9_RealK) THEN
+        IF (wave_length_short(i) < 200.0e-9_RealK) THEN
           thermal_coefficient(:,i)=0.0_RealK
-        ELSE  
+        ELSE
           IF (l_planck_tbl) THEN
             CALL calc_planck_tbl(ierr
      &        , n_deg_fit

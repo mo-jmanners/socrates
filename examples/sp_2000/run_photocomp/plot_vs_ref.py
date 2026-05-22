@@ -20,21 +20,25 @@ if __name__ == '__main__':
     if (len(sys.argv) > 4):
         filename4 = sys.argv[4]
         name4 = filename4[filename4.find('.') + 1:]
+        basename4 = filename4[0:filename4.find('.')]
         dgs4 = Dataset(filename4)
         var4 = dgs4.variables[name4][:]
     if (len(sys.argv) > 3):
         filename3 = sys.argv[3]
         name3 = filename3[filename3.find('.') + 1:]
+        basename3 = filename3[0:filename3.find('.')]
         dgs3 = Dataset(filename3)
         var3 = dgs3.variables[name3][:]
     if (len(sys.argv) > 2):
         filename2 = sys.argv[2]
         name2 = filename2[filename2.find('.') + 1:]
+        basename2 = filename2[0:filename2.find('.')]
         dgs2 = Dataset(filename2)
         var2 = dgs2.variables[name2][:]
     if (len(sys.argv) > 1):
         filename = sys.argv[1]
         name = filename[filename.find('.') + 1:]
+        basename = filename[0:filename.find('.')]
         dgs = Dataset(filename)
         var = dgs.variables[name][:]
     else:
@@ -97,22 +101,23 @@ else:
         vmean[i] = np.sum(var[:, i, :, :]) / (n_lon * n_lat)
         if (vmean[i] > vtop/e_factor):
           e_layer = i
-    e_layer = 40
+#    e_layer = layers-1
+    e_layer = 8
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
-    ax1.plot(vmean, p)
+    ax1.plot(vmean, p, color='blue')
     ax1.invert_yaxis()
     ax1.set_yscale('log')
     ax1.set_title(dgs.variables[name].title)
     ax1.set_xlabel(name)
     ax1.set_ylabel('Pressure (Pa)')
     e_height = p[e_layer]
-    ax1.plot([min(vmean),max(vmean)], [e_height,e_height], color='green')
+    ax1.plot([min(vmean),max(vmean)], [e_height,e_height], color='cyan')
     ax1.set_xscale('log')
     if (len(sys.argv) > 2):
         for i in np.arange(layers):
             vmean[i] = np.sum(var2[:, i, :, :]) / (n_lon * n_lat)
-        ax1.plot(vmean, p, linestyle='dashed', label='Ref')
+        ax1.plot(vmean, p, color='green')
     wn = 0.5e-2/wl_short + 0.5e-2/wl_long
     wl = 0.5e6*(wl_short + wl_long)
     wl2 = 0.5e6*(wl_short2 + wl_long2)
@@ -128,8 +133,8 @@ else:
         mid_spec2[ch]  = np.sum(var2[ch,e_layer, :,:])/(width2[ch]*n_lon*n_lat)
 #    ax2.plot(wl, toa_spec, color='blue', label='TOA')
 #    ax2.set_xlabel('Wavelength (micron)')
-    ax2.plot(wl, mid_spec, color='blue', label='Mid atmos')
-    ax2.plot(wl2, mid_spec2, color='green', label='Ref')
+    ax2.plot(wl, mid_spec, color='blue', label=basename)
+    ax2.plot(wl2, mid_spec2, color='green', label=basename2)
     if ('ph_rate' in name):
         ax2.set_ylabel('J (s$^{-1}$ m$^{-1}$)')
         ax2.set_yscale('symlog')
@@ -145,7 +150,7 @@ else:
         ax2.set_title('Mid atmosphere spectrum')
         ax2.set_ylabel('Flux (Wm-2m-1)')
         ax2.set_xscale('symlog')
-    ax2.set_xlim(left=0.1,right=5.0)
+    ax2.set_xlim(left=0.1,right=1.0)
     ax2.set_xlabel('Wavelength (micron)')
     plt.legend()
 

@@ -124,17 +124,18 @@ if (len(sys.argv) > 6):
 
 fig=plt.figure()
 ax1 = fig.add_subplot(111)
-ax1.plot(wavelength1,xsc1, color='blue')
+ax1.plot(wavelength1,xsc1, color='blue', label=filename)
 if (len(sys.argv) > 2):
-    ax1.plot(wavelength2,xsc2, color='green')
+    ax1.plot(wavelength2,xsc2, color='green', label=filename2)
 if (len(sys.argv) > 3):
-    ax1.plot(wavelength3,xsc3, color='red')
+    ax1.plot(wavelength3,xsc3, color='red', label=filename3)
 if (len(sys.argv) > 4):
-    ax1.plot(wavelength4,xsc4, color='cyan')
+    ax1.plot(wavelength4,xsc4, color='cyan', label=filename4)
 if (len(sys.argv) > 5):
-    ax1.plot(wavelength5,xsc5, color='magenta')
+    ax1.plot(wavelength5,xsc5, color='magenta', label=filename5)
 if (len(sys.argv) > 6):
-    ax1.plot(wavelength6,xsc6, color='orange')
+    ax1.plot(wavelength6,xsc6, color='orange', label=filename6)
 ax1.set_yscale('log')
+plt.legend()
 plt.tight_layout()
 plt.show()

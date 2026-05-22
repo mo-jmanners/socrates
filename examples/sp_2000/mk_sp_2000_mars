@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -n 'Started mk_sp_2000_earth: '; date
+echo -n 'Started mk_sp_2000_mars: '; date
 
 if [ $RAD_BIN ] ; then
   echo "Using code compiled in "$RAD_BIN
@@ -13,18 +13,18 @@ fi
 # -------------------------
 procs=4
 procs_s=8
-. ./env_earth
+. ./env_mars
 
-sp_dir="/data/users/james.manners/jm_earth_hr"
+sp_dir="/data/users/james.manners/jm_mars_hr"
 mkdir -p ${sp_dir}
 
 
 # Create skeleton spectral file
 # -----------------------------
-specfile=${sp_dir}/sp_2000_earth
-skelfile=${sp_dir}/sp_2000_earth_skel
+specfile=${sp_dir}/sp_2000_mars
+skelfile=${sp_dir}/sp_2000_mars_skel
 rm -f $skelfile
-./mk_sp_2000_earth_skel $skelfile > /dev/null
+./mk_sp_2000_mars_skel $skelfile > /dev/null
 
 
 # Gas absorption coefficients:
@@ -79,7 +79,7 @@ fi
 
 if [ ! -s $sp_dir/h2o_nuv_l ] ; then
   if [ ! -s $H2O_LBL_VIS ] ; then
-    echo "H2O: No visible LBL file: please run ./mk_h2o_lbl_2000_earth"
+    echo "H2O: No visible LBL file: please run ./mk_h2o_lbl_2000_mars"
     exit 1
   else
     echo "H2O: near UV - lines"
@@ -98,7 +98,7 @@ if [ ! -s $sp_dir/h2o_nuv_l ] ; then
 fi
 if [ ! -s $sp_dir/h2o_vis_l ] ; then
   if [ ! -s $H2O_LBL_VIS ] ; then
-    echo "H2O: No visible LBL file: please run ./mk_h2o_lbl_2000_earth"
+    echo "H2O: No visible LBL file: please run ./mk_h2o_lbl_2000_mars"
     exit 1
   else
     echo "H2O: visible"
@@ -117,7 +117,7 @@ if [ ! -s $sp_dir/h2o_vis_l ] ; then
 fi
 if [ ! -s $sp_dir/h2o_nirf_l ] ; then
   if [ ! -s $H2O_LBL_IRF ] ; then
-    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_earth"
+    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_mars"
     exit 1
   else
     echo "H2O: near infra-red"
@@ -138,7 +138,7 @@ if [ ! -s $sp_dir/h2o_nirf_l ] ; then
 fi
 if [ ! -s $sp_dir/h2o_mirf_l ] ; then
   if [ ! -s $H2O_LBL_IRF ] ; then
-    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_earth"
+    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_mars"
     exit 1
   else
     echo "H2O: mid infra-red"
@@ -159,7 +159,7 @@ if [ ! -s $sp_dir/h2o_mirf_l ] ; then
 fi
 if [ ! -s $sp_dir/h2o_firf_l ] ; then
   if [ ! -s $H2O_LBL_IRF ] ; then
-    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_earth"
+    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_mars"
     exit 1
   else
     echo "H2O: far infra-red"
@@ -178,74 +178,22 @@ if [ ! -s $sp_dir/h2o_firf_l ] ; then
     fi
   fi
 fi
-if [ ! -s $sp_dir/h2o_nir_s ] ; then
-  if [ ! -s $H2O_LBL_IRF ] ; then
-    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_earth"
-    exit 1
-  else
-    echo "H2O: near-ir self-broadened continuum"
-    rm -f $sp_dir/h2o_nir_s*
-	  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 501 1000 -C 33 1.0e-4 1.0e4 -P 7 \
-      -e ${CONT_H2O_S260} ${CONT_H2O_S260} \
-      -s $skelfile -u -p -r ${REF_PT_FILE} \
-      -o $sp_dir/h2o_nir_s -m $sp_dir/h2o_nir_sm \
-      -L $H2O_LBL_IRF -np $procs_s"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs_s -o $sp_dir/h2o_nir_s_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/h2o_nir_s_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/h2o_mir_s ] ; then
-  if [ ! -s $H2O_LBL_IRF ] ; then
-    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_earth"
-    exit 1
-  else
-    echo "H2O: mid-ir self-broadened continuum"
-    rm -f $sp_dir/h2o_mir_s*
-	  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -C 33 1.0e-4 1.0e4 -P 7 \
-      -e ${CONT_H2O_S260} ${CONT_H2O_S260} \
-      -s $skelfile -u -p -r ${REF_PT_FILE} \
-      -o $sp_dir/h2o_mir_s -m $sp_dir/h2o_mir_sm \
-      -L $H2O_LBL_IRF -np $procs_s"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs_s -o $sp_dir/h2o_mir_s_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/h2o_mir_s_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/h2o_fir_s ] ; then
-  if [ ! -s $H2O_LBL_IRF ] ; then
-    echo "H2O: No infra-red LBL file: please run ./mk_h2o_lbl_2000_earth"
-    exit 1
-  else
-    echo "H2O: far-ir self-broadened continuum"
-    rm -f $sp_dir/h2o_fir_s*
-	  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -C 33 1.0e-4 1.0e4 -P 7 \
-      -e ${CONT_H2O_S260} ${CONT_H2O_S260} \
-      -s $skelfile -u -p -r ${REF_PT_FILE} \
-      -o $sp_dir/h2o_fir_s -m $sp_dir/h2o_fir_sm \
-      -L $H2O_LBL_IRF -np $procs_s"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs_s -o $sp_dir/h2o_fir_s_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/h2o_fir_s_log
-    fi
-  fi
-fi
-
 
 # ----------------------------
 # Carbon Dioxide (CO2)
 # ----------------------------
-uv_co2=${sp_dir}/co2.uvxsc
-rm -f $uv_co2
-dat2xsc co2_300K_HuestisBerkowitz2010.dat $uv_co2  #  0.1254-201.6nm
+uv_co2=${sp_dir}/co2_150-300K.uvxsc  #  0.1254-201.6nm
+co2_pt_file="pt_co2"
+
+if [ ! -s $uv_co2 ] ; then
+  dat2xsc -t 150 co2_150K_Venot2018.dat co2_150K.uvxsc # 114.5333 - 178.4333 nm
+  dat2xsc -t 195 co2_195K_Venot2018.dat co2_195K.uvxsc # 152 - 195 nm
+  dat2xsc -t 230 co2_230K_Venot2018.dat co2_230K.uvxsc # 152 - 195 nm
+  dat2xsc -t 300 co2_300K_HuestisBerkowitz2010.dat co2_300K.uvxsc
+  cat co2_150K.uvxsc co2_195K.uvxsc co2_230K.uvxsc co2_300K.uvxsc > $uv_co2
+  rm -f co2_???K.uvxsc
+fi
+
 if [ ! -s ${sp_dir}/co2_xuv_l ] ; then
   echo 'CO2: XUV - cross-section'
   rm -f ${sp_dir}/co2_xuv_l* ${sp_dir}/co2_lbl_xuv*
@@ -278,7 +226,7 @@ if [ ! -s ${sp_dir}/co2_fuv_l ] ; then
   echo 'CO2: far UV - cross-section'
   rm -f ${sp_dir}/co2_fuv_l* ${sp_dir}/co2_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_co2 \
-    -R 101 202 -i 1.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 1.0e-3  \
+    -R 101 114 -i 1.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 5.0e-4  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/co2_fuv_l -m ${sp_dir}/co2_fuv_lm \
     -L ${sp_dir}/co2_lbl_fuv.nc -np $procs"
@@ -288,10 +236,52 @@ if [ ! -s ${sp_dir}/co2_fuv_l ] ; then
     ${ck_args} > ${sp_dir}/co2_fuv_log
   fi
 fi
+if [ ! -s ${sp_dir}/co2_fuvt_l ] ; then
+  echo 'CO2: far UV T-dependent cross-section'
+  rm -f ${sp_dir}/co2_fuvt_l* ${sp_dir}/co2_lbl_fuvt*
+  ck_args="Ccorr_k -F $co2_pt_file -UVX $uv_co2 \
+    -R 115 121 -i 1.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 5.0e-4  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/co2_fuvt_l -m ${sp_dir}/co2_fuvt_lm \
+    -L ${sp_dir}/co2_lbl_fuvt.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/co2_fuvt_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/co2_fuvt_log
+  fi
+fi
+if [ ! -s ${sp_dir}/co2_lya_l ] ; then
+  echo 'CO2: Lyman-alpha cross-section'
+  rm -f ${sp_dir}/co2_lya_l* ${sp_dir}/co2_lbl_lya*
+  ck_args="Ccorr_k -F $co2_pt_file -UVX $uv_co2 \
+    -R 122 122 -i 1.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 5.0e-6  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/co2_lya_l -m ${sp_dir}/co2_lya_lm \
+    -L ${sp_dir}/co2_lbl_lya.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/co2_lya_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/co2_lya_log
+  fi
+fi
+if [ ! -s ${sp_dir}/co2_uv_l ] ; then
+  echo 'CO2: UV cross-section'
+  rm -f ${sp_dir}/co2_uv_l* ${sp_dir}/co2_lbl_uv*
+  ck_args="Ccorr_k -F $co2_pt_file -UVX $uv_co2 \
+    -R 123 202 -i 1.0 -l $IP_CO2 ${COL_MASS_K_CO2} -t 5.0e-4  \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/co2_uv_l -m ${sp_dir}/co2_uv_lm \
+    -L ${sp_dir}/co2_lbl_uv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/co2_uv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/co2_uv_log
+  fi
+fi
 
 if [ ! -s $sp_dir/co2_nir_l ] ; then
   if [ ! -s $CO2_LBL ] ; then
-    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_earth"
+    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_mars"
     exit 1
   else
     echo "CO2: near infra-red"
@@ -310,7 +300,7 @@ if [ ! -s $sp_dir/co2_nir_l ] ; then
 fi
 if [ ! -s $sp_dir/co2_mir_l ] ; then
   if [ ! -s $CO2_LBL ] ; then
-    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_earth"
+    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_mars"
     exit 1
   else
     echo "CO2: mid infra-red"
@@ -329,7 +319,7 @@ if [ ! -s $sp_dir/co2_mir_l ] ; then
 fi
 if [ ! -s $sp_dir/co2_fir_l ] ; then
   if [ ! -s $CO2_LBL ] ; then
-    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_earth"
+    echo "CO2: No LBL file: please run ./mk_co2_lbl_2000_mars"
     exit 1
   else
     echo "CO2: far infra-red"
@@ -368,7 +358,7 @@ if [ ! -s ${sp_dir}/o3_uv_l ] ; then
 fi
 if [ ! -s $sp_dir/o3_mir_l ] ; then
   if [ ! -s $O3_LBL ] ; then
-    echo "O3: No LBL file: please run ./mk_o3_lbl_2000_earth"
+    echo "O3: No LBL file: please run ./mk_o3_lbl_2000_mars"
     exit 1
   else
     echo "O3: mid infra-red"
@@ -387,7 +377,7 @@ if [ ! -s $sp_dir/o3_mir_l ] ; then
 fi
 if [ ! -s $sp_dir/o3_fir_l ] ; then
   if [ ! -s $O3_LBL ] ; then
-    echo "O3: No LBL file: please run ./mk_o3_lbl_2000_earth"
+    echo "O3: No LBL file: please run ./mk_o3_lbl_2000_mars"
     exit 1
   else
     echo "O3: far infra-red"
@@ -480,63 +470,63 @@ if [ ! -s ${sp_dir}/n2o_uv_l ] ; then
   fi
 fi
 
-if [ ! -s $sp_dir/n2o_nir_l ] ; then
-  if [ ! -s $N2O_LBL ] ; then
-    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_earth"
-    exit 1
-  else
-    echo "N2O: near infra-red"
-    rm -f $sp_dir/n2o_nir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 686 1000 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/n2o_nir_l -m $sp_dir/n2o_nir_lm \
-      -L $N2O_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/n2o_nir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/n2o_nir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/n2o_mir_l ] ; then
-  if [ ! -s $N2O_LBL ] ; then
-    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_earth"
-    exit 1
-  else
-    echo "N2O: mid infra-red"
-    rm -f $sp_dir/n2o_mir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/n2o_mir_l -m $sp_dir/n2o_mir_lm \
-      -L $N2O_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/n2o_mir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/n2o_mir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/n2o_fir_l ] ; then
-  if [ ! -s $N2O_LBL ] ; then
-    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_earth"
-    exit 1
-  else
-    echo "N2O: far infra-red"
-    rm -f $sp_dir/n2o_fir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/n2o_fir_l -m $sp_dir/n2o_fir_lm \
-      -L $N2O_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/n2o_fir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/n2o_fir_log
-    fi
-  fi
-fi
+#if [ ! -s $sp_dir/n2o_nir_l ] ; then
+#  if [ ! -s $N2O_LBL ] ; then
+#    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "N2O: near infra-red"
+#    rm -f $sp_dir/n2o_nir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 686 1000 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
+#      -s $skelfile +S $SOLSPEC -lk \
+#      -o $sp_dir/n2o_nir_l -m $sp_dir/n2o_nir_lm \
+#      -L $N2O_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/n2o_nir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/n2o_nir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/n2o_mir_l ] ; then
+#  if [ ! -s $N2O_LBL ] ; then
+#    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "N2O: mid infra-red"
+#    rm -f $sp_dir/n2o_mir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1001 1500 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/n2o_mir_l -m $sp_dir/n2o_mir_lm \
+#      -L $N2O_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/n2o_mir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/n2o_mir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/n2o_fir_l ] ; then
+#  if [ ! -s $N2O_LBL ] ; then
+#    echo "N2O: No LBL file: please run ./mk_n2o_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "N2O: far infra-red"
+#    rm -f $sp_dir/n2o_fir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1501 2000 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/n2o_fir_l -m $sp_dir/n2o_fir_lm \
+#      -L $N2O_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/n2o_fir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/n2o_fir_log
+#    fi
+#  fi
+#fi
 
 # ----------------------------
 # Carbon Monoxide (CO)
@@ -589,7 +579,7 @@ fi
 
 if [ ! -s $sp_dir/co_nir_l ] ; then
   if [ ! -s $CO_LBL ] ; then
-    echo "CO: No LBL file: please run ./mk_co_lbl_2000_earth"
+    echo "CO: No LBL file: please run ./mk_co_lbl_2000_mars"
     exit 1
   else
     echo "CO: near infra-red"
@@ -608,7 +598,7 @@ if [ ! -s $sp_dir/co_nir_l ] ; then
 fi
 if [ ! -s $sp_dir/co_mir_l ] ; then
   if [ ! -s $CO_LBL ] ; then
-    echo "CO: No LBL file: please run ./mk_co_lbl_2000_earth"
+    echo "CO: No LBL file: please run ./mk_co_lbl_2000_mars"
     exit 1
   else
     echo "CO: mid infra-red"
@@ -627,7 +617,7 @@ if [ ! -s $sp_dir/co_mir_l ] ; then
 fi
 if [ ! -s $sp_dir/co_fir_l ] ; then
   if [ ! -s $CO_LBL ] ; then
-    echo "CO: No LBL file: please run ./mk_co_lbl_2000_earth"
+    echo "CO: No LBL file: please run ./mk_co_lbl_2000_mars"
     exit 1
   else
     echo "CO: far infra-red"
@@ -694,63 +684,63 @@ if [ ! -s ${sp_dir}/ch4_fuv_l ] ; then
   fi
 fi
 
-if [ ! -s $sp_dir/ch4_nir_l ] ; then
-  if [ ! -s $CH4_LBL ] ; then
-    echo "CH4: No LBL file: please run ./mk_ch4_lbl_2000_earth"
-    exit 1
-  else
-    echo "CH4: near infra-red"
-    rm -f $sp_dir/ch4_nir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 691 1000 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/ch4_nir_l -m $sp_dir/ch4_nir_lm \
-      -L $CH4_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/ch4_nir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/ch4_nir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/ch4_mir_l ] ; then
-  if [ ! -s $CH4_LBL ] ; then
-    echo "CH4: No LBL file: please run ./mk_ch4_lbl_2000_earth"
-    exit 1
-  else
-    echo "CH4: mid infra-red"
-    rm -f $sp_dir/ch4_mir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/ch4_mir_l -m $sp_dir/ch4_mir_lm \
-      -L $CH4_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/ch4_mir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/ch4_mir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/ch4_fir_l ] ; then
-  if [ ! -s $CH4_LBL ] ; then
-    echo "CH4: No LBL file: please run ./mk_ch4_lbl_2000_earth"
-    exit 1
-  else
-    echo "CH4: far infra-red"
-    rm -f $sp_dir/ch4_fir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/ch4_fir_l -m $sp_dir/ch4_fir_lm \
-      -L $CH4_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/ch4_fir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/ch4_fir_log
-    fi
-  fi
-fi
+#if [ ! -s $sp_dir/ch4_nir_l ] ; then
+#  if [ ! -s $CH4_LBL ] ; then
+#    echo "CH4: No LBL file: please run ./mk_ch4_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "CH4: near infra-red"
+#    rm -f $sp_dir/ch4_nir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 691 1000 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
+#      -s $skelfile +S $SOLSPEC -lk \
+#      -o $sp_dir/ch4_nir_l -m $sp_dir/ch4_nir_lm \
+#      -L $CH4_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/ch4_nir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/ch4_nir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/ch4_mir_l ] ; then
+#  if [ ! -s $CH4_LBL ] ; then
+#    echo "CH4: No LBL file: please run ./mk_ch4_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "CH4: mid infra-red"
+#    rm -f $sp_dir/ch4_mir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1001 1500 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/ch4_mir_l -m $sp_dir/ch4_mir_lm \
+#      -L $CH4_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/ch4_mir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/ch4_mir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/ch4_fir_l ] ; then
+#  if [ ! -s $CH4_LBL ] ; then
+#    echo "CH4: No LBL file: please run ./mk_ch4_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "CH4: far infra-red"
+#    rm -f $sp_dir/ch4_fir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1501 2000 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/ch4_fir_l -m $sp_dir/ch4_fir_lm \
+#      -L $CH4_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/ch4_fir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/ch4_fir_log
+#    fi
+#  fi
+#fi
 
 # ----------------------------
 # Oxygen (O2)
@@ -804,7 +794,7 @@ if [ ! -s ${sp_dir}/o2_lya_l ] ; then
   echo 'O2: Lyman-alpha - cross-section'
   rm -f ${sp_dir}/o2_lya_l* ${sp_dir}/o2_lbl_lya*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
-    -R 122 122 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 1.0e-6  \
+    -R 122 122 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-6  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/o2_lya_l -m ${sp_dir}/o2_lya_lm \
     -L ${sp_dir}/o2_lbl_lya.nc -np $procs"
@@ -831,7 +821,7 @@ fi
 
 if [ ! -s $sp_dir/o2_nir_l ] ; then
   if [ ! -s $O2_LBL ] ; then
-    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_mars"
     exit 1
   else
     echo "O2: near infra-red"
@@ -850,7 +840,7 @@ if [ ! -s $sp_dir/o2_nir_l ] ; then
 fi
 if [ ! -s $sp_dir/o2_mir_l ] ; then
   if [ ! -s $O2_LBL ] ; then
-    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_mars"
     exit 1
   else
     echo "O2: mid infra-red"
@@ -869,7 +859,7 @@ if [ ! -s $sp_dir/o2_mir_l ] ; then
 fi
 if [ ! -s $sp_dir/o2_fir_l ] ; then
   if [ ! -s $O2_LBL ] ; then
-    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_earth"
+    echo "O2: No LBL file: please run ./mk_o2_lbl_2000_mars"
     exit 1
   else
     echo "O2: far infra-red"
@@ -966,7 +956,7 @@ fi
 
 if [ ! -s $sp_dir/no_d1l_l ] ; then
   if [ ! -s $NO_UVLBL ] ; then
-    echo "NO: No ultra-violet LBL file: please run ./mk_no_uvlbl_2000_earth"
+    echo "NO: No ultra-violet LBL file: please run ./mk_no_uvlbl_2000_mars"
     exit 1
   else
     echo "NO: UV d(1-0) - lines"
@@ -985,7 +975,7 @@ if [ ! -s $sp_dir/no_d1l_l ] ; then
 fi
 if [ ! -s $sp_dir/no_d0l_l ] ; then
   if [ ! -s $NO_UVLBL ] ; then
-    echo "NO: No ultra-violet LBL file: please run ./mk_no_uvlbl_2000_earth"
+    echo "NO: No ultra-violet LBL file: please run ./mk_no_uvlbl_2000_mars"
     exit 1
   else
     echo "NO: UV d(0-0) - lines"
@@ -1003,63 +993,63 @@ if [ ! -s $sp_dir/no_d0l_l ] ; then
   fi
 fi
 
-if [ ! -s $sp_dir/no_nir_l ] ; then
-  if [ ! -s $NO_LBL ] ; then
-    echo "NO: No LBL file: please run ./mk_no_lbl_2000_earth"
-    exit 1
-  else
-    echo "NO: near infra-red"
-    rm -f $sp_dir/no_nir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 413 1000 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/no_nir_l -m $sp_dir/no_nir_lm \
-      -L $NO_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/no_nir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/no_nir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/no_mir_l ] ; then
-  if [ ! -s $NO_LBL ] ; then
-    echo "NO: No LBL file: please run ./mk_no_lbl_2000_earth"
-    exit 1
-  else
-    echo "NO: mid infra-red"
-    rm -f $sp_dir/no_mir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/no_mir_l -m $sp_dir/no_mir_lm \
-      -L $NO_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/no_mir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/no_mir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/no_fir_l ] ; then
-  if [ ! -s $NO_LBL ] ; then
-    echo "NO: No LBL file: please run ./mk_no_lbl_2000_earth"
-    exit 1
-  else
-    echo "NO: far infra-red"
-    rm -f $sp_dir/no_fir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/no_fir_l -m $sp_dir/no_fir_lm \
-      -L $NO_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/no_fir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/no_fir_log
-    fi
-  fi
-fi
+#if [ ! -s $sp_dir/no_nir_l ] ; then
+#  if [ ! -s $NO_LBL ] ; then
+#    echo "NO: No LBL file: please run ./mk_no_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "NO: near infra-red"
+#    rm -f $sp_dir/no_nir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 413 1000 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
+#      -s $skelfile +S $SOLSPEC -lk \
+#      -o $sp_dir/no_nir_l -m $sp_dir/no_nir_lm \
+#      -L $NO_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/no_nir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/no_nir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/no_mir_l ] ; then
+#  if [ ! -s $NO_LBL ] ; then
+#    echo "NO: No LBL file: please run ./mk_no_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "NO: mid infra-red"
+#    rm -f $sp_dir/no_mir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1001 1500 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/no_mir_l -m $sp_dir/no_mir_lm \
+#      -L $NO_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/no_mir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/no_mir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/no_fir_l ] ; then
+#  if [ ! -s $NO_LBL ] ; then
+#    echo "NO: No LBL file: please run ./mk_no_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "NO: far infra-red"
+#    rm -f $sp_dir/no_fir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1501 2000 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/no_fir_l -m $sp_dir/no_fir_lm \
+#      -L $NO_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/no_fir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/no_fir_log
+#    fi
+#  fi
+#fi
 
 # ----------------------------
 # Sulfur dioxide (SO2)
@@ -1110,25 +1100,25 @@ if [ ! -s ${sp_dir}/so2_uv_l ] ; then
   fi
 fi
 
-if [ ! -s $sp_dir/so2_fir_l ] ; then
-  if [ ! -s $SO2_LBL ] ; then
-    echo "SO2: No LBL file: please run ./mk_so2_lbl_2000_earth"
-    exit 1
-  else
-    echo "SO2: far infra-red"
-    rm -f $sp_dir/so2_fir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1535 2000 -l $IP_SO2 ${COL_MASS_K_SO2} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/so2_fir_l -m $sp_dir/so2_fir_lm \
-      -L $SO2_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/so2_fir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/so2_fir_log
-    fi
-  fi
-fi
+#if [ ! -s $sp_dir/so2_fir_l ] ; then
+#  if [ ! -s $SO2_LBL ] ; then
+#    echo "SO2: No LBL file: please run ./mk_so2_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "SO2: far infra-red"
+#    rm -f $sp_dir/so2_fir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1535 2000 -l $IP_SO2 ${COL_MASS_K_SO2} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/so2_fir_l -m $sp_dir/so2_fir_lm \
+#      -L $SO2_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/so2_fir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/so2_fir_log
+#    fi
+#  fi
+#fi
 
 # ----------------------------
 # Nitrogen Dioxide (NO2)
@@ -1324,93 +1314,93 @@ fi
 # ----------------------------
 # CFC-11 (CCl3F)
 # ----------------------------
-if [ ! -s ${sp_dir}/cfc11_ir_l ] ; then
-  echo "CFC-11 (CCl3F)"
-  rm -f ${sp_dir}/cfc11_ir_l* ${sp_dir}/cfc11_lbl_ir*
-  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_CFC11} \
-    -R 1872 1929 -i 1.0 -l $IP_CFC11 ${COL_MASS_K_CFC11} -t 1.0e-4 \
-    -s $skelfile -u -lk \
-    -o ${sp_dir}/cfc11_ir_l -m ${sp_dir}/cfc11_ir_lm \
-    -L ${sp_dir}/cfc11_lbl_ir.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/cfc11_ir_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/cfc11_ir_log
-  fi
-fi
+#if [ ! -s ${sp_dir}/cfc11_ir_l ] ; then
+#  echo "CFC-11 (CCl3F)"
+#  rm -f ${sp_dir}/cfc11_ir_l* ${sp_dir}/cfc11_lbl_ir*
+#  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_CFC11} \
+#    -R 1872 1929 -i 1.0 -l $IP_CFC11 ${COL_MASS_K_CFC11} -t 1.0e-4 \
+#    -s $skelfile -u -lk \
+#    -o ${sp_dir}/cfc11_ir_l -m ${sp_dir}/cfc11_ir_lm \
+#    -L ${sp_dir}/cfc11_lbl_ir.nc -np $procs"
+#  if command -v sbatch &> /dev/null ; then
+#    sbatch -W -n $procs -o ${sp_dir}/cfc11_ir_log -t 60 ${ck_args} &
+#  else
+#    ${ck_args} > ${sp_dir}/cfc11_ir_log
+#  fi
+#fi
 
 # ----------------------------
 # CFC-12 (CCl2F2)
 # ----------------------------
-if [ ! -s ${sp_dir}/cfc12_ir_l ] ; then
-  echo "CFC-12 (CCl2F2)"
-  rm -f ${sp_dir}/cfc12_ir_l* ${sp_dir}/cfc12_lbl_ir*
-  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_CFC12} \
-    -R 1873 1921 -i 1.0 -l $IP_CFC12 ${COL_MASS_K_CFC12} -t 1.0e-4 \
-    -s $skelfile -u -lk \
-    -o ${sp_dir}/cfc12_ir_l -m ${sp_dir}/cfc12_ir_lm \
-    -L ${sp_dir}/cfc12_lbl_ir.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/cfc12_ir_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/cfc12_ir_log
-  fi
-fi
+#if [ ! -s ${sp_dir}/cfc12_ir_l ] ; then
+#  echo "CFC-12 (CCl2F2)"
+#  rm -f ${sp_dir}/cfc12_ir_l* ${sp_dir}/cfc12_lbl_ir*
+#  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_CFC12} \
+#    -R 1873 1921 -i 1.0 -l $IP_CFC12 ${COL_MASS_K_CFC12} -t 1.0e-4 \
+#    -s $skelfile -u -lk \
+#    -o ${sp_dir}/cfc12_ir_l -m ${sp_dir}/cfc12_ir_lm \
+#    -L ${sp_dir}/cfc12_lbl_ir.nc -np $procs"
+#  if command -v sbatch &> /dev/null ; then
+#    sbatch -W -n $procs -o ${sp_dir}/cfc12_ir_log -t 60 ${ck_args} &
+#  else
+#    ${ck_args} > ${sp_dir}/cfc12_ir_log
+#  fi
+#fi
 
 # ----------------------------
 # CFC-113 (C2Cl3F3)
 # ----------------------------
-cfc113_pt_file="pt_cfc113"
-if [ ! -s ${sp_dir}/cfc113_ir_l ] ; then
-  echo "CFC-113 (C2Cl3F3)"
-  rm -f ${sp_dir}/cfc113_ir_l* ${sp_dir}/cfc113_lbl_ir*
-  ck_args="Ccorr_k -F $cfc113_pt_file -X ${HITRAN_CFC113} \
-    -R 1876 1940 -i 1.0 -l $IP_CFC113 ${COL_MASS_K_CFC113} -t 1.0e-4 \
-    -s $skelfile -u -lk \
-    -o ${sp_dir}/cfc113_ir_l -m ${sp_dir}/cfc113_ir_lm \
-    -L ${sp_dir}/cfc113_lbl_ir.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/cfc113_ir_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/cfc113_ir_log
-  fi
-fi
+#cfc113_pt_file="pt_cfc113"
+#if [ ! -s ${sp_dir}/cfc113_ir_l ] ; then
+#  echo "CFC-113 (C2Cl3F3)"
+#  rm -f ${sp_dir}/cfc113_ir_l* ${sp_dir}/cfc113_lbl_ir*
+#  ck_args="Ccorr_k -F $cfc113_pt_file -X ${HITRAN_CFC113} \
+#    -R 1876 1940 -i 1.0 -l $IP_CFC113 ${COL_MASS_K_CFC113} -t 1.0e-4 \
+#    -s $skelfile -u -lk \
+#    -o ${sp_dir}/cfc113_ir_l -m ${sp_dir}/cfc113_ir_lm \
+#    -L ${sp_dir}/cfc113_lbl_ir.nc -np $procs"
+#  if command -v sbatch &> /dev/null ; then
+#    sbatch -W -n $procs -o ${sp_dir}/cfc113_ir_log -t 60 ${ck_args} &
+#  else
+#    ${ck_args} > ${sp_dir}/cfc113_ir_log
+#  fi
+#fi
 
 # ----------------------------
 # HCFC-22 (CHClF2)
 # ----------------------------
-if [ ! -s ${sp_dir}/hcfc22_ir_l ] ; then
-  echo "HCFC-22 (CHClF2)"
-  rm -f ${sp_dir}/hcfc22_ir_l* ${sp_dir}/hcfc22_lbl_ir*
-  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_HCFC22} \
-    -R 1863 1927 -i 1.0 -l $IP_HCFC22 ${COL_MASS_K_HCFC22} -t 1.0e-4 \
-    -s $skelfile -u -lk \
-    -o ${sp_dir}/hcfc22_ir_l -m ${sp_dir}/hcfc22_ir_lm \
-    -L ${sp_dir}/hcfc22_lbl_ir.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/hcfc22_ir_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/hcfc22_ir_log
-  fi
-fi
+#if [ ! -s ${sp_dir}/hcfc22_ir_l ] ; then
+#  echo "HCFC-22 (CHClF2)"
+#  rm -f ${sp_dir}/hcfc22_ir_l* ${sp_dir}/hcfc22_lbl_ir*
+#  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_HCFC22} \
+#    -R 1863 1927 -i 1.0 -l $IP_HCFC22 ${COL_MASS_K_HCFC22} -t 1.0e-4 \
+#    -s $skelfile -u -lk \
+#    -o ${sp_dir}/hcfc22_ir_l -m ${sp_dir}/hcfc22_ir_lm \
+#    -L ${sp_dir}/hcfc22_lbl_ir.nc -np $procs"
+#  if command -v sbatch &> /dev/null ; then
+#    sbatch -W -n $procs -o ${sp_dir}/hcfc22_ir_log -t 60 ${ck_args} &
+#  else
+#    ${ck_args} > ${sp_dir}/hcfc22_ir_log
+#  fi
+#fi
 
 # ----------------------------
 # HFC-134a (CFH2CF3)
 # ----------------------------
-if [ ! -s ${sp_dir}/hfc134a_ir_l ] ; then
-  echo "HFC-134a (CFH2CF3)"
-  rm -f ${sp_dir}/hfc134a_ir_l* ${sp_dir}/hfc134a_lbl_ir*
-  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_HFC134A} \
-    -R 1840 1925 -i 1.0 -l $IP_HFC134A ${COL_MASS_K_HFC134A} -t 1.0e-4 \
-    -s $skelfile -u -lk \
-    -o ${sp_dir}/hfc134a_ir_l -m ${sp_dir}/hfc134a_ir_lm \
-    -L ${sp_dir}/hfc134a_lbl_ir.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/hfc134a_ir_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/hfc134a_ir_log
-  fi
-fi
+#if [ ! -s ${sp_dir}/hfc134a_ir_l ] ; then
+#  echo "HFC-134a (CFH2CF3)"
+#  rm -f ${sp_dir}/hfc134a_ir_l* ${sp_dir}/hfc134a_lbl_ir*
+#  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X ${HITRAN_HFC134A} \
+#    -R 1840 1925 -i 1.0 -l $IP_HFC134A ${COL_MASS_K_HFC134A} -t 1.0e-4 \
+#    -s $skelfile -u -lk \
+#    -o ${sp_dir}/hfc134a_ir_l -m ${sp_dir}/hfc134a_ir_lm \
+#    -L ${sp_dir}/hfc134a_lbl_ir.nc -np $procs"
+#  if command -v sbatch &> /dev/null ; then
+#    sbatch -W -n $procs -o ${sp_dir}/hfc134a_ir_log -t 60 ${ck_args} &
+#  else
+#    ${ck_args} > ${sp_dir}/hfc134a_ir_log
+#  fi
+#fi
 
 # ----------------------------
 # Hydrogen (H2)
@@ -1490,63 +1480,63 @@ if [ ! -s ${sp_dir}/ocs_uv_l ] ; then
   fi
 fi
 
-if [ ! -s $sp_dir/ocs_nir_l ] ; then
-  if [ ! -s $OCS_LBL ] ; then
-    echo "OCS: No LBL file: please run ./mk_ocs_lbl_2000_earth"
-    exit 1
-  else
-    echo "OCS: near infra-red"
-    rm -f $sp_dir/ocs_nir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 691 1000 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/ocs_nir_l -m $sp_dir/ocs_nir_lm \
-      -L $OCS_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/ocs_nir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/ocs_nir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/ocs_mir_l ] ; then
-  if [ ! -s $OCS_LBL ] ; then
-    echo "OCS: No LBL file: please run ./mk_ocs_lbl_2000_earth"
-    exit 1
-  else
-    echo "OCS: mid infra-red"
-    rm -f $sp_dir/ocs_mir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1001 1500 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/ocs_mir_l -m $sp_dir/ocs_mir_lm \
-      -L $OCS_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/ocs_mir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/ocs_mir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/ocs_fir_l ] ; then
-  if [ ! -s $OCS_LBL ] ; then
-    echo "OCS: No LBL file: please run ./mk_ocs_lbl_2000_earth"
-    exit 1
-  else
-    echo "OCS: far infra-red"
-    rm -f $sp_dir/ocs_fir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 1501 2000 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
-      -s $skelfile -u -lk \
-      -o $sp_dir/ocs_fir_l -m $sp_dir/ocs_fir_lm \
-      -L $OCS_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/ocs_fir_log -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/ocs_fir_log
-    fi
-  fi
-fi
+#if [ ! -s $sp_dir/ocs_nir_l ] ; then
+#  if [ ! -s $OCS_LBL ] ; then
+#    echo "OCS: No LBL file: please run ./mk_ocs_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "OCS: near infra-red"
+#    rm -f $sp_dir/ocs_nir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 691 1000 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
+#      -s $skelfile +S $SOLSPEC -lk \
+#      -o $sp_dir/ocs_nir_l -m $sp_dir/ocs_nir_lm \
+#      -L $OCS_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/ocs_nir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/ocs_nir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/ocs_mir_l ] ; then
+#  if [ ! -s $OCS_LBL ] ; then
+#    echo "OCS: No LBL file: please run ./mk_ocs_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "OCS: mid infra-red"
+#    rm -f $sp_dir/ocs_mir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1001 1500 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/ocs_mir_l -m $sp_dir/ocs_mir_lm \
+#      -L $OCS_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/ocs_mir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/ocs_mir_log
+#    fi
+#  fi
+#fi
+#if [ ! -s $sp_dir/ocs_fir_l ] ; then
+#  if [ ! -s $OCS_LBL ] ; then
+#    echo "OCS: No LBL file: please run ./mk_ocs_lbl_2000_mars"
+#    exit 1
+#  else
+#    echo "OCS: far infra-red"
+#    rm -f $sp_dir/ocs_fir_l*
+#    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
+#      -R 1501 2000 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
+#      -s $skelfile -u -lk \
+#      -o $sp_dir/ocs_fir_l -m $sp_dir/ocs_fir_lm \
+#      -L $OCS_LBL -np $procs"
+#    if command -v sbatch &> /dev/null ; then
+#      sbatch -W -n $procs -o $sp_dir/ocs_fir_log -t 360 ${ck_args} &
+#    else
+#      ${ck_args} > $sp_dir/ocs_fir_log
+#    fi
+#  fi
+#fi
 
 # ----------------------------
 # Acetylene (C2H2)
@@ -2392,7 +2382,7 @@ if [ ! -s ${sp_dir}/co2-co2_c ] ; then
   echo "CO2-CO2 CIA"
   rm -f ${sp_dir}/co2-co2_c*
   ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_CO2_CO2 \
-    -R 1550 2000 -i 1.0 -ct $IP_CO2 $IP_CO2 ${COL_CO2_CO2} -t 5.0e-4 \
+    -R 1550 2000 -i 0.1 -ct $IP_CO2 $IP_CO2 ${COL_CO2_CO2} -t 5.0e-4 \
     -s $skelfile -u -lk \
     -o ${sp_dir}/co2-co2_c -m ${sp_dir}/co2-co2_cm \
     -L ${sp_dir}/co2-co2_clbl.nc -np $procs"
@@ -2402,60 +2392,55 @@ if [ ! -s ${sp_dir}/co2-co2_c ] ; then
     ${ck_args} > ${sp_dir}/co2-co2_clog
   fi
 fi
-if [ ! -s ${sp_dir}/o2-o2_c ] ; then
-  echo "O2-O2 CIA"
-  rm -f ${sp_dir}/o2-o2_c*
-  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_O2_O2 \
-    -R 297 1886 -i 1.0 -ct $IP_O2 $IP_O2 ${COL_O2_O2} -t 5.0e-4 \
-    -s $skelfile -u -lk \
-    -o ${sp_dir}/o2-o2_c -m ${sp_dir}/o2-o2_cm \
-    -L ${sp_dir}/o2-o2_clbl.nc -np $procs"
+
+wait
+
+# ----------------------------
+# H2O Self-broadened continuum
+# ----------------------------
+if [ ! -s $sp_dir/h2o-h2o_nir_c ] ; then
+  echo "H2O: near-ir self-broadened continuum"
+  rm -f $sp_dir/h2o-h2o_nir_c*
+	ck_args="Ccorr_k -F $CONT_PT_FILE -e ${CONT_H2O_S296} ${CONT_H2O_S260} \
+    -R 501 1000 -i 0.1 -ct $IP_H2O $IP_H2O ${COL_H2O_H2O} -t 5.0e-4 \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o $sp_dir/h2o-h2o_nir_c -m $sp_dir/h2o-h2o_nir_cm \
+    -L ${sp_dir}/h2o-h2o_nir_clbl.nc \
+    -lw $sp_dir/h2o_nirf_l_map.nc -np $procs"
   if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/o2-o2_clog -t 60 ${ck_args} &
+    sbatch -W -n $procs -o $sp_dir/h2o-h2o_nir_c_log -t 360 ${ck_args} &
   else
-    ${ck_args} > ${sp_dir}/o2-o2_clog
+    ${ck_args} > $sp_dir/h2o-h2o_nir_c_log
   fi
 fi
-if [ ! -s ${sp_dir}/o2-n2_c ] ; then
-  echo "O2-N2 CIA"
-  rm -f ${sp_dir}/o2-n2_c*
-  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_O2_N2 \
-    -R 722 1872 -i 1.0 -ct $IP_O2 $IP_N2 ${COL_O2_N2} -t 5.0e-4 \
+if [ ! -s $sp_dir/h2o-h2o_mir_c ] ; then
+  echo "H2O: mid-ir self-broadened continuum"
+  rm -f $sp_dir/h2o-h2o_mir_c*
+	ck_args="Ccorr_k -F $CONT_PT_FILE -e ${CONT_H2O_S296} ${CONT_H2O_S260} \
+    -R 1001 1500 -i 0.1 -ct $IP_H2O $IP_H2O ${COL_H2O_H2O} -t 5.0e-4 \
     -s $skelfile -u -lk \
-    -o ${sp_dir}/o2-n2_c -m ${sp_dir}/o2-n2_cm \
-    -L ${sp_dir}/o2-n2_clbl.nc -np $procs"
+    -o $sp_dir/h2o-h2o_mir_c -m $sp_dir/h2o-h2o_mir_cm \
+    -L ${sp_dir}/h2o-h2o_mir_clbl.nc \
+    -lw $sp_dir/h2o_mirf_l_map.nc -np $procs"
   if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/o2-n2_clog -t 60 ${ck_args} &
+    sbatch -W -n $procs -o $sp_dir/h2o-h2o_mir_c_log -t 360 ${ck_args} &
   else
-    ${ck_args} > ${sp_dir}/o2-n2_clog
+    ${ck_args} > $sp_dir/h2o-h2o_mir_c_log
   fi
 fi
-if [ ! -s ${sp_dir}/n2-n2_c ] ; then
-  echo "N2-N2 CIA"
-  rm -f ${sp_dir}/n2-n2_c*
-  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_N2_N2 \
-    -R 1499 1998 -i 1.0 -ct $IP_N2 $IP_N2 ${COL_N2_N2} -t 5.0e-4 \
+if [ ! -s $sp_dir/h2o-h2o_fir_c ] ; then
+  echo "H2O: far-ir self-broadened continuum"
+  rm -f $sp_dir/h2o-h2o_fir_c*
+	ck_args="Ccorr_k -F $CONT_PT_FILE -e ${CONT_H2O_S296} ${CONT_H2O_S260} \
+    -R 1501 2000 -i 0.1 -ct $IP_H2O $IP_H2O ${COL_H2O_H2O} -t 5.0e-4 \
     -s $skelfile -u -lk \
-    -o ${sp_dir}/n2-n2_c -m ${sp_dir}/n2-n2_cm \
-    -L ${sp_dir}/n2-n2_clbl.nc -np $procs"
+    -o $sp_dir/h2o-h2o_fir_c -m $sp_dir/h2o-h2o_fir_cm \
+    -L ${sp_dir}/h2o-h2o_fir_clbl.nc \
+    -lw $sp_dir/h2o_firf_l_map.nc -np $procs"
   if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/n2-n2_clog -t 60 ${ck_args} &
+    sbatch -W -n $procs -o $sp_dir/h2o-h2o_fir_c_log -t 360 ${ck_args} &
   else
-    ${ck_args} > ${sp_dir}/n2-n2_clog
-  fi
-fi
-if [ ! -s ${sp_dir}/n2-n2_fir_c ] ; then
-  echo "N2-N2 Far-IR CIA"
-  rm -f ${sp_dir}/n2-n2_fir_c*
-  ck_args="Ccorr_k -F $CONT_PT_FILE -CIA $CONT_N2_N2 \
-    -R 1999 2000 -i 1.0 -ct $IP_N2 $IP_N2 ${COL_N2_N2} -n 2 \
-    -s $skelfile -u -lk \
-    -o ${sp_dir}/n2-n2_fir_c -m ${sp_dir}/n2-n2_fir_cm \
-    -L ${sp_dir}/n2-n2_fir_clbl.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/n2-n2_fir_clog -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/n2-n2_fir_clog
+    ${ck_args} > $sp_dir/h2o-h2o_fir_c_log
   fi
 fi
 
@@ -2536,11 +2521,14 @@ n
 ${SOLSPEC}
 n
 3
-a
+c
+1
+2
+y
 6
 n
 p
-160 330
+100 270
 4
 5
 ${sp_dir}/h2o_xuv_l
@@ -2565,14 +2553,6 @@ ${sp_dir}/h2o_mirf_l
 5
 y
 ${sp_dir}/h2o_firf_l
-9
-${sp_dir}/h2o_nir_s
-9
-y
-${sp_dir}/h2o_mir_s
-9
-y
-${sp_dir}/h2o_fir_s
 5
 y
 ${sp_dir}/co2_xuv_l
@@ -2582,6 +2562,15 @@ ${sp_dir}/co2_euv_l
 5
 y
 ${sp_dir}/co2_fuv_l
+5
+y
+${sp_dir}/co2_fuvt_l
+5
+y
+${sp_dir}/co2_lya_l
+5
+y
+${sp_dir}/co2_uv_l
 5
 y
 ${sp_dir}/co2_nir_l
@@ -2614,15 +2603,6 @@ y
 ${sp_dir}/n2o_uv_l
 5
 y
-${sp_dir}/n2o_nir_l
-5
-y
-${sp_dir}/n2o_mir_l
-5
-y
-${sp_dir}/n2o_fir_l
-5
-y
 ${sp_dir}/co_xuv_l
 5
 y
@@ -2648,15 +2628,6 @@ ${sp_dir}/ch4_euv_l
 5
 y
 ${sp_dir}/ch4_fuv_l
-5
-y
-${sp_dir}/ch4_nir_l
-5
-y
-${sp_dir}/ch4_mir_l
-5
-y
-${sp_dir}/ch4_fir_l
 5
 y
 ${sp_dir}/o2_xuv_l
@@ -2704,15 +2675,6 @@ y
 ${sp_dir}/no_d0l_l
 5
 y
-${sp_dir}/no_nir_l
-5
-y
-${sp_dir}/no_mir_l
-5
-y
-${sp_dir}/no_fir_l
-5
-y
 ${sp_dir}/so2_xuv_l
 5
 y
@@ -2720,9 +2682,6 @@ ${sp_dir}/so2_euv_l
 5
 y
 ${sp_dir}/so2_uv_l
-5
-y
-${sp_dir}/so2_fir_l
 5
 y
 ${sp_dir}/no2_xuv_l
@@ -2755,21 +2714,6 @@ y
 ${sp_dir}/n2_euv_l
 5
 y
-${sp_dir}/cfc11_ir_l
-5
-y
-${sp_dir}/cfc12_ir_l
-5
-y
-${sp_dir}/cfc113_ir_l
-5
-y
-${sp_dir}/hcfc22_ir_l
-5
-y
-${sp_dir}/hfc134a_ir_l
-5
-y
 ${sp_dir}/h2_xuv_l
 5
 y
@@ -2780,15 +2724,6 @@ ${sp_dir}/h2_fuv_l
 5
 y
 ${sp_dir}/ocs_uv_l
-5
-y
-${sp_dir}/ocs_nir_l
-5
-y
-${sp_dir}/ocs_mir_l
-5
-y
-${sp_dir}/ocs_fir_l
 5
 y
 ${sp_dir}/c2h2_xuv_l
@@ -2940,16 +2875,13 @@ ${sp_dir}/fit_thick_ice_casim_2022_2000
 ${sp_dir}/co2-co2_c
 19
 y
-${sp_dir}/o2-o2_c
+${sp_dir}/h2o-h2o_nir_c
 19
 y
-${sp_dir}/o2-n2_c
+${sp_dir}/h2o-h2o_mir_c
 19
 y
-${sp_dir}/n2-n2_c
-19
-y
-${sp_dir}/n2-n2_fir_c
+${sp_dir}/h2o-h2o_fir_c
 -1
 EOF
 
@@ -3011,16 +2943,14 @@ o
 1.0e5
 1.0e5
 1.0e5
-1.0e5
-1.0e5
 0.99999999990
 6
 ${COL_MASS_MAJOR_H2O}
 ${COL_MASS_MAJOR_CO2}
 ${COL_MASS_MAJOR_O3}
-${COL_MASS_MAJOR_N2O}
 0.0
-${COL_MASS_MAJOR_CH4}
+${COL_MASS_MAJOR_CO}
+0.0
 ${COL_MASS_MAJOR_O2}
 0.0
 0.0
@@ -3028,8 +2958,6 @@ ${COL_MASS_MAJOR_O2}
 0.0
 0.0
 ${COL_MASS_MAJOR_N2}
-0.0
-0.0
 0.0
 0.0
 0.0
@@ -3522,5 +3450,5 @@ no_Akimoto2016_1.qy
 -1
 EOF
 
-echo -n 'Finished mk_sp_2000_earth: '; date
+echo -n 'Finished mk_sp_2000_mars: '; date
 exit 0

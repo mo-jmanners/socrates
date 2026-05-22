@@ -11,5 +11,5 @@ Cl_run_cdf -B atm -s ${specfile} -S -R 1 2000 -g 3 -r -C 5 -sg
 fmove atm sp_2000_earth
 
 #with sub band channels
-Cl_run_cdf -B atm -s ${specfile} -S -R 1 2000 -g 3 -r -C 5 -sg -ch 11630
+Cl_run_cdf -B atm -s ${specfile} -S -R 1 2000 -g 3 -r -C 5 -sg -ch 11232
 fmove atm sp_2000_earth_subch
