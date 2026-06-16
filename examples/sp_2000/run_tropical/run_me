@@ -4,6 +4,7 @@ sp_dir="/data/users/james.manners/jm_earth_hr"
 specfile=${sp_dir}/sp_2000_earth
 swref_file=${RAD_DATA}/spectra/ga9_ref/sp_sw_260_jm3
 lwref_file=${RAD_DATA}/spectra/ga9_ref/sp_lw_300_jm3
+sw9_file="/data/users/james.manners/jm_earth_sw_9/sp_sw_9_earth"
 
 base=tropical
 
@@ -23,6 +24,13 @@ fmove $base sw_260
 
 Cl_run_cdf -B $base -s ${swref_file} -S -R 1 260 -g 3 -r -c -C 5 -sg -ch 260
 fmove $base sw_260_subch
+
+Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg
+fmove $base sw_9
+
+Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg -ch 4728
+fmove $base sw_9_subch
+
 
 # LW
 cp $base.surflw $base.surf

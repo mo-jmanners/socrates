@@ -791,6 +791,10 @@ SUBROUTINE corr_k_single &
         ! Ensure externally supplied grid aligns with band increments
         grid_offset = MINVAL(nu_wgt_all - band_min(ib), &
           mask=(nu_wgt_all - band_min(ib) >= 1.0E-09_RealK))
+        IF (grid_offset+band_min(ib) < band_max(ib)) THEN
+          ! Allow data that partially covers band
+          grid_offset = MODULO(grid_offset, nu_inc)
+        END IF
         IF (grid_offset > nu_inc + 1.0E-09_RealK) THEN
           WRITE(cmessage,'(a,i0)') &
             'The line-by-line file does not contain sufficient data'//&
@@ -3052,9 +3056,7 @@ CONTAINS
         WRITE(*,*) 'Wavenumber range: ', &
           min_nu_wgt - nu_inc/2.0_RealK, &
           max_nu_wgt + nu_inc/2.0_RealK
-        WRITE(*,'(a)') 'Please adjust band limits.'
-        ierr = i_err_fatal
-        RETURN
+        WRITE(*,'(a)') 'Absorption will be set to zero outside range.'
       END IF
     END DO
 
@@ -3103,9 +3105,14 @@ CONTAINS
     INTEGER :: varid                   ! variable ID
     INTEGER :: i_nu, nu_index, nu_count
     INTEGER :: nu_wgt_map(n_nu), nu_wgt_all_map(SIZE(nu_wgt_all))
+    INTEGER :: nu_wgt_all_min, nu_wgt_all_max
+    REAL(RealK), ALLOCATABLE :: kabs_read(:,:)
+    REAL(RealK), ALLOCATABLE :: kabs_sb_read(:,:,:)
 
     nu_wgt_map=NINT((nu_wgt-nu_wgt(1))/nu_inc)
     nu_wgt_all_map=NINT((nu_wgt_all-nu_wgt(1))/nu_inc)
+    nu_wgt_all_min=MINVAL(nu_wgt_all_map)
+    nu_wgt_all_max=MAXVAL(nu_wgt_all_map)
 
 !   Get absorption coefficients for current band
     CALL nf(nf90_inq_varid(ncidin_lbl,'kabs',varid))
@@ -3113,40 +3120,62 @@ CONTAINS
     i_nu=1
     DO
       IF (i_nu > n_nu) EXIT
-      nu_index = MINLOC(nu_wgt_all_map, 1, &
-        nu_wgt_all_map == nu_wgt_map(i_nu))
-      IF (nu_index == 0) THEN
-        WRITE(*,'(a)') &
-          '***Error: required wavenumber not found in LbL file'
-        STOP
+      IF (nu_wgt_all_min > nu_wgt_map(i_nu) .OR. &
+          nu_wgt_all_max < nu_wgt_map(i_nu)) THEN
+        nu_index = 0
+      ELSE
+        nu_index = MINLOC(nu_wgt_all_map, 1, &
+          nu_wgt_all_map == nu_wgt_map(i_nu))
       END IF
       nu_count=1
-      DO
-!       Read contiguous blocks of data from LbL file
-        IF (i_nu     + nu_count <= n_nu .AND. &
-            nu_index + nu_count <= SIZE(nu_wgt_all)) THEN
-          IF (nu_wgt_map(i_nu+nu_count) == &
-            nu_wgt_all_map(nu_index+nu_count)) THEN
-            nu_count=nu_count+1
+      IF (nu_index == 0) THEN
+        ! No data for this wavenumber, assume zero absorption
+        IF (l_self_broadening) THEN
+          kabs_all_sb(i_nu,:,:) = 0.0_RealK
+        ELSE
+          kabs_all(i_nu,:) = 0.0_RealK
+        END IF
+      ELSE
+        DO
+!         Read contiguous blocks of data from LbL file
+          IF (i_nu     + nu_count <= n_nu .AND. &
+              nu_index + nu_count <= SIZE(nu_wgt_all)) THEN
+            IF (nu_wgt_map(i_nu+nu_count) == &
+              nu_wgt_all_map(nu_index+nu_count)) THEN
+              nu_count=nu_count+1
+            ELSE
+              EXIT
+            END IF
           ELSE
             EXIT
           END IF
+        END DO
+        WRITE(*,'(2(a,f12.2))') 'Reading wavenumbers:', &
+          nu_wgt(i_nu),' to', nu_wgt(i_nu+nu_count-1)
+        IF (l_self_broadening) THEN
+          ALLOCATE(kabs_sb_read(nu_count, n_pt_pair, n_gas_frac))
+          CALL nf(nf90_get_var(ncidin_lbl,varid, &
+            kabs_all_sb(i_nu:i_nu+nu_count-1,:,:), &
+            start=(/nu_index, 1, 1/), &
+            count=(/nu_count, n_pt_pair, n_gas_frac/)))
+          DO igf=1, n_gas_frac
+            DO ipt=1, n_pt_pair
+              kabs_all_sb(i_nu:i_nu+nu_count-1, ipt, igf) &
+                = kabs_sb_read(:, ipt, igf)
+            END DO
+          END DO
+          DEALLOCATE(kabs_sb_read)
         ELSE
-          EXIT
+          ALLOCATE(kabs_read(nu_count, n_pt_pair))
+          CALL nf(nf90_get_var(ncidin_lbl,varid, &
+            kabs_read, &
+            start=(/nu_index, 1/), &
+            count=(/nu_count, n_pt_pair/)))
+          DO ipt=1, n_pt_pair
+            kabs_all(i_nu:i_nu+nu_count-1, ipt) = kabs_read(:, ipt)
+          END DO
+          DEALLOCATE(kabs_read)
         END IF
-      END DO
-      WRITE(*,'(2(a,f12.2))') 'Reading wavenumbers:', &
-        nu_wgt(i_nu),' to', nu_wgt(i_nu+nu_count-1)
-      IF (l_self_broadening) THEN
-        CALL nf(nf90_get_var(ncidin_lbl,varid, &
-          kabs_all_sb(i_nu:i_nu+nu_count-1,:,:), &
-          start=(/nu_index, 1, 1/), &
-          count=(/nu_count, n_pt_pair, n_gas_frac/)))
-      ELSE
-        CALL nf(nf90_get_var(ncidin_lbl,varid, &
-          kabs_all(i_nu:i_nu+nu_count-1,:), &
-          start=(/nu_index, 1/), &
-          count=(/nu_count, n_pt_pair/)))
       END IF
       i_nu=i_nu+nu_count
     END DO

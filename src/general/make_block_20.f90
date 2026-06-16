@@ -261,8 +261,12 @@ SUBROUTINE make_block_20(Sp, ierr)
       ! Upper wavelength bound at mid-point to next data point
       ! (converted from nm to m)
       IF (i == data_length_qy) THEN
-        qy_unique(1,n_qy) &
-          =(1.5_RealK*qy_data(1,i)-0.5_RealK*qy_data(1,i-1))*1.0E-09_RealK
+        IF (i == 1) THEN
+          qy_unique(1,n_qy) = qy_data(1,i)*1.0E-09_RealK
+        ELSE
+          qy_unique(1,n_qy) &
+            =(1.5_RealK*qy_data(1,i)-0.5_RealK*qy_data(1,i-1))*1.0E-09_RealK
+        END IF
       ELSE
         qy_unique(1,n_qy)=(qy_data(1,i)+qy_data(1,i+1))*0.5E-09_RealK
       END IF
