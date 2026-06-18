@@ -437,6 +437,8 @@ TYPE StrSpecVar
 !   Fraction of varying-band associated with each sub-band
   REAL (RealK), ALLOCATABLE :: wavelength_sub_band(:, :)
 !   Wavelength limits for the sub-band
+  REAL (RealK), ALLOCATABLE :: weight_uv_index(:)
+!   Weight of contribution to UV-index for each sub-band
 
   INTEGER, ALLOCATABLE      :: time(:, :)
 !   Times: year, month, day of month, seconds in day
@@ -1155,6 +1157,11 @@ IF (.NOT. ALLOCATED(Sp%Var%wavelength_sub_band)) &
 Sp%Dim%nd_alloc_real = &
 Sp%Dim%nd_alloc_real + SIZE(Sp%Var%wavelength_sub_band)
 
+IF (.NOT. ALLOCATED(Sp%Var%weight_uv_index)) &
+  ALLOCATE(Sp%Var%weight_uv_index( Sp%Dim%nd_sub_band ))
+Sp%Dim%nd_alloc_real = &
+Sp%Dim%nd_alloc_real + SIZE(Sp%Var%weight_uv_index)
+
 IF (.NOT. ALLOCATED(Sp%Var%time)) &
   ALLOCATE(Sp%Var%time( 4, Sp%Dim%nd_times ))
 Sp%Dim%nd_alloc_int = &
@@ -1346,6 +1353,8 @@ IF (ALLOCATED(Sp%Var%total_solar_flux)) &
    DEALLOCATE(Sp%Var%total_solar_flux)
 IF (ALLOCATED(Sp%Var%time)) &
    DEALLOCATE(Sp%Var%time)
+IF (ALLOCATED(Sp%Var%weight_uv_index)) &
+   DEALLOCATE(Sp%Var%weight_uv_index)
 IF (ALLOCATED(Sp%Var%wavelength_sub_band)) &
    DEALLOCATE(Sp%Var%wavelength_sub_band)
 IF (ALLOCATED(Sp%Var%var_band_fraction)) &

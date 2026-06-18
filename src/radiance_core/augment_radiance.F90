@@ -182,6 +182,8 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
 !       Weight to apply to channel increments
   REAL (RealK) :: weight_band_incr
 !       Weight to apply to channel increments mapped from bands
+  REAL (RealK) :: weight_uv_index_incr
+!       Weight to apply to channel flux increments for UV-index calculation
   REAL (RealK) :: photolysis_div_incr(nd_flux_profile, nd_layer,        &
                                       sp%dim%nd_pathway)
 !       Flux divergence for photolysis increment for the sub-band
@@ -210,12 +212,14 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
       i_sub = sp%map%list_sub_band_k(1, 1, i_band)
       i_channel = control%map_channel(i_sub)
       weight_channel_incr = weight_sub_band_incr
+      weight_uv_index_incr = weight_channel_incr*sp%var%weight_uv_index(i_sub)
       photolysis_rate_incr = 0.0_RealK
       photolysis_div_incr = 0.0_RealK
       CALL augment_channel(                                                    &
         control, sp, bound, radout, l_initial_channel, l_clear,                &
         i_channel, n_profile, n_layer, n_viewing_level, n_direction,           &
-        weight_channel_incr, flux_direct_incr, flux_total_incr,                &
+        weight_channel_incr, weight_uv_index_incr,                             &
+        flux_direct_incr, flux_total_incr,                                     &
         actinic_flux_incr, photolysis_div_incr, photolysis_rate_incr,          &
         radiance_incr, photolysis_incr,                                        &
         flux_direct_incr_clear, flux_total_incr_clear, actinic_flux_incr_clear,&
@@ -253,6 +257,8 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
           END IF
         END DO
         IF (l_calc_sub_band) THEN
+          weight_uv_index_incr = weight_channel_incr &
+            * sp%var%weight_uv_index(i_sub)
           photolysis_rate_incr = 0.0_RealK
           photolysis_div_incr = 0.0_RealK
           l_path=.FALSE.
@@ -267,7 +273,8 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
           CALL augment_channel(                                                &
             control, sp, bound, radout, l_initial_channel, l_clear,            &
             i_channel, n_profile, n_layer, n_viewing_level, n_direction,       &
-            weight_channel_incr, flux_direct_incr, flux_total_incr,            &
+            weight_channel_incr, weight_uv_index_incr,                         &
+            flux_direct_incr, flux_total_incr,                                 &
             actinic_flux_incr, photolysis_div_incr, photolysis_rate_incr,      &
             radiance_incr, photolysis_incr, flux_direct_incr_clear,            &
             flux_total_incr_clear, actinic_flux_incr_clear,                    &
@@ -281,6 +288,7 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
     ! Photolysis increments are always calculated using sub-bands
     photolysis_rate_incr = 0.0_RealK
     photolysis_div_incr = 0.0_RealK
+    weight_uv_index_incr = 0.0_RealK
     IF (iex > 0) THEN
       l_path=.FALSE.
       weight_band_incr = 0.0_RealK
@@ -311,6 +319,8 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
             nd_esft_term, nd_abs, weight_channel_incr, i_band, l_path,         &
             iex_minor, i_sub, n_layer, n_profile, k_abs_layer, photol )
           weight_band_incr = weight_band_incr + weight_channel_incr
+          weight_uv_index_incr = weight_uv_index_incr &
+            + weight_channel_incr * sp%var%weight_uv_index(i_sub)
         END IF
       END DO
       CALL finalise_photol_incr(                                               &
@@ -334,7 +344,8 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
     CALL augment_channel(                                                      &
       control, sp, bound, radout, l_initial_channel, l_clear,                  &
       i_channel, n_profile, n_layer, n_viewing_level, n_direction,             &
-      weight_channel_incr, flux_direct_incr, flux_total_incr,                  &
+      weight_channel_incr, weight_uv_index_incr,                               &
+      flux_direct_incr, flux_total_incr,                                       &
       actinic_flux_incr, photolysis_div_incr, photolysis_rate_incr,            &
       radiance_incr, photolysis_incr,                                          &
       flux_direct_incr_clear, flux_total_incr_clear, actinic_flux_incr_clear,  &

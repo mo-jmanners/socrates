@@ -96,6 +96,12 @@ TYPE StrOut
   REAL (RealK), ALLOCATABLE :: contrib_funcf_band(:, :, :)
 !   Contribution function per band (flux)
 
+! UV-index
+  REAL (RealK), ALLOCATABLE :: uv_index(:, :, :)
+!   UV-index per channel
+  REAL (RealK), ALLOCATABLE :: uv_index_clear(:, :, :)
+!   Clear-sky UV-index per channel
+
 ! Photolysis diagnostics
   REAL (RealK), ALLOCATABLE :: actinic_flux(:, :, :)
 !   Actinic flux
@@ -539,6 +545,20 @@ IF (control%l_contrib_func_band) THEN
                                                  sp%dim%nd_band              ))
 END IF
 
+IF (control%l_uv_index) THEN
+  IF (.NOT. ALLOCATED(radout%uv_index))                                        &
+    ALLOCATE(radout%uv_index                   ( dimen%nd_flux_profile,        &
+                                                 0: dimen%nd_layer,            &
+                                                 dimen%nd_channel            ))
+END IF
+
+IF (control%l_uv_index_clear) THEN
+  IF (.NOT. ALLOCATED(radout%uv_index_clear))                                  &
+    ALLOCATE(radout%uv_index_clear             ( dimen%nd_flux_profile,        &
+                                                 0: dimen%nd_layer,            &
+                                                 dimen%nd_channel            ))
+END IF
+
 END SUBROUTINE allocate_out
 !------------------------------------------------------------------------------
 SUBROUTINE deallocate_out(radout)
@@ -547,6 +567,10 @@ IMPLICIT NONE
 
 TYPE (StrOut), INTENT(INOUT) :: radout
 
+IF (ALLOCATED(radout%uv_index_clear)) &
+    DEALLOCATE(radout%uv_index_clear)
+IF (ALLOCATED(radout%uv_index)) &
+    DEALLOCATE(radout%uv_index)
 IF (ALLOCATED(radout%contrib_funcf_band)) &
     DEALLOCATE(radout%contrib_funcf_band)
 IF (ALLOCATED(radout%contrib_funci_band)) &
