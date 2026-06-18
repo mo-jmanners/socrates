@@ -184,6 +184,8 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
 !       Weight to apply to channel increments mapped from bands
   REAL (RealK) :: weight_uv_index_incr
 !       Weight to apply to channel flux increments for UV-index calculation
+  REAL (RealK) :: weight_uv_index_surf_incr
+!       Weight to apply to flux increments for surface UV-index calculation
   REAL (RealK) :: photolysis_div_incr(nd_flux_profile, nd_layer,        &
                                       sp%dim%nd_pathway)
 !       Flux divergence for photolysis increment for the sub-band
@@ -213,6 +215,7 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
       i_channel = control%map_channel(i_sub)
       weight_channel_incr = weight_sub_band_incr
       weight_uv_index_incr = weight_channel_incr*sp%var%weight_uv_index(i_sub)
+      weight_uv_index_surf_incr = weight_uv_index_incr
       photolysis_rate_incr = 0.0_RealK
       photolysis_div_incr = 0.0_RealK
       CALL augment_channel(                                                    &
@@ -233,6 +236,7 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
         i_channel = control%map_channel(i_sub)
         weight_channel_incr = weight_sub_band_incr &
           * sp%map%weight_sub_band_k(i_sub_k, iex, i_band)
+        weight_uv_index_surf_incr = 0.0_RealK
         l_calc_sub_band = .TRUE.
         DO i_abs=2, sp%gas%n_band_absorb(i_band)
           IF (iex_minor(i_abs) > 0) THEN
@@ -259,6 +263,8 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
         IF (l_calc_sub_band) THEN
           weight_uv_index_incr = weight_channel_incr &
             * sp%var%weight_uv_index(i_sub)
+          weight_uv_index_surf_incr = weight_uv_index_surf_incr &
+            + weight_uv_index_incr
           photolysis_rate_incr = 0.0_RealK
           photolysis_div_incr = 0.0_RealK
           l_path=.FALSE.
@@ -339,6 +345,7 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
     ELSE
       weight_channel_incr = weight_incr
     END IF
+    weight_uv_index_surf_incr = weight_uv_index_incr
     ! Increment the fluxes with bands mapping to channels
     i_channel = control%map_channel(i_band)
     CALL augment_channel(                                                      &
@@ -370,12 +377,49 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
                 = weight_blue_incr*sph%allsky%flux_direct(l, n_layer+1)
             END DO
           END IF
+          IF (control%l_uv_index_surf) THEN
+            DO l=1, n_profile
+              radout%uv_index_surf(l) &
+                = weight_uv_index_surf_incr * &
+                ( flux_total_incr(l, 2*n_layer+2) &
+                + sph%allsky%flux_direct(l, n_layer+1) )
+            END DO
+          END IF
+          IF (control%l_uv_index_clear_surf .AND. l_clear) THEN
+            DO l=1, n_profile
+              radout%uv_index_clear_surf(l) &
+                = weight_uv_index_surf_incr * &
+                ( flux_total_incr_clear(l, 2*n_layer+2) &
+                + sph%clear%flux_direct(l, n_layer+1) )
+            END DO
+          END IF
         ELSE
           IF (control%l_blue_flux_surf) THEN
             DO l=1, n_profile
               radout%flux_direct_blue_surf(l) &
                 = weight_blue_incr*flux_direct_incr(l, n_layer)
             END DO
+          END IF
+          IF (control%l_uv_index_surf) THEN
+            DO l=1, n_profile
+              radout%uv_index_surf(l) &
+                = weight_uv_index_surf_incr &
+                * flux_total_incr(l, 2*n_layer+2)
+            END DO
+          END IF
+          IF (control%l_uv_index_clear_surf .AND. l_clear) THEN
+            DO l=1, n_profile
+              radout%uv_index_clear_surf(l) &
+                = weight_uv_index_surf_incr &
+                * flux_total_incr_clear(l, 2*n_layer+2)
+            END DO
+          END IF
+        END IF
+        IF (.NOT.l_clear) THEN
+          IF (control%l_uv_index_clear_surf) THEN
+            DO l=1, n_profile
+              radout%uv_index_clear_surf(l) = 0.0_RealK
+            END DO            
           END IF
         END IF
         IF (control%l_blue_flux_surf) THEN
@@ -416,12 +460,46 @@ SUBROUTINE augment_radiance(control, sp, atm, bound, radout             &
                 + weight_blue_incr*sph%allsky%flux_direct(l, n_layer+1)
             END DO
           END IF
+          IF (control%l_uv_index_surf) THEN
+            DO l=1, n_profile
+              radout%uv_index_surf(l) &
+                = radout%uv_index_surf(l) &
+                + weight_uv_index_surf_incr * &
+                ( flux_total_incr(l, 2*n_layer+2) &
+                + sph%allsky%flux_direct(l, n_layer+1) )
+            END DO
+          END IF
+          IF (control%l_uv_index_clear_surf .AND. l_clear) THEN
+            DO l=1, n_profile
+              radout%uv_index_clear_surf(l) &
+                = radout%uv_index_clear_surf(l) &
+                + weight_uv_index_surf_incr * &
+                ( flux_total_incr_clear(l, 2*n_layer+2) &
+                + sph%clear%flux_direct(l, n_layer+1) )
+            END DO
+          END IF
         ELSE
           IF (control%l_blue_flux_surf) THEN
             DO l=1, n_profile
               radout%flux_direct_blue_surf(l) &
                 = radout%flux_direct_blue_surf(l) &
                 + weight_blue_incr*flux_direct_incr(l, n_layer)
+            END DO
+          END IF
+          IF (control%l_uv_index_surf) THEN
+            DO l=1, n_profile
+              radout%uv_index_surf(l) &
+                = radout%uv_index_surf(l) &
+                + weight_uv_index_surf_incr &
+                * flux_total_incr(l, 2*n_layer+2)
+            END DO
+          END IF
+          IF (control%l_uv_index_clear_surf .AND. l_clear) THEN
+            DO l=1, n_profile
+              radout%uv_index_clear_surf(l) &
+                = radout%uv_index_clear_surf(l) &
+                + weight_uv_index_surf_incr &
+                * flux_total_incr_clear(l, 2*n_layer+2)
             END DO
           END IF
         END IF

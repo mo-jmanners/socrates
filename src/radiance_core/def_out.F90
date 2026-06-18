@@ -101,6 +101,10 @@ TYPE StrOut
 !   UV-index per channel
   REAL (RealK), ALLOCATABLE :: uv_index_clear(:, :, :)
 !   Clear-sky UV-index per channel
+  REAL (RealK), ALLOCATABLE :: uv_index_surf(:)
+!   UV-index at surface
+  REAL (RealK), ALLOCATABLE :: uv_index_clear_surf(:)
+!   Clear-sky UV-index at surface
 
 ! Photolysis diagnostics
   REAL (RealK), ALLOCATABLE :: actinic_flux(:, :, :)
@@ -559,6 +563,16 @@ IF (control%l_uv_index_clear) THEN
                                                  dimen%nd_channel            ))
 END IF
 
+IF (control%l_uv_index_surf) THEN
+  IF (.NOT. ALLOCATED(radout%uv_index_surf))                                   &
+    ALLOCATE(radout%uv_index_surf              ( dimen%nd_flux_profile       ))
+END IF
+
+IF (control%l_uv_index_clear_surf) THEN
+  IF (.NOT. ALLOCATED(radout%uv_index_clear_surf))                             &
+    ALLOCATE(radout%uv_index_clear_surf        ( dimen%nd_flux_profile       ))
+END IF
+
 END SUBROUTINE allocate_out
 !------------------------------------------------------------------------------
 SUBROUTINE deallocate_out(radout)
@@ -567,6 +581,10 @@ IMPLICIT NONE
 
 TYPE (StrOut), INTENT(INOUT) :: radout
 
+IF (ALLOCATED(radout%uv_index_clear_surf)) &
+    DEALLOCATE(radout%uv_index_clear_surf)
+IF (ALLOCATED(radout%uv_index_surf)) &
+    DEALLOCATE(radout%uv_index_surf)
 IF (ALLOCATED(radout%uv_index_clear)) &
     DEALLOCATE(radout%uv_index_clear)
 IF (ALLOCATED(radout%uv_index)) &

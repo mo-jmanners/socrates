@@ -408,6 +408,10 @@ TYPE StrCtrl
 !   Calculate UV-index per channel
   LOGICAL :: l_uv_index_clear                                     = .FALSE.
 !   Calculate clear-sky UV-index per channel
+  LOGICAL :: l_uv_index_surf                                      = .FALSE.
+!   Calculate UV-index at surface
+  LOGICAL :: l_uv_index_clear_surf                                = .FALSE.
+!   Calculate clear-sky UV-index at surface
   LOGICAL :: l_actinic_flux                                       = .FALSE.
 !   Calculate actinic flux per channel
   LOGICAL :: l_actinic_flux_clear                                 = .FALSE.

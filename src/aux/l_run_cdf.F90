@@ -338,7 +338,9 @@ PROGRAM l_run_cdf
   control%l_flux_up_clear_band = .FALSE.
   control%l_uv_index = spectrum%basic%l_present(17) &
                  .AND. spectrum%basic%l_present(2)
+  control%l_uv_index_surf = control%l_uv_index
   control%l_uv_index_clear = .FALSE.
+  control%l_uv_index_clear_surf = .FALSE.
   control%l_actinic_flux = spectrum%basic%l_present(2)
   control%l_actinic_flux_clear = .FALSE.
   control%l_actinic_flux_band = .FALSE.
@@ -1504,6 +1506,9 @@ END IF
       END IF
     END IF
 
+    IF (control%l_uv_index_surf) THEN
+      WRITE(iu_stdout, "(a,(f5.2))") 'UV-index:', radout%uv_index_surf
+    END IF
     IF (control%l_uv_index) THEN
       uv_index = radout%uv_index
     END IF
