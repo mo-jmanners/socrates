@@ -142,6 +142,8 @@ PROGRAM tidy_90
       '9.   Scale extinction for ice-crystals.'
     WRITE(iu_stdout, '(5x, a)') &
       '10.   Ensure a single null absorber is present in each band.'
+    WRITE(iu_stdout, '(5x, a)') &
+      '11.   Set the scattering method for each k-term.'
     WRITE(iu_stdout, '(/5x, a//)') &
       '-1.  to finish.'
 !
@@ -266,6 +268,8 @@ PROGRAM tidy_90
         ENDIF
       CASE(10)
         CALL set_null_absorber
+      CASE(11)
+        CALL set_scatter_method
       CASE DEFAULT
         WRITE(iu_err, '(a)') '+++ Invalid type of process:'
         IF (l_interactive) THEN
@@ -863,5 +867,82 @@ CONTAINS
     END DO
 
   END SUBROUTINE set_null_absorber
+
+!+ ---------------------------------------------------------------------
+! Subroutine to set the scattering method per k-term 
+!
+! Method:
+!      A typical amount of each gas in a column is given.
+!      For each k-term the scattering method is set depending on the
+!      column optical depth.
+!      (For use with the Hybrid Scattering scheme.)
+!
+!- ---------------------------------------------------------------------
+  SUBROUTINE set_scatter_method
+
+    USE gas_list_pcf, ONLY: name_absorb
+    USE rad_pcf, ONLY: ip_no_scatter_sw, ip_no_scatter_abs, ip_scatter_full
+    IMPLICIT NONE
+
+    INTEGER :: i, k, i_band, i_gas
+!     Loop variables
+    INTEGER :: n_k
+!     Number of k-terms
+    REAL (RealK) :: column_gas(Spectrum%Dim%nd_species)
+!     Specified column amounts for gases
+    REAL (RealK) :: tau
+!     Optical depth of column
+    REAL (RealK) :: tau_max
+!     Threshold optical depth for neglecting scattering
+
+!   Obtain column amounts of gas absorbers.
+    WRITE(iu_stdout, '(/A, /A)') &
+      'For each gas absorber enter the column amount (kg/m2)', &
+      'to determine where scattering can be neglected.'
+    DO i=1, Spectrum%Gas%n_absorb
+      WRITE(iu_stdout, '(4X, 2A)') 'Column amount for ', &
+        name_absorb(Spectrum%Gas%type_absorb(i))
+      READ(iu_stdin, *, IOSTAT=ios) column_gas(i)
+      IF (ios.NE.0) THEN
+        WRITE(iu_err, '(A)') '+++ Erroneous response.'
+        STOP
+      END IF
+    END DO
+
+!   Optical depth of column for which scattering is neglected
+    WRITE(iu_stdout, '(/A)') &
+      'Enter the column optical depth threshold for neglecting scattering.'
+    READ(iu_stdin, *, IOSTAT=ios) tau_max
+    IF (ios.NE.0) THEN
+      WRITE(iu_err, '(A)') '+++ Erroneous response.'
+      STOP
+    END IF
+
+    DO i_band=1, Spectrum%Basic%n_band
+      DO i=1, Spectrum%Gas%n_band_absorb(i_band)
+        i_gas = Spectrum%Gas%index_absorb(i, i_band)
+        n_k = Spectrum%Gas%i_band_k(i_band, i_gas)
+        IF (column_gas(i_gas) > 0.0_RealK) THEN
+          DO k=1, n_k
+            tau = Spectrum%Gas%k(k, i_band, i_gas) * column_gas(i_gas)
+            IF (tau > tau_max) THEN
+              IF (Spectrum%Basic%l_present(2)) THEN
+                ! SW spectral file
+                Spectrum%Gas%i_scat(k, i_band, i_gas) = ip_no_scatter_sw
+              ELSE
+                ! LW spectral file
+                Spectrum%Gas%i_scat(k, i_band, i_gas) = ip_no_scatter_abs
+              END IF
+            ELSE
+              Spectrum%Gas%i_scat(k, i_band, i_gas) = ip_scatter_full
+            END IF
+          END DO
+        ELSE
+          Spectrum%Gas%i_scat(1:n_k, i_band, i_gas) = 0
+        END IF
+      END DO
+    END DO
+
+  END SUBROUTINE set_scatter_method
 
 END PROGRAM tidy_90

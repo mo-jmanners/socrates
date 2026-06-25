@@ -97,7 +97,7 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
   USE rad_pcf, ONLY: ip_solar, ip_infra_red, ip_spherical_harmonic, &
                      ip_two_stream, ip_surf_alb_diff, ip_ir_gauss, &
                      ip_cloud_mcica, ip_scatter_hybrid, ip_scatter_full, &
-                     ip_rayleigh_sub_band
+                     ip_no_scatter_sw, ip_rayleigh_sub_band
   USE diffusivity_factor, ONLY: diffusivity_factor_minor
   USE vectlib_mod, ONLY: exp_v
   USE yomhook, ONLY: lhook, dr_hook
@@ -1145,7 +1145,8 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
       rayleigh_adjust = 0.0_RealK
     END IF
 
-    IF (i_cloud == ip_cloud_mcica) THEN
+    IF (i_cloud == ip_cloud_mcica .AND. &
+        i_scatter_method /= ip_no_scatter_sw) THEN
 
       CALL mcica_sample(ierr &
         , control, dimen, atm, cld, bound &

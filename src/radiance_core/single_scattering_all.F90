@@ -11,7 +11,7 @@ MODULE single_scattering_all_mod
 IMPLICIT NONE
 CHARACTER(LEN=*), PARAMETER, PRIVATE :: ModuleName = 'SINGLE_SCATTERING_ALL_MOD'
 CONTAINS
-SUBROUTINE single_scattering_all(i_scatter_method_band                  &
+SUBROUTINE single_scattering_all(i_scatter_method                       &
 !                 Atmospheric Properties
     , n_profile, n_layer, d_mass                                        &
 !                 Cloudy Properties
@@ -46,8 +46,8 @@ SUBROUTINE single_scattering_all(i_scatter_method_band                  &
 
 ! Dummy variables.
   INTEGER, INTENT(IN) ::                                                &
-      i_scatter_method_band
-!       Treatment of scattering in the band
+      i_scatter_method
+!       Treatment of scattering
 
 !                 Atmospheric properties
   INTEGER, INTENT(IN) ::                                                &
@@ -98,7 +98,7 @@ SUBROUTINE single_scattering_all(i_scatter_method_band                  &
 ! In the following call K_GAS_ABS can be used as if it had the
 ! smaller dimension ND_LAYER_CLR as long as the last dimension
 ! is over atmospheric layers.
-  CALL single_scattering(i_scatter_method_band                          &
+  CALL single_scattering(i_scatter_method                               &
     , n_profile, 1, n_cloud_top-1                                       &
     , d_mass                                                            &
     , ss_prop%k_grey_tot_clr, ss_prop%k_ext_scat_clr, k_gas_abs         &
@@ -106,7 +106,7 @@ SUBROUTINE single_scattering_all(i_scatter_method_band                  &
     , ss_prop%tau_clr, ss_prop%omega_clr                                &
     , nd_profile, nd_layer, 1, nd_layer_clr                             &
     )
-  CALL single_scattering(i_scatter_method_band                          &
+  CALL single_scattering(i_scatter_method                               &
     , n_profile, n_cloud_top, n_layer                                   &
     , d_mass                                                            &
     , ss_prop%k_grey_tot(:, :, 0)                                       &
@@ -119,7 +119,7 @@ SUBROUTINE single_scattering_all(i_scatter_method_band                  &
 
   IF (l_cloud) THEN
     DO k=1, n_cloud_type
-      CALL single_scattering(i_scatter_method_band                      &
+      CALL single_scattering(i_scatter_method                           &
         , n_profile, n_cloud_top, n_layer                               &
         , d_mass                                                        &
         , ss_prop%k_grey_tot(:, :, k)                                   &
