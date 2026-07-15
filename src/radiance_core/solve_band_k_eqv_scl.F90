@@ -615,7 +615,8 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
       ! Ignore absorption for gases that only require photolysis rates
       IF (l_photol_only(i_abs_band)) CYCLE
 
-      IF (n_abs_esft(i_abs_band) == 1 .AND. control%l_spherical_solar) THEN
+      IF (n_abs_esft(i_abs_band) == 1 .AND. &
+         (control%l_grey_single .OR. control%l_spherical_solar)) THEN
         ! If there is only 1 k-term for this absorber there is no need to
         ! calculate an equivalent extinction: the single absorption coefficient
         ! is added directly to the grey absorption.

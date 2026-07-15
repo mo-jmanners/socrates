@@ -123,6 +123,16 @@ SUBROUTINE make_block_17(Sp, Sol, ierr)
             END IF
           END IF
         END DO
+        DO band=max_band+1, Sp%Basic%n_band
+          IF (Sp%Gas%n_band_absorb(band) > 0) THEN
+            index_absorb = Sp%Gas%index_absorb(1, band)
+            IF (Sp%Gas%n_sub_band_gas(band, index_absorb) > 1) THEN
+              ! Remove gas sub-band data for undivided bands to save space
+              Sp%Gas%n_sub_band_gas(band, index_absorb) = 1
+              Sp%Gas%sub_band(band, index_absorb)%k(1) = 0
+            END IF
+          END IF
+        END DO
         EXIT
       END IF
       index_absorb = Sp%Gas%index_absorb(1, band)

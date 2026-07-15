@@ -451,7 +451,9 @@ CONTAINS
 !     Number of absorbers and continua in a band
     INTEGER :: n_k
 !     Number of k-terms
-    REAL (RealK) :: column_gas(Spectrum%Dim%nd_species)
+    INTEGER :: n_column(Spectrum%Dim%nd_species), n_column_p
+!     Number of column amounts
+    REAL (RealK) :: column_gas(3, Spectrum%Dim%nd_species)
 !     Specified column amounts for gases
     REAL (RealK) :: column_cont(Spectrum%Dim%nd_cont)
 !     Specified column amounts for continua
@@ -474,6 +476,8 @@ CONTAINS
 !     Surface pressure
     REAL (RealK) :: p_level
 !     Pressure at current level
+    REAL (RealK) :: p_column(3)
+!     Pressure for different gas cumulative column amounts
     REAL (RealK), PARAMETER :: p_toa = 1.0_RealK
 !     Pressure at TOA
     REAL (RealK), PARAMETER :: p_inc = 10.0**(0.1_RealK)
@@ -484,6 +488,8 @@ CONTAINS
 !     Map sorting absorbers by increasing transmission
     CHARACTER(LEN=1) :: char_yn
 !     Response to yes/no question
+    CHARACTER(LEN=1024) :: column
+!     Column amounts
     LOGICAL :: l_allow_cont_major
 !     Flag for allowing continua to become the major absorber
     LOGICAL :: l_cont_added(Spectrum%Dim%nd_cont)
@@ -503,33 +509,37 @@ CONTAINS
     WRITE(iu_stdout, '(/A, /A)') &
       'For each absorber enter the amounts of the gas to find', &
       'the major gas in each band.'
-    DO i=1, Spectrum%Gas%n_absorb
-      WRITE(iu_stdout, '(4X, 2A)') 'Column amount for ', &
-        name_absorb(Spectrum%Gas%type_absorb(i))
+    n_column = 1
+    DO i_gas=1, Spectrum%Gas%n_absorb
+      WRITE(iu_stdout, '(4X, 2A)') &
+        'Increasing cumulative column amounts (up to 3) for ', &
+        name_absorb(Spectrum%Gas%type_absorb(i_gas))
+      READ(iu_stdin, '(a)') column
+      n_column(i_gas) = 3
       DO
-        READ(iu_stdin, *, IOSTAT=ios) column_gas(i)
-        IF (ios.NE.0) THEN
-          WRITE(iu_err, '(A)') '+++ Erroneous response:'
-          IF (lock_code(.TRUE.)) THEN
+        READ(column, *, IOSTAT=ios) column_gas(1:n_column(i_gas), i_gas)
+        IF (ios /= 0) THEN
+          IF (n_column(i_gas) == 1) THEN
+            WRITE(iu_err, '(A)') '+++ Erroneous response'
             STOP
           ELSE
-            WRITE(iu_stdout, '(A)') 'Please re-type.'
-          ENDIF
+            n_column(i_gas) = n_column(i_gas) - 1
+          END IF
         ELSE
           EXIT
-        ENDIF
+        END IF
       END DO
-    ENDDO
-    DO i=1, Spectrum%ContGen%n_cont
-      index_gas_1=Spectrum%ContGen%index_cont_gas_1(i)
-      index_gas_2=Spectrum%ContGen%index_cont_gas_2(i)
+    END DO
+    DO i_cont=1, Spectrum%ContGen%n_cont
+      index_gas_1=Spectrum%ContGen%index_cont_gas_1(i_cont)
+      index_gas_2=Spectrum%ContGen%index_cont_gas_2(i_cont)
       WRITE(iu_stdout, '(4X, A)') 'Column amount for ' // &
         TRIM(name_absorb(Spectrum%Gas%type_absorb(index_gas_1))) // &
         ' -- ' // &
         TRIM(name_absorb(Spectrum%Gas%type_absorb(index_gas_2))) // &
         ' continuum'
       DO
-        READ(iu_stdin, *, IOSTAT=ios) column_cont(i)
+        READ(iu_stdin, *, IOSTAT=ios) column_cont(i_cont)
         IF (ios.NE.0) THEN
           WRITE(iu_err, '(A)') '+++ Erroneous response:'
           IF (lock_code(.TRUE.)) THEN
@@ -543,22 +553,31 @@ CONTAINS
       END DO
     ENDDO
 
-    IF (Spectrum%ContGen%n_cont > 0) THEN
-      WRITE(iu_stdout, '(/,A)') 'Enter the surface pressure.'
-      DO
+    n_column_p = MAXVAL(n_column)
+    IF (Spectrum%ContGen%n_cont > 0 .OR. n_column_p > 1) THEN
+      IF (n_column_p > 1) THEN
+        WRITE(iu_stdout, '(/,A)') 'Enter the column pressures (low to high)'
+        READ(iu_stdin, *, IOSTAT=ios) p_column(1:n_column_p)
+        IF (ios /= 0 .OR. ANY(p_column(1:n_column_p) <= 0.0_RealK)) THEN
+          WRITE(iu_err, '(A)') '+++ Erroneous response'
+          STOP
+        ELSE
+          p_surf=MAXVAL(p_column(1:n_column_p))
+        END IF
+      ELSE
+        WRITE(iu_stdout, '(/,A)') 'Enter the surface pressure.'
         READ(iu_stdin, *, IOSTAT=ios) p_surf
         IF (ios /= 0 .OR. p_surf <= 0.0_RealK) THEN
-          WRITE(iu_err, '(A)') '+++ Erroneous response:'
-          IF (lock_code(.TRUE.)) THEN
-            STOP
-          ELSE
-            WRITE(iu_stdout, '(A)') 'Please re-type.'
-          ENDIF
-        ELSE
-          EXIT
-        ENDIF
-      ENDDO
+          WRITE(iu_err, '(A)') '+++ Erroneous response'
+          STOP
+        END IF
+      END IF
+    ELSE
+!     If there are no continua the surface pressure is arbitrary
+      p_surf=1.0E+05_RealK
+    END IF
 
+    IF (Spectrum%ContGen%n_cont > 0) THEN
       WRITE(iu_stdout, '(/,A)') 'Do you wish to allow continua to ' // &
           'become the major absorber? (Y/N)'
       DO
@@ -579,8 +598,6 @@ CONTAINS
         ENDIF
       ENDDO
     ELSE
-!     If there are no continua the surface pressure is arbitrary
-      p_surf=1.0E+05_RealK
       l_allow_cont_major=.FALSE.
     END IF
 
@@ -601,7 +618,29 @@ CONTAINS
         l_cont_added=.FALSE.
         DO i=1,n_band_absorb
           i_gas=Spectrum%Gas%index_absorb(i, i_band)
-          column_mass_gas(i)=column_gas(i_gas)*p_level/p_surf
+          IF (n_column(i_gas) == 3) THEN
+            IF (p_level < p_column(1)) THEN
+              column_mass_gas(i) = column_gas(1, i_gas)*p_level/p_column(1)
+            ELSE IF (p_level < p_column(2)) THEN
+              column_mass_gas(i) = column_gas(1, i_gas) &
+                + ( column_gas(2, i_gas) - column_gas(1, i_gas) ) &
+                * ( p_level - p_column(1) ) / ( p_column(2) - p_column(1) )
+            ELSE
+              column_mass_gas(i) = column_gas(2, i_gas) &
+                + ( column_gas(3, i_gas) - column_gas(2, i_gas) ) &
+                * ( p_level - p_column(2) ) / ( p_column(3) - p_column(2) )
+            END IF
+          ELSE IF (n_column(i_gas) == 2) THEN
+            IF (p_level < p_column(1)) THEN
+              column_mass_gas(i) = column_gas(1, i_gas)*p_level/p_column(1)
+            ELSE
+              column_mass_gas(i) = column_gas(1, i_gas) &
+                + ( column_gas(2, i_gas) - column_gas(1, i_gas) ) &
+                * ( p_level - p_column(1) ) / ( p_surf - p_column(1) )
+            END IF
+          ELSE
+            column_mass_gas(i)=column_gas(1, i_gas)*p_level/p_surf
+          END IF
           n_k=Spectrum%Gas%i_band_k(i_band, i_gas)
           trans_column_gas(i)=SUM(Spectrum%Gas%w(1:n_k, i_band, i_gas) &
             *EXP(-Spectrum%Gas%k(1:n_k, i_band, i_gas)*column_mass_gas(i)))

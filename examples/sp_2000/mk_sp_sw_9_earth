@@ -13,7 +13,7 @@ fi
 # -------------------------
 procs=4
 procs_s=8
-mem=24G
+mem=48G
 mem_s=64G
 . ./env_earth
 
@@ -40,7 +40,7 @@ if [ ! -s ${sp_dir}/h2o_fuv_l ] ; then
   echo 'H2O: far UV - cross-section'
   rm -f ${sp_dir}/h2o_fuv_l* ${sp_dir}/h2o_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_h2o \
-    -R 1 2 -i 1.0 -l $IP_H2O 1.0e-5 -t 1.0e-3  \
+    -R 1 3 -i 1.0 -l $IP_H2O 1.0e-5 -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/h2o_fuv_l -m ${sp_dir}/h2o_fuv_lm \
     -L ${sp_dir}/h2o_lbl_fuv.nc -np $procs"
@@ -59,7 +59,7 @@ if [ ! -s $sp_dir/h2o_nuv_l ] ; then
     echo "H2O: near UV - lines"
     rm -f $sp_dir/h2o_nuv_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 4 4 -l $IP_H2O ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 4 4 -l $IP_H2O ${COL_MASS_K_H2O} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_nuv_l -m $sp_dir/h2o_nuv_lm \
       -L $H2O_LBL_VIS -np $procs"
@@ -78,7 +78,7 @@ if [ ! -s $sp_dir/h2o_vis_l ] ; then
     echo "H2O: visible"
     rm -f $sp_dir/h2o_vis_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 5 5 -l $IP_H2O ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 5 5 -l $IP_H2O ${COL_MASS_K_H2O} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_vis_l -m $sp_dir/h2o_vis_lm \
       -L $H2O_LBL_VIS -np $procs"
@@ -98,7 +98,7 @@ if [ ! -s $sp_dir/h2o_nirf_l ] ; then
     rm -f $sp_dir/h2o_nirf_l*
     rm -f $sp_dir/h2o_nirf_l_map.nc
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 6 7 -l $IP_H2O ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 6 7 -l $IP_H2O ${COL_MASS_K_H2O} -t 1.0e-2 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_nirf_l -m $sp_dir/h2o_nirf_lm \
       -L $H2O_LBL_IRF -np $procs \
@@ -119,7 +119,7 @@ if [ ! -s $sp_dir/h2o_mirf_l ] ; then
     rm -f $sp_dir/h2o_mirf_l*
     rm -f $sp_dir/h2o_mirf_l_map.nc
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_H2O ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 8 8 -l $IP_H2O ${COL_MASS_K_H2O} -t 1.0e-2 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_mirf_l -m $sp_dir/h2o_mirf_lm \
       -L $H2O_LBL_IRF -np $procs \
@@ -140,7 +140,7 @@ if [ ! -s $sp_dir/h2o_firf_l ] ; then
     rm -f $sp_dir/h2o_firf_l*
     rm -f $sp_dir/h2o_firf_l_map.nc
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_H2O ${COL_MASS_K_H2O} -b 5.0e-4 \
+      -R 9 9 -l $IP_H2O ${COL_MASS_K_H2O} -t 1.2e-2 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/h2o_firf_l -m $sp_dir/h2o_firf_lm \
       -L $H2O_LBL_IRF -np $procs \
@@ -243,7 +243,7 @@ if [ ! -s $sp_dir/co2_nir_l ] ; then
     echo "CO2: near infra-red"
     rm -f $sp_dir/co2_nir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 6 7 -l $IP_CO2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -R 6 7 -l $IP_CO2 ${COL_MASS_K_CO2} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/co2_nir_l -m $sp_dir/co2_nir_lm \
       -L $CO2_LBL -np $procs"
@@ -262,7 +262,7 @@ if [ ! -s $sp_dir/co2_mir_l ] ; then
     echo "CO2: mid infra-red"
     rm -f $sp_dir/co2_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_CO2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -R 8 8 -l $IP_CO2 ${COL_MASS_K_CO2} -t 4.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/co2_mir_l -m $sp_dir/co2_mir_lm \
       -L $CO2_LBL -np $procs"
@@ -281,7 +281,7 @@ if [ ! -s $sp_dir/co2_fir_l ] ; then
     echo "CO2: far infra-red"
     rm -f $sp_dir/co2_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_CO2 ${COL_MASS_K_CO2} -b 5.0e-4 \
+      -R 9 9 -l $IP_CO2 ${COL_MASS_K_CO2} -t 1.0e-2 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/co2_fir_l -m $sp_dir/co2_fir_lm \
       -L $CO2_LBL -np $procs"
@@ -320,7 +320,7 @@ if [ ! -s $sp_dir/o3_mir_l ] ; then
     echo "O3: mid infra-red"
     rm -f $sp_dir/o3_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_O3 ${COL_MASS_K_O3} -b 5.0e-4 \
+      -R 8 8 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/o3_mir_l -m $sp_dir/o3_mir_lm \
       -L $O3_LBL -np $procs"
@@ -339,7 +339,7 @@ if [ ! -s $sp_dir/o3_fir_l ] ; then
     echo "O3: far infra-red"
     rm -f $sp_dir/o3_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_O3 ${COL_MASS_K_O3} -b 5.0e-4 \
+      -R 9 9 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/o3_fir_l -m $sp_dir/o3_fir_lm \
       -L $O3_LBL -np $procs"
@@ -406,7 +406,7 @@ if [ ! -s $sp_dir/n2o_nir_l ] ; then
     echo "N2O: near infra-red"
     rm -f $sp_dir/n2o_nir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 7 7 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
+      -R 7 7 -l $IP_N2O ${COL_MASS_K_N2O} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/n2o_nir_l -m $sp_dir/n2o_nir_lm \
       -L $N2O_LBL -np $procs"
@@ -425,7 +425,7 @@ if [ ! -s $sp_dir/n2o_mir_l ] ; then
     echo "N2O: mid infra-red"
     rm -f $sp_dir/n2o_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
+      -R 8 8 -l $IP_N2O ${COL_MASS_K_N2O} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/n2o_mir_l -m $sp_dir/n2o_mir_lm \
       -L $N2O_LBL -np $procs"
@@ -444,7 +444,7 @@ if [ ! -s $sp_dir/n2o_fir_l ] ; then
     echo "N2O: far infra-red"
     rm -f $sp_dir/n2o_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_N2O ${COL_MASS_K_N2O} -b 5.0e-4 \
+      -R 9 9 -l $IP_N2O ${COL_MASS_K_N2O} -t 6.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/n2o_fir_l -m $sp_dir/n2o_fir_lm \
       -L $N2O_LBL -np $procs"
@@ -506,7 +506,7 @@ if [ ! -s $sp_dir/ch4_nir_l ] ; then
     echo "CH4: near infra-red"
     rm -f $sp_dir/ch4_nir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 7 7 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
+      -R 7 7 -l $IP_CH4 ${COL_MASS_K_CH4} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/ch4_nir_l -m $sp_dir/ch4_nir_lm \
       -L $CH4_LBL -np $procs"
@@ -525,7 +525,7 @@ if [ ! -s $sp_dir/ch4_mir_l ] ; then
     echo "CH4: mid infra-red"
     rm -f $sp_dir/ch4_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
+      -R 8 8 -l $IP_CH4 ${COL_MASS_K_CH4} -t 6.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/ch4_mir_l -m $sp_dir/ch4_mir_lm \
       -L $CH4_LBL -np $procs"
@@ -544,7 +544,7 @@ if [ ! -s $sp_dir/ch4_fir_l ] ; then
     echo "CH4: far infra-red"
     rm -f $sp_dir/ch4_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_CH4 ${COL_MASS_K_CH4} -b 5.0e-4 \
+      -R 9 9 -l $IP_CH4 ${COL_MASS_K_CH4} -t 6.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/ch4_fir_l -m $sp_dir/ch4_fir_lm \
       -L $CH4_LBL -np $procs"
@@ -566,7 +566,7 @@ if [ ! -s ${sp_dir}/o2_fuv_l ] ; then
   echo 'O2: FUV - cross-section'
   rm -f ${sp_dir}/o2_fuv_l* ${sp_dir}/o2_lbl_fuv*
   ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_o2 \
-    -R 1 1 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 5.0e-4  \
+    -R 1 1 -i 1.0 -l $IP_O2 ${COL_MASS_K_O2} -t 1.0e-3  \
     -s $skelfile +S $SOLSPEC \
     -o ${sp_dir}/o2_fuv_l -m ${sp_dir}/o2_fuv_lm \
     -L ${sp_dir}/o2_lbl_fuv.nc -np $procs"
@@ -599,7 +599,7 @@ if [ ! -s $sp_dir/o2_nir_l ] ; then
     echo "O2: near infra-red"
     rm -f $sp_dir/o2_nir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 6 7 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+      -R 6 7 -l $IP_O2 ${COL_MASS_K_O2} -t 2.2e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/o2_nir_l -m $sp_dir/o2_nir_lm \
       -L $O2_LBL -np $procs"
@@ -618,7 +618,7 @@ if [ ! -s $sp_dir/o2_mir_l ] ; then
     echo "O2: mid infra-red"
     rm -f $sp_dir/o2_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+      -R 8 8 -l $IP_O2 ${COL_MASS_K_O2} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/o2_mir_l -m $sp_dir/o2_mir_lm \
       -L $O2_LBL -np $procs"
@@ -637,7 +637,7 @@ if [ ! -s $sp_dir/o2_fir_l ] ; then
     echo "O2: far infra-red"
     rm -f $sp_dir/o2_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_O2 ${COL_MASS_K_O2} -b 5.0e-4 \
+      -R 9 9 -l $IP_O2 ${COL_MASS_K_O2} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/o2_fir_l -m $sp_dir/o2_fir_lm \
       -L $O2_LBL -np $procs"
@@ -652,38 +652,6 @@ fi
 # ----------------------------
 # Nitric Oxide (NO)
 # ----------------------------
-uv_no=${sp_dir}/no.uvxsc
-rm -f $uv_no
-dat2xsc no_298K_Iida86_Chang93.dat $uv_no  #  6.5 - 228.5 nm
-if [ ! -s ${sp_dir}/no_fuv_l ] ; then
-  echo 'NO: FUV cross-section'
-  rm -f ${sp_dir}/no_fuv_l* ${sp_dir}/no_lbl_fuv*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no \
-    -R 1 1 -i 1.0 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/no_fuv_l -m ${sp_dir}/no_fuv_lm \
-    -L ${sp_dir}/no_lbl_fuv.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/no_fuv_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/no_fuv_log
-  fi
-fi
-if [ ! -s ${sp_dir}/no_uv_l ] ; then
-  echo 'NO: UV cross-section'
-  rm -f ${sp_dir}/no_uv_l* ${sp_dir}/no_lbl_uv*
-  ck_args="Ccorr_k -F $PT_SINGLE -UVX $uv_no \
-    -R 3 3 -i 1.0 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3  \
-    -s $skelfile +S $SOLSPEC \
-    -o ${sp_dir}/no_uv_l -m ${sp_dir}/no_uv_lm \
-    -L ${sp_dir}/no_lbl_uv.nc -np $procs"
-  if command -v sbatch &> /dev/null ; then
-    sbatch -W -n $procs -o ${sp_dir}/no_uv_log -t 60 ${ck_args} &
-  else
-    ${ck_args} > ${sp_dir}/no_uv_log
-  fi
-fi
-
 if [ ! -s $sp_dir/no_dl_l ] ; then
   if [ ! -s $NO_UVLBL ] ; then
     echo "NO: No ultra-violet LBL file: please run ./mk_no_uvlbl_2000_earth"
@@ -692,72 +660,14 @@ if [ ! -s $sp_dir/no_dl_l ] ; then
     echo "NO: UV lines"
     rm -f $sp_dir/no_dl_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 2 2 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
+      -R 2 2 -l $IP_NO ${COL_MASS_K_NO} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/no_dl_l -m $sp_dir/no_dl_lm \
       -L $NO_UVLBL -np $procs"
     if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/no_dl_log --mem=48G -t 360 ${ck_args} &
+      sbatch -W -n $procs -o $sp_dir/no_dl_log --mem=$mem -t 360 ${ck_args} &
     else
       ${ck_args} > $sp_dir/no_dl_log
-    fi
-  fi
-fi
-
-if [ ! -s $sp_dir/no_nir_l ] ; then
-  if [ ! -s $NO_LBL ] ; then
-    echo "NO: No LBL file: please run ./mk_no_lbl_2000_earth"
-    exit 1
-  else
-    echo "NO: near infra-red"
-    rm -f $sp_dir/no_nir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 5 7 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/no_nir_l -m $sp_dir/no_nir_lm \
-      -L $NO_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/no_nir_log --mem=48G -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/no_nir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/no_mir_l ] ; then
-  if [ ! -s $NO_LBL ] ; then
-    echo "NO: No LBL file: please run ./mk_no_lbl_2000_earth"
-    exit 1
-  else
-    echo "NO: mid infra-red"
-    rm -f $sp_dir/no_mir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/no_mir_l -m $sp_dir/no_mir_lm \
-      -L $NO_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/no_mir_log --mem=$mem -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/no_mir_log
-    fi
-  fi
-fi
-if [ ! -s $sp_dir/no_fir_l ] ; then
-  if [ ! -s $NO_LBL ] ; then
-    echo "NO: No LBL file: please run ./mk_no_lbl_2000_earth"
-    exit 1
-  else
-    echo "NO: far infra-red"
-    rm -f $sp_dir/no_fir_l*
-    ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_NO ${COL_MASS_K_NO} -b 5.0e-4 \
-      -s $skelfile +S $SOLSPEC -lk \
-      -o $sp_dir/no_fir_l -m $sp_dir/no_fir_lm \
-      -L $NO_LBL -np $procs"
-    if command -v sbatch &> /dev/null ; then
-      sbatch -W -n $procs -o $sp_dir/no_fir_log --mem=$mem -t 360 ${ck_args} &
-    else
-      ${ck_args} > $sp_dir/no_fir_log
     fi
   fi
 fi
@@ -791,7 +701,7 @@ if [ ! -s $sp_dir/so2_fir_l ] ; then
     echo "SO2: far infra-red"
     rm -f $sp_dir/so2_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_SO2 ${COL_MASS_K_SO2} -b 5.0e-4 \
+      -R 9 9 -l $IP_SO2 ${COL_MASS_K_SO2} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/so2_fir_l -m $sp_dir/so2_fir_lm \
       -L $SO2_LBL -np $procs"
@@ -940,7 +850,7 @@ if [ ! -s $sp_dir/ocs_nir_l ] ; then
     echo "OCS: near infra-red"
     rm -f $sp_dir/ocs_nir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 7 7 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
+      -R 7 7 -l $IP_OCS ${COL_MASS_K_OCS} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/ocs_nir_l -m $sp_dir/ocs_nir_lm \
       -L $OCS_LBL -np $procs"
@@ -959,7 +869,7 @@ if [ ! -s $sp_dir/ocs_mir_l ] ; then
     echo "OCS: mid infra-red"
     rm -f $sp_dir/ocs_mir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 8 8 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
+      -R 8 8 -l $IP_OCS ${COL_MASS_K_OCS} -t 1.0e-3 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/ocs_mir_l -m $sp_dir/ocs_mir_lm \
       -L $OCS_LBL -np $procs"
@@ -978,7 +888,7 @@ if [ ! -s $sp_dir/ocs_fir_l ] ; then
     echo "OCS: far infra-red"
     rm -f $sp_dir/ocs_fir_l*
     ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} \
-      -R 9 9 -l $IP_OCS ${COL_MASS_K_OCS} -b 5.0e-4 \
+      -R 9 9 -l $IP_OCS ${COL_MASS_K_OCS} -t 1.0e-2 \
       -s $skelfile +S $SOLSPEC -lk \
       -o $sp_dir/ocs_fir_l -m $sp_dir/ocs_fir_lm \
       -L $OCS_LBL -np $procs"
@@ -1709,7 +1619,7 @@ $specfile
 2
 n
 ${SOLSPEC}
-n
+y
 3
 a
 5
@@ -1805,22 +1715,7 @@ y
 ${sp_dir}/o2_fir_l
 5
 y
-${sp_dir}/no_fuv_l
-5
-y
-${sp_dir}/no_uv_l
-5
-y
 ${sp_dir}/no_dl_l
-5
-y
-${sp_dir}/no_nir_l
-5
-y
-${sp_dir}/no_mir_l
-5
-y
-${sp_dir}/no_fir_l
 5
 y
 ${sp_dir}/so2_uv_l
@@ -2012,21 +1907,19 @@ o
 1.0e5
 0.99999999990
 6
-${COL_MASS_MAJOR_H2O}
-${COL_MASS_MAJOR_CO2}
-${COL_MASS_MAJOR_O3}
-${COL_MASS_MAJOR_N2O}
+${COL_MASS_STRATOPAUSE_H2O} ${COL_MASS_TROPOPAUSE_H2O} ${COL_MASS_SURFACE_H2O}
+${COL_MASS_STRATOPAUSE_CO2} ${COL_MASS_TROPOPAUSE_CO2} ${COL_MASS_SURFACE_CO2}
+${COL_MASS_STRATOPAUSE_O3} ${COL_MASS_TROPOPAUSE_O3} ${COL_MASS_SURFACE_O3}
+${COL_MASS_STRATOPAUSE_N2O} ${COL_MASS_TROPOPAUSE_N2O} ${COL_MASS_SURFACE_N2O}
 0.0
-${COL_MASS_MAJOR_CH4}
-${COL_MASS_MAJOR_O2}
-0.0
-0.0
+${COL_MASS_STRATOPAUSE_CH4} ${COL_MASS_TROPOPAUSE_CH4} ${COL_MASS_SURFACE_CH4}
+${COL_MASS_STRATOPAUSE_O2} ${COL_MASS_TROPOPAUSE_O2} ${COL_MASS_SURFACE_O2}
 0.0
 0.0
 0.0
-${COL_MASS_MAJOR_N2}
 0.0
 0.0
+${COL_MASS_STRATOPAUSE_N2} ${COL_MASS_TROPOPAUSE_N2} ${COL_MASS_SURFACE_N2}
 0.0
 0.0
 0.0
@@ -2055,8 +1948,59 @@ ${COL_MASS_MAJOR_N2}
 0.0
 0.0
 0.0
-1.0e+5
+0.0
+0.0
+${PRESSURE_STRATOPAUSE} ${PRESSURE_TROPOPAUSE} ${PRESSURE_SURFACE}
 n
+-1
+EOF
+
+echo 'Setting scatter method per k-term'
+tidy_90 <<EOF > ${specfile}_tidy_log2
+${specfile}
+o
+11
+${COL_MASS_TROPOPAUSE_H2O}
+${COL_MASS_TROPOPAUSE_CO2}
+${COL_MASS_TROPOPAUSE_O3}
+${COL_MASS_TROPOPAUSE_N2O}
+0.0
+${COL_MASS_TROPOPAUSE_CH4}
+${COL_MASS_TROPOPAUSE_O2}
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+0.0
+10.0
 -1
 EOF
 
@@ -2440,3 +2384,10 @@ EOF
 
 echo -n 'Finished mk_sp_sw_9_earth: '; date
 exit 0
+
+# Check job progress using:
+# sacct --format=jobname%10,jobid%9,elapsed,totalcpu,ncpus%5,reqmem,exitcode,state | grep Ccorr_k
+# Use scancel to kill
+
+# cd $sp_dir
+# ls -lt *log* | head -`sacct | grep Ccorr_k | wc -l`

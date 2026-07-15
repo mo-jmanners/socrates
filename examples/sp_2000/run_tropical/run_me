@@ -3,6 +3,7 @@
 sp_dir="/data/users/james.manners/jm_earth_hr"
 specfile=${sp_dir}/sp_2000_earth
 swref_file=${RAD_DATA}/spectra/ga9_ref/sp_sw_260_jm3
+sw_ga9_file=${RAD_DATA}/spectra/ga9/sp_sw_ga9
 lwref_file=${RAD_DATA}/spectra/ga9_ref/sp_lw_300_jm3
 sw9_file="/data/users/james.manners/jm_earth_sw_9/sp_sw_9_earth"
 
@@ -13,36 +14,113 @@ base=tropical
 # SW
 cp $base.surfsw $base.surf
 
-Cl_run_cdf -B $base -s ${specfile} -S -R 1 2000 -g 3 -r -c -u -C 5 -sg
-fmove $base sw_2000
+#Cl_run_cdf -B $base -s ${specfile} -S -R 1 2000 -g 3 -r -c -u -C 5 -sg
+#fmove $base sw_2000
 
-Cl_run_cdf -B $base -s ${specfile} -S -R 1 2000 -g 3 -r -c -u -C 5 -sg -ch 11232
-fmove $base sw_2000_subch
+#Cl_run_cdf -B $base -s ${specfile} -S -R 1 320 -g 3 -r -c -u -C 5 -sg
+#fmove $base sw_2000_gab1
 
-Cl_run_cdf -B $base -s ${swref_file} -S -R 1 260 -g 3 -r -c -C 5 -sg
-fmove $base sw_260
+#Cl_run_cdf -B $base -s ${specfile} -S -R 321 505 -g 3 -r -c -u -C 5 -sg
+#fmove $base sw_2000_gab2
 
-Cl_run_cdf -B $base -s ${swref_file} -S -R 1 260 -g 3 -r -c -C 5 -sg -ch 260
-fmove $base sw_260_subch
+#Cl_run_cdf -B $base -s ${specfile} -S -R 506 690 -g 3 -r -c -u -C 5 -sg
+#fmove $base sw_2000_gab3
 
-Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg
-fmove $base sw_9
+#Cl_run_cdf -B $base -s ${specfile} -S -R 691 1160 -g 3 -r -c -u -C 5 -sg
+#fmove $base sw_2000_gab4
 
-Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg -ch 4728
-fmove $base sw_9_subch
+#Cl_run_cdf -B $base -s ${specfile} -S -R 1161 1580 -g 3 -r -c -u -C 5 -sg
+#fmove $base sw_2000_gab5
 
+#Cl_run_cdf -B $base -s ${specfile} -S -R 1581 2000 -g 3 -r -c -u -C 5 -sg
+#fmove $base sw_2000_gab6
+
+#Cl_run_cdf -B $base -s ${specfile} -S -R 1 2000 -g 3 -r -c -u -C 5 -sg -ch 15459
+#fmove $base sw_2000_subch
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 1 260 -g 3 -r -c -C 5 -sg
+#fmove $base sw_260
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 1 29 -g 3 -r -c -C 5 -sg
+#fmove $base sw_260_gab1
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 30 66 -g 3 -r -c -C 5 -sg
+#fmove $base sw_260_gab2
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 67 103 -g 3 -r -c -C 5 -sg
+#fmove $base sw_260_gab3
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 104 154 -g 3 -r -c -C 5 -sg
+#fmove $base sw_260_gab4
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 155 214 -g 3 -r -c -C 5 -sg
+#fmove $base sw_260_gab5
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 215 260 -g 3 -r -c -C 5 -sg
+#fmove $base sw_260_gab6
+
+#Cl_run_cdf -B $base -s ${swref_file} -S -R 1 260 -g 3 -r -c -C 5 -sg -ch 260
+#fmove $base sw_260_subch
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg
+#fmove $base sw_9
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg -ch 5579
+#fmove $base sw_9_subch
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 4 -g 4 -r -c -u -C 5 -sg
+#fmove $base sw_9_gab1
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 5 5 -g 4 -r -c -u -C 5 -sg
+#fmove $base sw_9_gab2
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 6 6 -g 4 -r -c -u -C 5 -sg
+#fmove $base sw_9_gab3
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 7 7 -g 4 -r -c -u -C 5 -sg
+#fmove $base sw_9_gab4
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 8 8 -g 4 -r -c -u -C 5 -sg
+#fmove $base sw_9_gab5
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 9 9 -g 4 -r -c -u -C 5 -sg
+#fmove $base sw_9_gab6
+
+#Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg -ch 5579 -z 5
+#fmove $base sw_9_subch_z5
+
+#Cl_run_cdf -B $base -s ${sw_ga9_file} -S -R 1 6 -g 4 -r -c -C 5 -sg -ch 12
+#fmove $base sw_ga9_subch
+
+#Cl_run_cdf -B $base -s ${sw_ga9_file} -S -R 1 1 -g 4 -r -c -C 5 -sg
+#fmove $base sw_ga9_b1
+
+#Cl_run_cdf -B $base -s ${sw_ga9_file} -S -R 2 2 -g 4 -r -c -C 5 -sg
+#fmove $base sw_ga9_b2
+
+#Cl_run_cdf -B $base -s ${sw_ga9_file} -S -R 3 3 -g 4 -r -c -C 5 -sg
+#fmove $base sw_ga9_b3
+
+#Cl_run_cdf -B $base -s ${sw_ga9_file} -S -R 4 4 -g 4 -r -c -C 5 -sg
+#fmove $base sw_ga9_b4
+
+#Cl_run_cdf -B $base -s ${sw_ga9_file} -S -R 5 5 -g 4 -r -c -C 5 -sg
+#fmove $base sw_ga9_b5
+
+#Cl_run_cdf -B $base -s ${sw_ga9_file} -S -R 6 6 -g 4 -r -c -C 5 -sg
+#fmove $base sw_ga9_b6
 
 # LW
-cp $base.surflw $base.surf
-
-Cl_run_cdf -B $base -s ${specfile} -I -R 1 2000 -g 2 -c -u -C 5
-fmove $base lw_2000
-
-Cl_run_cdf -B $base -s ${specfile} -I -R 1 2000 -g 2 -c -u -C 5 -ch 11232
-fmove $base lw_2000_subch
-
-Cl_run_cdf -B $base -s ${lwref_file} -I -R 1 300 -g 2 -c -C 5
-fmove $base lw_300
-
-Cl_run_cdf -B $base -s ${lwref_file} -I -R 1 300 -g 2 -c -C 5 -ch 300
-fmove $base lw_300_subch
+#cp $base.surflw $base.surf
+#
+#Cl_run_cdf -B $base -s ${specfile} -I -R 1 2000 -g 2 -c -u -C 5
+#fmove $base lw_2000
+#
+#Cl_run_cdf -B $base -s ${specfile} -I -R 1 2000 -g 2 -c -u -C 5 -ch 15459
+#fmove $base lw_2000_subch
+#
+#Cl_run_cdf -B $base -s ${lwref_file} -I -R 1 300 -g 2 -c -C 5
+#fmove $base lw_300
+#
+#Cl_run_cdf -B $base -s ${lwref_file} -I -R 1 300 -g 2 -c -C 5 -ch 300
+#fmove $base lw_300_subch

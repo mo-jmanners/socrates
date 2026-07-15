@@ -19,7 +19,7 @@ Cl_run_cdf -N planet.nml -B $base -s ${earth_specfile} -R 1 2000 -S +R -g 3 -r -
 fmove $base earth_2000
 
 echo -n 'Earth 11232 sub-band calculation: '; date
-Cl_run_cdf -N planet.nml -B $base -s ${earth_specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg -ch 11232
+Cl_run_cdf -N planet.nml -B $base -s ${earth_specfile} -R 1 2000 -S +R -g 3 -r -c -u -a -C 5 -sg -ch 15459
 fmove $base earth_2000_subch
 echo -n 'Finished: ';date
 
