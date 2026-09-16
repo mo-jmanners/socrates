@@ -4,31 +4,30 @@
 ! which you should have received as part of this distribution.
 ! *****************************COPYRIGHT*******************************
 !
-!+ Subroutine to set the weighting function for correlated-k.
-!
-SUBROUTINE select_weight_ck_90 &
-!
-(i_weight, SolarSpec, abs_path, l_interactive, ierr)
+! Subroutine to set the weighting function for correlated-k.
 !
 ! Description:
 !   A list of possible weighting functions is displayed and
 !   the user selects one. If solar weighting is used the
 !   solar spectrum is read in.
 !
-!
-!
-! Modules used:
+!------------------------------------------------------------------------------
+MODULE select_weight_ck_mod
+IMPLICIT NONE
+CHARACTER(LEN=*), PARAMETER, PRIVATE :: ModuleName = 'SELECT_WEIGHT_CK_MOD'
+CONTAINS
+SUBROUTINE select_weight_ck_90( &
+  i_weight, SolarSpec, abs_path, l_interactive, ierr )
+
   USE realtype_rd
   USE def_solarspec
   USE weighting_pcf
   USE error_pcf
   USE def_std_io_icf
-!
-!
+
   IMPLICIT NONE
-!
-!
-!
+
+
 ! Dummy variables.
   LOGICAL, Intent(IN) :: l_interactive
 !   Flag for interactive operation
@@ -127,8 +126,9 @@ SUBROUTINE select_weight_ck_90 &
         end if
       end do
       if (size(abs_path) /= n_p_path) then
-        write(iu_err, '(a)') &
-          'Error: wrong number of pressures in absorber path file'
+        write(iu_err, '(a, i0, a, i0)') &
+          'Error: wrong number of pressures in absorber path file: ', &
+          n_p_path, ', should be: ', size(abs_path)
         ierr=i_err_fatal
         return
       end if
@@ -156,3 +156,4 @@ SUBROUTINE select_weight_ck_90 &
   end if
   
 END SUBROUTINE select_weight_ck_90
+END MODULE select_weight_ck_mod

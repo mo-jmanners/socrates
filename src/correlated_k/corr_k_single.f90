@@ -1489,7 +1489,7 @@ SUBROUTINE corr_k_single &
                   wgt=wgt_sv
                   kabs=kabs_all_sb(:,ipt,igf)
                   IF (i_weight == ip_weight_solar_path) THEN
-                    wgt=wgt*exp(-kabs*abs_path(index_p(ipt)))
+                    wgt=wgt*exp(-kabs*10.0_RealK*abs_path(index_p(ipt)))
                     IF (index_p(ipt) == n_p) THEN
                       umax_kopt = 10.0_RealK * &
                         abs_path(index_p(ipt))-abs_path(index_p(ipt)-1)
@@ -1509,7 +1509,7 @@ SUBROUTINE corr_k_single &
               ELSE
                 kabs=kabs_all(1:n_nu,ipt)
                 IF (i_weight == ip_weight_solar_path) THEN
-                  wgt=wgt*exp(-kabs*abs_path(index_p(ipt)))
+                  wgt=wgt*exp(-kabs*10.0_RealK*abs_path(index_p(ipt)))
                   IF (index_p(ipt) == n_p) THEN
                     umax_kopt = 10.0_RealK * &
                       abs_path(index_p(ipt))-abs_path(index_p(ipt)-1)

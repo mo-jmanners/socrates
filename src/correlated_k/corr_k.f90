@@ -19,6 +19,7 @@ PROGRAM corr_k
   USE def_std_io_icf
   USE def_hitran_record
   USE hitran_cnst, ONLY: read_parsum_dat
+  USE select_weight_ck_mod, ONLY: select_weight_ck_90
 
   IMPLICIT NONE
 !
@@ -549,6 +550,7 @@ PROGRAM corr_k
       l_fit_self_continuum .OR. l_fit_frn_continuum) THEN
 !   Select the weighting to be applied.
     CALL select_weight_ck_90(i_weight, SolarSpec, abs_path, l_interactive, ierr)
+    IF (ierr /= i_normal) STOP
 
 !   Set the output file.
     CALL get_free_unit(ierr, iu_k_out)

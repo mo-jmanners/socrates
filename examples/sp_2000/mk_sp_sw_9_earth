@@ -13,6 +13,7 @@ fi
 # -------------------------
 procs=4
 procs_s=8
+procs_o3=48
 mem=48G
 mem_s=64G
 . ./env_earth
@@ -298,11 +299,25 @@ fi
 # ----------------------------
 uv_o3="$RAD_DATA/gases/O3_110nm-1100nm.xsc"
 o3_pt_file="$RAD_DATA/gases/pt_o3_uv"
+if [ ! -s ${sp_dir}/o3_fuv_l ] ; then
+  echo 'O3: far-UV cross-section'
+  rm -f ${sp_dir}/o3_fuv_l* ${sp_dir}/o3_lbl_fuv*
+  ck_args="Ccorr_k -F $o3_pt_file -X $uv_o3 \
+    -R 1 2 -i 1.0 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-3 \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/o3_fuv_l -m ${sp_dir}/o3_fuv_lm \
+    -L ${sp_dir}/o3_lbl_fuv.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/o3_fuv_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/o3_fuv_log
+  fi
+fi
 if [ ! -s ${sp_dir}/o3_uv_l ] ; then
-  echo 'O3: far-UV - near-IR cross-section'
+  echo 'O3: UV cross-section'
   rm -f ${sp_dir}/o3_uv_l* ${sp_dir}/o3_lbl_uv*
   ck_args="Ccorr_k -F $o3_pt_file -X $uv_o3 \
-    -R 1 7 -i 1.0 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-3 \
+    -R 3 4 -i 1.0 -l $IP_O3 ${COL_MASS_K_O3} -t 2.0e-3 \
     -s $skelfile +S $SOLSPEC -lk \
     -o ${sp_dir}/o3_uv_l -m ${sp_dir}/o3_uv_lm \
     -L ${sp_dir}/o3_lbl_uv.nc -np $procs"
@@ -310,6 +325,48 @@ if [ ! -s ${sp_dir}/o3_uv_l ] ; then
     sbatch -W -n $procs -o ${sp_dir}/o3_uv_log -t 60 ${ck_args} &
   else
     ${ck_args} > ${sp_dir}/o3_uv_log
+  fi
+fi
+if [ ! -s ${sp_dir}/o3_blue_l ] ; then
+  echo 'O3: blue cross-section'
+  rm -f ${sp_dir}/o3_blue_l* ${sp_dir}/o3_lbl_blue*
+  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X $uv_o3 \
+    -R 5 5 -i 1.0 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-4 \
+    -s $skelfile +SP $SOLSPEC p_o3_earth_tropical -lk \
+    -o ${sp_dir}/o3_blue_l -m ${sp_dir}/o3_blue_lm \
+    -L ${sp_dir}/o3_lbl_blue.nc -np $procs_o3"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs_o3 -o ${sp_dir}/o3_blue_log --mem=$mem -t 360 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/o3_blue_log
+  fi
+fi
+if [ ! -s ${sp_dir}/o3_red_l ] ; then
+  echo 'O3: red cross-section'
+  rm -f ${sp_dir}/o3_red_l* ${sp_dir}/o3_lbl_red*
+  ck_args="Ccorr_k -F ${GAS_DATA_DIR}/${PT_FILE} -X $uv_o3 \
+    -R 6 6 -i 1.0 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-4 \
+    -s $skelfile +SP $SOLSPEC p_o3_earth_tropical -lk \
+    -o ${sp_dir}/o3_red_l -m ${sp_dir}/o3_red_lm \
+    -L ${sp_dir}/o3_lbl_red.nc -np $procs_o3"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs_o3 -o ${sp_dir}/o3_red_log --mem=$mem -t 360 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/o3_red_log
+  fi
+fi
+if [ ! -s ${sp_dir}/o3_nir_l ] ; then
+  echo 'O3: near-IR cross-section'
+  rm -f ${sp_dir}/o3_nir_l* ${sp_dir}/o3_lbl_nir*
+  ck_args="Ccorr_k -F $o3_pt_file -X $uv_o3 \
+    -R 7 7 -i 1.0 -l $IP_O3 ${COL_MASS_K_O3} -t 1.0e-3 \
+    -s $skelfile +S $SOLSPEC -lk \
+    -o ${sp_dir}/o3_nir_l -m ${sp_dir}/o3_nir_lm \
+    -L ${sp_dir}/o3_lbl_nir.nc -np $procs"
+  if command -v sbatch &> /dev/null ; then
+    sbatch -W -n $procs -o ${sp_dir}/o3_nir_log -t 60 ${ck_args} &
+  else
+    ${ck_args} > ${sp_dir}/o3_nir_log
   fi
 fi
 if [ ! -s $sp_dir/o3_mir_l ] ; then
@@ -1661,7 +1718,19 @@ y
 ${sp_dir}/co2_fir_l
 5
 y
+${sp_dir}/o3_fuv_l
+5
+y
 ${sp_dir}/o3_uv_l
+5
+y
+${sp_dir}/o3_blue_l
+5
+y
+${sp_dir}/o3_red_l
+5
+y
+${sp_dir}/o3_nir_l
 5
 y
 ${sp_dir}/o3_mir_l

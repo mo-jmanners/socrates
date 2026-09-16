@@ -65,17 +65,17 @@ cp $base.surfsw $base.surf
 #Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg
 #fmove $base sw_9
 
-#Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg -ch 5579
-#fmove $base sw_9_subch
+Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 9 -g 4 -r -c -u -C 5 -sg -ch 5639
+fmove $base sw_9_subch_p4
 
 #Cl_run_cdf -B $base -s ${sw9_file} -S -R 1 4 -g 4 -r -c -u -C 5 -sg
-#fmove $base sw_9_gab1
+#fmove $base sw_9_gab1p2
 
-#Cl_run_cdf -B $base -s ${sw9_file} -S -R 5 5 -g 4 -r -c -u -C 5 -sg
-#fmove $base sw_9_gab2
+Cl_run_cdf -B $base -s ${sw9_file} -S -R 5 5 -g 4 -r -c -u -C 5 -sg
+fmove $base sw_9_gab2p4
 
 #Cl_run_cdf -B $base -s ${sw9_file} -S -R 6 6 -g 4 -r -c -u -C 5 -sg
-#fmove $base sw_9_gab3
+#fmove $base sw_9_gab3p3
 
 #Cl_run_cdf -B $base -s ${sw9_file} -S -R 7 7 -g 4 -r -c -u -C 5 -sg
 #fmove $base sw_9_gab4
