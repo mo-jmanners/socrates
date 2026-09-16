@@ -13,12 +13,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    if (len(sys.argv) > 2):
+    if (len(sys.argv) > 3):
         filename = sys.argv[1]
         ndists = int(sys.argv[2])
+        start_band = int(sys.argv[3])
+    elif (len(sys.argv) > 2):
+        filename = sys.argv[1]
+        ndists = int(sys.argv[2])
+        start_band = 1
     elif (len(sys.argv) > 1):
         filename = sys.argv[1]
         ndists = 56
+        start_band = 1
     else:
         raise RuntimeError('please enter a mon file name')
 
@@ -28,34 +34,41 @@ fitted=np.zeros(ndists)
 linenum=0
 plotnum=0
 plotrow=0
+band=0
 with open(filename) as f:
     for line in f:
         linenum += 1
         if (line.find("Fitted") == 0):
             title=line
-        if (line.find("Scaled Size") == 4):
-            f.readline()
-            for n in range(0, ndists):
-                cols=f.readline().strip().split()
-                size[n]=float(cols[0])
-                actual[n]=float(cols[1])
-                fitted[n]=float(cols[2])
-            if (plotnum == 0):
-                if (plotrow == 0):
-                    fig, ax = plt.subplots(3,3, sharex=True, figsize=(13, 10))
-            ax[plotrow,plotnum].plot(size,actual, 's', label='Actual')
-            ax[plotrow,plotnum].plot(size,fitted, '+', label='Fitted')
-            ax[plotrow,plotnum].set_title(title)
-            plotnum += 1
-            if (plotnum == 3):
-                plotnum=0
-                plotrow += 1
-            if (plotrow == 3):
-                plotnum=0
-                plotrow=0
-                plt.legend()
-                plt.tight_layout()
-                plt.show()
+            cols=line.strip().split()
+            if (int(cols[2]) == 1):
+                band=int(cols[6])
+        if (band > start_band+2):
+            break
+        if (band >= start_band):
+            if (line.find("Scaled Size") == 4):
+                f.readline()
+                for n in range(0, ndists):
+                    cols=f.readline().strip().split()
+                    size[n]=float(cols[0])
+                    actual[n]=float(cols[1])
+                    fitted[n]=float(cols[2])
+                if (plotnum == 0):
+                    if (plotrow == 0):
+                        fig, ax = plt.subplots(3,3, sharex=True, figsize=(13, 10))
+                ax[plotrow,plotnum].plot(size,actual, 's', label='Actual')
+                ax[plotrow,plotnum].plot(size,fitted, '+', label='Fitted')
+                ax[plotrow,plotnum].set_title(title)
+                plotnum += 1
+                if (plotnum == 3):
+                    plotnum=0
+                    plotrow += 1
+                if (plotrow == 3):
+                    plotnum=0
+                    plotrow=0
+                    plt.legend()
+                    plt.tight_layout()
+                    plt.show()
     if (plotrow > 0):
         plt.tight_layout()
         plt.show()
