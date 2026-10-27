@@ -14,7 +14,8 @@ implicit none
 private
 public :: set_spectrum, compress_spectrum, set_weight_blue, get_spectrum, &
           get_spectral_band, spectrum_array_name, spectrum_array, &
-          set_mcica, mcica_spectrum_name, mcica_data_array
+          set_mcica, mcica_spectrum_name, mcica_data_array, &
+          set_solar_variability, set_band_map
 
 integer, parameter :: specnamelength = 64
 character(len=specnamelength), allocatable, save :: spectrum_array_name(:)
@@ -625,9 +626,10 @@ end if
 end subroutine get_spectrum
 
 
-function get_spectral_band(wavelength, spectrum_name, spectrum) result(band)
+function get_spectral_band(wavelength, spectrum_name, spectrum, l_nearest) &
+  result(band)
 
-use realtype_rd, only: RealExt
+use realtype_rd, only: RealExt, RealK
 use errormessagelength_mod, only: errormessagelength
 use ereport_mod, only: ereport
 use rad_pcf, only: i_normal, i_err_fatal, i_warning
@@ -642,13 +644,25 @@ real(RealExt), intent(in) :: wavelength
 
 character(len=*), intent(in), optional :: spectrum_name
 type(StrSpecData), intent(in), target, optional :: spectrum
+logical, intent(in), optional :: l_nearest
 
 ! Local variables
 type(StrSpecData), pointer :: spec
+logical :: l_near
 integer :: id_spec, i_band, i_band_exclude, index_exclude
+integer :: short_band, long_band
+real(RealK) :: wavelength_short, wavelength_long
+
 integer :: ierr = i_normal
 character(len=errormessagelength) :: cmessage
 character(len=*), parameter :: RoutineName='GET_SPECTRAL_BAND'
+
+
+if (present(l_nearest)) then
+  l_near = l_nearest
+else
+  l_near = .false.
+end if
 
 nullify(spec)
 
@@ -671,9 +685,25 @@ else
 end if
 
 band = 0
+short_band = 0
+long_band = 0
+wavelength_short = huge(wavelength_short)
+wavelength_long = 0.0_RealK
 outer : do i_band=1, spec%basic%n_band
-  if ( spec%basic%wavelength_short(i_band) > wavelength ) cycle outer
-  if ( spec%basic%wavelength_long(i_band) <= wavelength ) cycle outer
+  if ( spec%basic%wavelength_short(i_band) > wavelength ) then
+    if ( spec%basic%wavelength_short(i_band) < wavelength_short ) then
+      short_band = i_band
+      wavelength_short = spec%basic%wavelength_short(i_band)
+    end if
+    cycle outer
+  end if
+  if ( spec%basic%wavelength_long(i_band) <= wavelength ) then
+    if ( spec%basic%wavelength_long(i_band) > wavelength_long ) then
+      long_band = i_band
+      wavelength_long = spec%basic%wavelength_long(i_band)
+    end if
+    cycle outer
+  end if
   inner : do i_band_exclude = 1, spec%basic%n_band_exclude(i_band)
     index_exclude = spec%basic%index_exclude(i_band_exclude, i_band)
     if ( spec%basic%wavelength_short(index_exclude) <= wavelength .and. &
@@ -688,9 +718,24 @@ outer : do i_band=1, spec%basic%n_band
 end do outer
 
 if (band == 0) then
-  cmessage = ' Wavelength outside spectral file range.'
-  ierr=i_err_fatal
-  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+  if (l_near) then
+    if ( short_band > 0 .and. long_band > 0) then
+      ! Wavelength is in a gap between spectral bands
+      if (wavelength_short - wavelength > wavelength - wavelength_long) then
+        band = long_band
+      else
+        band = short_band
+      end if
+    else if ( short_band > 0 ) then
+      band = short_band
+    else
+      band = long_band
+    end if
+  else
+    cmessage = ' Wavelength outside spectral file range.'
+    ierr=i_err_fatal
+    call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+  end if
 end if
 
 end function get_spectral_band
@@ -840,6 +885,291 @@ end if
 if (lhook) call dr_hook(ModuleName//':'//RoutineName,zhook_out,zhook_handle)
 
 end subroutine set_mcica
+
+
+subroutine set_band_map(spectrum_name, spectrum, &
+  albedo_spectrum_name, albedo_spectrum, &
+  aerosol_spectrum_name, aerosol_spectrum)
+
+use realtype_rd, only: RealK
+use errormessagelength_mod, only: errormessagelength
+use ereport_mod, only: ereport
+use rad_pcf, only: i_normal, i_err_fatal
+
+implicit none
+
+character(len=*), intent(in), optional :: spectrum_name
+type(StrSpecData), intent(inout), target, optional :: spectrum
+character(len=*), intent(in), optional :: albedo_spectrum_name
+type(StrSpecData), intent(inout), target, optional :: albedo_spectrum
+character(len=*), intent(in), optional :: aerosol_spectrum_name
+type(StrSpecData), intent(inout), target, optional :: aerosol_spectrum
+
+! Local variables
+type(StrSpecData), pointer :: spec, alb_spec, aer_spec
+integer :: id_spec, i_band, i_band_exclude, index_exclude
+real(RealK) :: wavelength_short, wavelength_long, wavelength_band
+logical :: l_albedo, l_aerosol
+
+integer :: ierr = i_normal
+character(len=errormessagelength) :: cmessage
+character(len=*), parameter :: RoutineName='SET_BAND_MAP'
+
+
+if (present(spectrum_name)) then
+  do id_spec=1, size(spectrum_array)
+    if (spectrum_array_name(id_spec) == spectrum_name) exit
+    if (id_spec == size(spectrum_array)) then
+      cmessage = ' Spectrum name not found.'
+      ierr=i_err_fatal
+      call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+    end if
+  end do
+  spec => spectrum_array(id_spec)
+else if (present(spectrum)) then
+  spec => spectrum
+else
+  cmessage = ' Spectrum not provided.'
+  ierr=i_err_fatal
+  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+end if
+
+if (present(albedo_spectrum_name)) then
+  do id_spec=1, size(spectrum_array)
+    if (spectrum_array_name(id_spec) == albedo_spectrum_name) exit
+    if (id_spec == size(spectrum_array)) then
+      cmessage = ' Albedo spectrum name not found.'
+      ierr=i_err_fatal
+      call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+    end if
+  end do
+  alb_spec => spectrum_array(id_spec)
+  l_albedo = .true.
+else if (present(albedo_spectrum)) then
+  alb_spec => albedo_spectrum
+  l_albedo = .true.
+else
+  l_albedo = .false.
+end if
+
+if (present(aerosol_spectrum_name)) then
+  do id_spec=1, size(spectrum_array)
+    if (spectrum_array_name(id_spec) == aerosol_spectrum_name) exit
+    if (id_spec == size(spectrum_array)) then
+      cmessage = ' Aerosol spectrum name not found.'
+      ierr=i_err_fatal
+      call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+    end if
+  end do
+  aer_spec => spectrum_array(id_spec)
+  l_aerosol = .true.
+else if (present(aerosol_spectrum)) then
+  aer_spec => aerosol_spectrum
+  l_aerosol = .true.
+else
+  l_aerosol = .false.
+end if
+
+if (.not.l_albedo .and. .not.l_aerosol) then
+  cmessage = ' No mapping spectrum provided.'
+  ierr=i_err_fatal
+  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+end if
+
+do i_band=1, spec%basic%n_band
+  wavelength_short = spec%basic%wavelength_short(i_band)
+  wavelength_long = spec%basic%wavelength_long(i_band)
+  do i_band_exclude = 1, spec%basic%n_band_exclude(i_band)
+    ! If there are excluded bands then use the first contiguous
+    ! wavelength region
+    index_exclude = spec%basic%index_exclude(i_band_exclude, i_band)
+    if ( spec%basic%wavelength_short(index_exclude) < wavelength_long ) &
+      wavelength_long = spec%basic%wavelength_short(index_exclude)
+  end do
+  wavelength_band = 0.5_RealK * (wavelength_short + wavelength_long)
+  if (l_albedo) then
+    spec%map%albedo_band(i_band) = get_spectral_band( &
+      wavelength = wavelength_band, &
+      spectrum   = alb_spec, &
+      l_nearest  = .true. )
+  end if
+  if (l_aerosol) then
+    spec%map%aerosol_band(i_band) = get_spectral_band( &
+      wavelength = wavelength_band, &
+      spectrum   = aer_spec, &
+      l_nearest  = .true. )
+  end if
+end do
+
+end subroutine set_band_map
+
+
+subroutine set_solar_variability(year, month, day, second, &
+  spectrum_name, spectrum, tsi)
+
+use realtype_rd, only: RealK
+use errormessagelength_mod, only: errormessagelength
+use ereport_mod, only: ereport
+use rad_pcf, only: i_normal, i_err_fatal, i_warning
+use julian_date_mod, only: julian_date
+
+implicit none
+
+integer, intent(in) :: year
+integer, intent(in), optional :: month, day, second
+character(len=*), intent(in), optional :: spectrum_name
+type(StrSpecData), intent(inout), target, optional :: spectrum
+real(RealK), intent(out), optional :: tsi
+
+! Local variables
+type(StrSpecData), pointer :: spec
+integer :: id_spec, band, sub_band, var_band, term, i_gas
+integer :: i, i_time, i_sub_band_time
+integer, allocatable :: adjusted_terms(:)
+!   Number of terms where weights have been adjusted
+integer, allocatable :: i_sub_band_term(:, :)
+!   Number of sub-band contributing to a given k-term
+real(RealK) :: current_julian_date
+!   Julian date for current model time
+real(RealK) :: repeat_period
+!   Repeat period in days
+real(RealK) :: fraction_of_band
+!   Weight of sub-band as a fraction of the band
+real(RealK), parameter :: eps = epsilon(eps)
+!   Tolerance to avoid divide by zero
+
+integer :: ierr = i_normal
+character(len=errormessagelength) :: cmessage
+character(len=*), parameter :: RoutineName='SET_SOLAR_VARIABILITY'
+
+
+if (present(spectrum_name)) then
+  do id_spec=1, size(spectrum_array)
+    if (spectrum_array_name(id_spec) == spectrum_name) exit
+    if (id_spec == size(spectrum_array)) then
+      cmessage = ' Spectrum name not found.'
+      ierr=i_err_fatal
+      call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+    end if
+  end do
+  spec => spectrum_array(id_spec)
+else if (present(spectrum)) then
+  spec => spectrum
+else
+  cmessage = ' Spectrum not provided.'
+  ierr=i_err_fatal
+  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+end if
+
+if (spec%var%n_times < 1) then
+  cmessage = ' No spectral variability data.'
+  ierr=i_err_fatal
+  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+end if
+
+current_julian_date = julian_date(year, month, day, second)
+
+! Find current time in look-up table
+i_time = 0
+do i=1, spec%var%n_times
+  if (spec%var%julian_date(i) > current_julian_date + eps) exit
+  i_time = i
+end do
+
+if (i_time == 0) then
+  cmessage = ' Solar variability data starts after model time:'// &
+             ' using initial values'
+  ierr=i_warning
+  call ereport(ModuleName//':'//RoutineName, ierr, cmessage)
+  i_time = 1
+else if (i_time == spec%var%n_times .and. spec%var%n_repeat_times > 1) then
+  ! Repeat times periodically once look-up table ends
+  ! Find repeat period
+  repeat_period = spec%var%julian_date(spec%var%n_times) &
+    - spec%var%julian_date(spec%var%n_times - spec%var%n_repeat_times)
+  ! Find equivalent look-up time in repeat period
+  outer: do
+    ! Subtract required number of repeat periods from model time
+    current_julian_date = current_julian_date - repeat_period
+    ! Search through repeated values for equivalent model time
+    do i=spec%var%n_times - spec%var%n_repeat_times + 1, spec%var%n_times
+      if (spec%var%julian_date(i) > current_julian_date + eps) exit outer
+      i_time = i
+    end do
+  end do outer
+end if
+
+! Set Total Solar Irradiance
+if (present(tsi)) then
+  tsi = spec%var%total_solar_flux(i_time)
+end if
+
+! Set normalised flux in each spectral sub-band
+if (spec%var%n_var_band < spec%var%n_sub_band) then
+  i_sub_band_time = 0
+  do sub_band=1, spec%var%n_sub_band
+    var_band = spec%var%var_band_map(sub_band)
+    if (var_band > 0) then
+      spec%var%solar_flux_sub_band(sub_band, i_sub_band_time) &
+        = spec%var%solar_flux_var_band(var_band, i_time) &
+        * spec%var%var_band_fraction(sub_band)
+    end if
+  end do
+else
+  i_sub_band_time = i_time
+end if
+
+! Set normalised flux in each spectral band
+spec%solar%solar_flux_band = 0.0
+do sub_band=1, spec%var%n_sub_band
+  band = spec%var%index_sub_band(1, sub_band)
+  spec%solar%solar_flux_band(band) = spec%solar%solar_flux_band(band) &
+    + spec%var%solar_flux_sub_band(sub_band, i_sub_band_time)
+end do
+
+! Set k-term weights (only given for special k-terms that
+! represent the absorption in the sub-band) and Rayleigh coefficients
+allocate(adjusted_terms(spec%dim%nd_band))
+allocate(i_sub_band_term(spec%dim%nd_k_term, spec%dim%nd_band))
+adjusted_terms = 0
+i_sub_band_term = 0
+spec%rayleigh%rayleigh_coeff = 0.0
+do sub_band=1, spec%var%n_sub_band
+  band = spec%var%index_sub_band(1, sub_band)
+  term = spec%var%index_sub_band(2, sub_band)
+  i_gas = spec%gas%index_absorb(1, band)
+  adjusted_terms(band) = max(adjusted_terms(band), term)
+  if (term > 0) then
+    ! The sub-band contributes to the weight of the specified k-term
+    if (spec%solar%solar_flux_band(band) > eps) then
+      fraction_of_band=spec%var%solar_flux_sub_band(sub_band, i_sub_band_time) &
+                      /spec%solar%solar_flux_band(band)
+      spec%rayleigh%rayleigh_coeff(band) = spec%rayleigh%rayleigh_coeff(band) &
+        + spec%var%rayleigh_coeff(sub_band, i_sub_band_time) * fraction_of_band
+      ! Set sub-band weights
+      i_sub_band_term(term, band) = i_sub_band_term(term, band) + 1
+      spec%map%weight_sub_band_k(i_sub_band_term(term, band), term, band) &
+        = fraction_of_band
+      if (i_sub_band_term(term, band) == 1) then
+        ! This is the first sub-band weight to add to the k-term weight
+        spec%gas%w(term, band, i_gas) = fraction_of_band
+      else
+        ! This sub-band weight needs to be added on to the rolling sum
+        spec%gas%w(term, band, i_gas) = spec%gas%w(term, band, i_gas) &
+          + fraction_of_band
+      end if
+    end if
+  else
+    ! The sub-band corresponds to the whole band so the k-term weights
+    ! do not need to be adjusted
+    spec%rayleigh%rayleigh_coeff(band) &
+      = spec%var%rayleigh_coeff(sub_band, i_sub_band_time)
+  end if
+end do
+deallocate(i_sub_band_term)
+deallocate(adjusted_terms)
+
+end subroutine set_solar_variability
 
 
 end module socrates_set_spectrum

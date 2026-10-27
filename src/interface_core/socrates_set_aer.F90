@@ -501,29 +501,31 @@ contains
     real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
-    integer :: band
+    integer :: band, aer_band
 
     if (present(full_field)) then
       if (l_last) then
         do band=control%first_band, control%last_band
+          aer_band = spectrum%map%aerosol_band(band)
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
               do l=1, n_profile
                 out_field(l, i, j, band) &
-                  = real(full_field(ii, j, band, list(l)), RealK)
+                  = real(full_field(ii, j, aer_band, list(l)), RealK)
               end do
             end do
           end do
         end do
       else
         do band=control%first_band, control%last_band
+          aer_band = spectrum%map%aerosol_band(band)
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
               do l=1, n_profile
                 out_field(l, i, j, band) &
-                  = real(full_field(list(l), ii, j, band), RealK)
+                  = real(full_field(list(l), ii, j, aer_band), RealK)
               end do
             end do
           end do
@@ -532,12 +534,13 @@ contains
     else if (present(oned_field)) then
       if (l_last) then
         do band=control%first_band, control%last_band
+          aer_band = spectrum%map%aerosol_band(band)
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
               do l=1, n_profile
                 ll = spectrum%basic%n_band*aer%n_mode*stride_layer*(list(l)-1) &
-                   + aer%n_mode*stride_layer*(band-1) &
+                   + aer%n_mode*stride_layer*(aer_band-1) &
                    + stride_layer*(j-1) + ii
                 out_field(l, i, j, band) = real(oned_field(ll), RealK)
               end do
@@ -546,11 +549,12 @@ contains
         end do
       else
         do band=control%first_band, control%last_band
+          aer_band = spectrum%map%aerosol_band(band)
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
               do l=1, n_profile
-                ll = aer%n_mode*stride_layer*n_profile*(band-1) &
+                ll = aer%n_mode*stride_layer*n_profile*(aer_band-1) &
                    + stride_layer*n_profile*(j-1) &
                    + n_profile*(ii-1) + list(l)
                 out_field(l, i, j, band) = real(oned_field(ll), RealK)

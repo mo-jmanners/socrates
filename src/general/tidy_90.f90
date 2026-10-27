@@ -22,7 +22,7 @@ PROGRAM tidy_90
   USE def_spectrum
   USE def_std_io_icf
   USE error_pcf
-!
+  USE socrates_set_spectrum, ONLY: set_solar_variability
 !
   IMPLICIT NONE
 !
@@ -51,6 +51,8 @@ PROGRAM tidy_90
 !   Species of gas
   INTEGER :: i_cont
 !   Species of continuum
+  INTEGER :: year, month, day, second
+!   Date for solar variability look-up table
   LOGICAL  :: l_exist
 !   Existence flag
 !
@@ -144,6 +146,8 @@ PROGRAM tidy_90
       '10.   Ensure a single null absorber is present in each band.'
     WRITE(iu_stdout, '(5x, a)') &
       '11.   Set the scattering method for each k-term.'
+    WRITE(iu_stdout, '(5x, a)') &
+      '12.   Set the solar spectrum for a given time in the var file.'
     WRITE(iu_stdout, '(/5x, a//)') &
       '-1.  to finish.'
 !
@@ -270,6 +274,17 @@ PROGRAM tidy_90
         CALL set_null_absorber
       CASE(11)
         CALL set_scatter_method
+      CASE(12)
+        IF (Spectrum%Basic%l_present(17)) THEN
+          WRITE(iu_stdout, '(4X, A)') 'year, month, day, second:'
+          READ(iu_stdin, *, IOSTAT=ios) year, month, day, second
+          CALL set_solar_variability( year, month, day, second, &
+            spectrum = Spectrum)
+        ELSE
+          WRITE(iu_err,'(/a)') &
+            'The file contains no solar variability data: the process ' &
+            //'cannot be carried out.'
+        ENDIF
       CASE DEFAULT
         WRITE(iu_err, '(a)') '+++ Invalid type of process:'
         IF (l_interactive) THEN

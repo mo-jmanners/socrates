@@ -3272,6 +3272,7 @@ END SUBROUTINE read_block_16_0_0_int
 ! Spectral variability
 SUBROUTINE read_block_17_0_0
 
+USE julian_date_mod, ONLY: julian_date
 IMPLICIT NONE
 
 ! Local variables.
@@ -3435,6 +3436,7 @@ DO
       
       ! Read look-up table of spectral variability data
       ALLOCATE(Sp%Var%time(4, nd_times))
+      ALLOCATE(Sp%Var%julian_date(nd_times))
       ALLOCATE(Sp%Var%total_solar_flux(nd_times))
       ALLOCATE(Sp%Var%solar_flux_var_band(Sp%Dim%nd_var_band, &
                                         0:Sp%Dim%nd_var_band_times))
@@ -3445,6 +3447,11 @@ DO
       DO i=1, Sp%Var%n_times
         READ(iu_spc2, '(4(i6),4x,1pe16.9)') &
           Sp%Var%time(:, i), Sp%Var%total_solar_flux(i)
+        Sp%Var%julian_date(i) = julian_date( &
+          year   = Sp%Var%time(1, i), &
+          month  = Sp%Var%time(2, i), &
+          day    = Sp%Var%time(3, i), &
+          second = Sp%Var%time(4, i) )
         IF (Sp%Var%n_var_band < Sp%Var%n_sub_band) THEN
           READ(iu_spc2, '(5(1pe16.9))') Sp%Var%solar_flux_var_band(:, i)
         ELSE

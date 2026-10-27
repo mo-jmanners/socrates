@@ -19,7 +19,8 @@ subroutine set_bound(bound, control, dimen, spectrum, &
   l_grey_albedo, grey_albedo, albedo_diff, albedo_dir, &
   albedo_diff_1d, albedo_dir_1d, &
   frac_tile, t_tile, flux_tile, albedo_diff_tile, albedo_dir_tile, &
-  frac_tile_1d, t_tile_1d, flux_tile_1d, albedo_diff_tile_1d, albedo_dir_tile_1d, &
+  frac_tile_1d, t_tile_1d, flux_tile_1d, albedo_diff_tile_1d, &
+  albedo_dir_tile_1d, &
   l_profile_last, l_debug, i_profile_debug)
 
 use def_bound,    only: StrBound, allocate_bound
@@ -115,7 +116,7 @@ integer, intent(in), optional :: i_profile_debug
 !   Options for outputting debugging information
 
 ! Local variables.
-integer :: l, ll, i_band, i_tile, list(n_profile)
+integer :: l, ll, i_band, alb_band, i_tile, list(n_profile)
 logical :: l_grey_alb, l_last
 
 ! Allocate structure for the core radiation code interface
@@ -155,32 +156,36 @@ else
   if (present(albedo_diff)) then
     if (l_last) then
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
           bound%rho_alb(l, ip_surf_alb_diff, i_band) &
-            = real(albedo_diff(i_band, list(l)), RealK)
+            = real(albedo_diff(alb_band, list(l)), RealK)
         end do
       end do
     else
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
           bound%rho_alb(l, ip_surf_alb_diff, i_band) &
-            = real(albedo_diff(list(l), i_band), RealK)
+            = real(albedo_diff(list(l), alb_band), RealK)
         end do
       end do
     end if
   else if (present(albedo_diff_1d)) then
     if (l_last) then
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
-          ll = spectrum%basic%n_band*(list(l)-1) + i_band
+          ll = spectrum%basic%n_band*(list(l)-1) + alb_band
           bound%rho_alb(l, ip_surf_alb_diff, i_band) &
             = real(albedo_diff_1d(ll), RealK)
         end do
       end do
     else
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
-          ll = n_profile*(i_band-1) + list(l)
+          ll = n_profile*(alb_band-1) + list(l)
           bound%rho_alb(l, ip_surf_alb_diff, i_band) &
             = real(albedo_diff_1d(ll), RealK)
         end do
@@ -196,32 +201,36 @@ else
   if (present(albedo_dir)) then
     if (l_last) then
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
           bound%rho_alb(l, ip_surf_alb_dir, i_band) &
-            = real(albedo_dir(i_band, list(l)), RealK)
+            = real(albedo_dir(alb_band, list(l)), RealK)
         end do
       end do
     else
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
           bound%rho_alb(l, ip_surf_alb_dir, i_band) &
-            = real(albedo_dir(list(l), i_band), RealK)
+            = real(albedo_dir(list(l), alb_band), RealK)
         end do
       end do
     end if
   else if (present(albedo_dir_1d)) then
     if (l_last) then
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
-          ll = spectrum%basic%n_band*(list(l)-1) + i_band
+          ll = spectrum%basic%n_band*(list(l)-1) + alb_band
           bound%rho_alb(l, ip_surf_alb_dir, i_band) &
             = real(albedo_dir_1d(ll), RealK)
         end do
       end do
     else
       do i_band=1, spectrum%basic%n_band
+        alb_band = spectrum%map%albedo_band(i_band)
         do l=1, n_profile
-          ll = n_profile*(i_band-1) + list(l)
+          ll = n_profile*(alb_band-1) + list(l)
           bound%rho_alb(l, ip_surf_alb_dir, i_band) &
             = real(albedo_dir_1d(ll), RealK)
         end do
@@ -343,19 +352,21 @@ if (control%l_tile .and. present(n_tile) .and. &
     if (present(albedo_diff_tile)) then
       if (l_last) then
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
               bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
-                = real(albedo_diff_tile(i_tile, i_band, list(l)), RealK)
+                = real(albedo_diff_tile(i_tile, alb_band, list(l)), RealK)
             end do
           end do
         end do
       else
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
               bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
-                = real(albedo_diff_tile(list(l), i_tile, i_band), RealK)
+                = real(albedo_diff_tile(list(l), i_tile, alb_band), RealK)
             end do
           end do
         end do
@@ -363,10 +374,11 @@ if (control%l_tile .and. present(n_tile) .and. &
     else
       if (l_last) then
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
               ll = spectrum%basic%n_band*n_tile*(list(l)-1) &
-                 + n_tile*(i_band-1) + i_tile
+                 + n_tile*(alb_band-1) + i_tile
               bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
                 = real(albedo_diff_tile_1d(ll), RealK)
             end do
@@ -374,9 +386,10 @@ if (control%l_tile .and. present(n_tile) .and. &
         end do
       else
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
-              ll = n_profile*n_tile*(i_band-1) &
+              ll = n_profile*n_tile*(alb_band-1) &
                  + n_profile*(i_tile-1) + list(l)
               bound%rho_alb_tile(l, ip_surf_alb_diff, i_tile, i_band) &
                 = real(albedo_diff_tile_1d(ll), RealK)
@@ -417,19 +430,21 @@ if (control%l_tile .and. present(n_tile) .and. &
     if (present(albedo_dir_tile)) then
       if (l_last) then
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
               bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
-                = real(albedo_dir_tile(i_tile, i_band, list(l)), RealK)
+                = real(albedo_dir_tile(i_tile, alb_band, list(l)), RealK)
             end do
           end do
         end do
       else
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
               bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
-                = real(albedo_dir_tile(list(l), i_tile, i_band), RealK)
+                = real(albedo_dir_tile(list(l), i_tile, alb_band), RealK)
             end do
           end do
         end do
@@ -437,10 +452,11 @@ if (control%l_tile .and. present(n_tile) .and. &
     else
       if (l_last) then
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
               ll = spectrum%basic%n_band*n_tile*(list(l)-1) &
-                 + n_tile*(i_band-1) + i_tile
+                 + n_tile*(alb_band-1) + i_tile
               bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
                 = real(albedo_dir_tile_1d(ll), RealK)
             end do
@@ -448,9 +464,10 @@ if (control%l_tile .and. present(n_tile) .and. &
         end do
       else
         do i_band=1, spectrum%basic%n_band
+          alb_band = spectrum%map%albedo_band(i_band)
           do i_tile=1, n_tile
             do l=1, n_profile
-              ll = n_profile*n_tile*(i_band-1) &
+              ll = n_profile*n_tile*(alb_band-1) &
                  + n_profile*(i_tile-1) + list(l)
               bound%rho_alb_tile(l, ip_surf_alb_dir, i_tile, i_band) &
                 = real(albedo_dir_tile_1d(ll), RealK)

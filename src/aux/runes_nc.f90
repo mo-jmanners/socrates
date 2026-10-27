@@ -21,6 +21,7 @@ PROGRAM runes_nc
   ! Modules
 
   USE socrates_set_spectrum, only: set_spectrum, &
+                                   set_band_map, &
                                    get_spectrum, &
                                    set_mcica
 
@@ -662,6 +663,14 @@ PROGRAM runes_nc
      ! Output file
   CHARACTER(LEN=200) :: spectral_dir
      ! Spectral file directory
+  CHARACTER(LEN=200) :: sw_spectral_path, lw_spectral_path, mcica_data_path
+  CHARACTER(LEN=200) :: sw_lfric_file, lw_lfric_file, mcica_lfric_file
+  CHARACTER(LEN=200) :: sw_runes_file, lw_runes_file, mcica_runes_file
+     ! Spectral files to use (overriding LFRic ones)
+  LOGICAL :: l_override_sw = .FALSE.
+  LOGICAL :: l_override_lw = .FALSE.
+  LOGICAL :: l_override_mcica = .FALSE.
+  INTEGER :: n_spectral_files = 2
 
   ! Namelist unit
   INTEGER :: fn_conf
@@ -756,6 +765,29 @@ PROGRAM runes_nc
             WRITE(*,*) 'spectral_file_dir: ', TRIM(spectral_dir)
           END IF ! l_debug
           ic=ic+1
+        CASE ('-sw')
+          CALL get_command_argument(ic+1, sw_runes_file)
+          IF (l_debug) THEN
+            WRITE(*,*) 'sw_runes_file: ', TRIM(sw_runes_file)
+          END IF ! l_debug
+          ic=ic+1
+          n_spectral_files = n_spectral_files + 1
+          l_override_sw = .true.
+        CASE ('-lw')
+          CALL get_command_argument(ic+1, lw_runes_file)
+          IF (l_debug) THEN
+            WRITE(*,*) 'lw_runes_file: ', TRIM(lw_runes_file)
+          END IF ! l_debug
+          ic=ic+1
+          n_spectral_files = n_spectral_files + 1
+          l_override_lw = .true.
+        CASE ('-mcica_data')
+          CALL get_command_argument(ic+1, mcica_runes_file)
+          IF (l_debug) THEN
+            WRITE(*,*) 'mcica_runes_file: ', TRIM(mcica_runes_file)
+          END IF ! l_debug
+          ic=ic+1
+          l_override_mcica = .true.
         CASE ('-ascii')
           l_ascii=.true.
           IF (l_debug) THEN
@@ -1470,9 +1502,18 @@ PROGRAM runes_nc
   ALLOCATE(dummy_arr_out(n_profile*(nlayers+1)))
 
   ! Read in spectral files once at the beginning of a run
+
+  sw_lfric_file = TRIM(spectral_dir)//TRIM(spectral_file_sw)
+  IF (l_override_sw) THEN
+    sw_spectral_path = sw_runes_file
+  ELSE
+    sw_spectral_path = sw_lfric_file
+  END IF
+    
   CALL set_spectrum(                        &
+    n_instances   = n_spectral_files,       &
     spectrum_name = 'sw',                   &
-    spectral_file = TRIM(spectral_dir)//TRIM(spectral_file_sw), &
+    spectral_file = sw_spectral_path,       &
     l_cfc11       = l_cfc11,                &
     l_cfc113      = l_cfc113,               &
     l_cfc12       = l_cfc12,                &
@@ -1499,9 +1540,26 @@ PROGRAM runes_nc
     l_tio         = l_tio,                  &
     l_vo          = l_vo )
 
+  IF (l_override_sw) THEN
+    CALL set_spectrum( &
+      spectrum_name = 'sw_lfric', &
+      spectral_file = sw_lfric_file )
+    CALL set_band_map( &
+      spectrum_name = 'sw', &
+      albedo_spectrum_name = 'sw_lfric', &
+      aerosol_spectrum_name = 'sw_lfric' )
+  END IF
+
+  lw_lfric_file = TRIM(spectral_dir)//TRIM(spectral_file_lw)
+  IF (l_override_lw) THEN
+    lw_spectral_path = lw_runes_file
+  ELSE
+    lw_spectral_path = lw_lfric_file
+  END IF
+    
   CALL set_spectrum(                        &
     spectrum_name = 'lw',                   &
-    spectral_file = TRIM(spectral_dir)//TRIM(spectral_file_lw), &
+    spectral_file = lw_spectral_path,       &
     l_cfc11       = l_cfc11,                &
     l_cfc113      = l_cfc113,               &
     l_cfc12       = l_cfc12,                &
@@ -1528,6 +1586,16 @@ PROGRAM runes_nc
     l_tio         = l_tio,                  &
     l_vo          = l_vo )    
 
+  IF (l_override_lw) THEN
+    CALL set_spectrum( &
+      spectrum_name = 'lw_lfric', &
+      spectral_file = lw_lfric_file )
+    CALL set_band_map( &
+      spectrum_name = 'lw', &
+      albedo_spectrum_name = 'lw_lfric', &
+      aerosol_spectrum_name = 'lw_lfric' )
+  END IF
+
   CALL get_spectrum( &
     spectrum_name = 'sw', &
     n_band = n_sw_band )
@@ -1536,7 +1604,13 @@ PROGRAM runes_nc
     spectrum_name = 'lw', &
     n_band = n_lw_band )
 
-  CALL set_mcica(TRIM(spectral_dir)//mcica_data_file , 'sw', 'lw')
+  mcica_lfric_file = TRIM(spectral_dir)//mcica_data_file
+  IF (l_override_mcica) THEN
+    mcica_data_path = mcica_runes_file
+  ELSE
+    mcica_data_path = mcica_lfric_file
+  END IF
+  CALL set_mcica(mcica_data_path, 'sw', 'lw')
 
 
   ! Open files for ascii output

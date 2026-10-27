@@ -29,6 +29,7 @@ USE def_orbit, ONLY: StrOrbit, ip_smart, ip_mueller, ip_elements_user, &
   ip_elements_earth_fixed, ip_elements_earth_secular_variation, &
   ip_spin_user, ip_spin_earth_day, ip_spin_fixed_sun
 USE orbprm_mod, ONLY: orbprm
+USE julian_date_mod, ONLY: julian_date
 
 IMPLICIT NONE
 
@@ -85,10 +86,6 @@ REAL(RealK) :: day_number_at_midnight
 REAL(RealK) :: day_number
 !       Number of days from epoch to the middle of the current timestep
 
-REAL(RealK), PARAMETER :: jd1 = 1721425.5_RealK
-!       Julian day number for the beginning of the first day (year 1) of
-!       the Gregorian calendar.
-
 ! Cartesian coordinates of distant observer in orbital and equatorial
 ! reference frames:
 REAL(RealK) :: obs_orb_x, obs_orb_y, obs_orb_z
@@ -127,9 +124,7 @@ CASE (ip_elements_user)
   ! Calculate number of days from epoch to the middle of the 
   ! current timestep. The conversion to Julian day number assumes
   ! the Gregorian calendar for the calculation of leap years.
-  day_number_at_midnight = jd1 + REAL( 365*(year-1)     &
-    + (year-1)/4 - (year-1)/100 + (year-1)/400 , RealK) &
-    + REAL(day, RealK) - 1.0_RealK - orbit%epoch
+  day_number_at_midnight = julian_date(year, day=day) - orbit%epoch
   day_number = day_number_at_midnight                   &
     + (seconds+timestep/2.0_RealK)/86400.0_RealK
 

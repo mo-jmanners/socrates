@@ -442,6 +442,8 @@ TYPE StrSpecVar
 
   INTEGER, ALLOCATABLE      :: time(:, :)
 !   Times: year, month, day of month, seconds in day
+  REAL (RealK), ALLOCATABLE :: julian_date(:)
+!   Julian date for each time
   REAL (RealK), ALLOCATABLE :: total_solar_flux(:)
 !   Total solar flux in Wm-2 at 1 AU for each time
   REAL (RealK), ALLOCATABLE :: solar_flux_var_band(:, :)
@@ -494,6 +496,10 @@ TYPE StrSpecMap
 !   Weight of minor gas k-terms for each sub-band
   REAL (RealK), ALLOCATABLE :: weight_k_major(:, :, :, :)
 !   Weight of minor gas k-terms for each major gas k-term
+  INTEGER, ALLOCATABLE      :: albedo_band(:)
+!   Mapping from albedo bands to spectral bands
+  INTEGER, ALLOCATABLE      :: aerosol_band(:)
+!   Mapping from aerosol bands to spectral bands
 END TYPE StrSpecMap
 
 
@@ -1167,6 +1173,11 @@ IF (.NOT. ALLOCATED(Sp%Var%time)) &
 Sp%Dim%nd_alloc_int = &
 Sp%Dim%nd_alloc_int + SIZE(Sp%Var%time)
 
+IF (.NOT. ALLOCATED(Sp%Var%julian_date)) &
+  ALLOCATE(Sp%Var%julian_date( Sp%Dim%nd_times ))
+Sp%Dim%nd_alloc_real = &
+Sp%Dim%nd_alloc_real + SIZE(Sp%Var%julian_date)
+
 IF (.NOT. ALLOCATED(Sp%Var%total_solar_flux)) &
   ALLOCATE(Sp%Var%total_solar_flux( Sp%Dim%nd_times ))
 Sp%Dim%nd_alloc_real = &
@@ -1295,6 +1306,25 @@ IF (.NOT. ALLOCATED(Sp%Map%weight_k_major)) &
 Sp%Dim%nd_alloc_real = &
 Sp%Dim%nd_alloc_real + SIZE(Sp%Map%weight_k_major)
 
+! Albedo and aerosol band mapping
+IF (.NOT. ALLOCATED(Sp%Map%albedo_band)) THEN
+  ALLOCATE(Sp%Map%albedo_band( Sp%Dim%nd_band ))
+  DO i=1, Sp%Dim%nd_band
+    Sp%Map%albedo_band(i) = i
+  END DO
+END IF
+Sp%Dim%nd_alloc_int = &
+Sp%Dim%nd_alloc_int + SIZE(Sp%Map%albedo_band)
+
+IF (.NOT. ALLOCATED(Sp%Map%aerosol_band)) THEN
+  ALLOCATE(Sp%Map%aerosol_band( Sp%Dim%nd_band ))
+  DO i=1, Sp%Dim%nd_band
+    Sp%Map%aerosol_band(i) = i
+  END DO
+END IF
+Sp%Dim%nd_alloc_int = &
+Sp%Dim%nd_alloc_int + SIZE(Sp%Map%aerosol_band)
+
 IF (l_debug) WRITE(*,'(a,i0)') 'Size after Map:',Sp%Dim%nd_alloc_real
 END SUBROUTINE allocate_spectrum
 !------------------------------------------------------------------------------
@@ -1303,6 +1333,12 @@ SUBROUTINE deallocate_spectrum(Sp)
 IMPLICIT NONE
 
 TYPE (StrSpecData), INTENT(INOUT) :: Sp
+
+! Albedo and aerosol band mapping
+IF (ALLOCATED(Sp%Map%aerosol_band)) &
+   DEALLOCATE(Sp%Map%aerosol_band)
+IF (ALLOCATED(Sp%Map%albedo_band)) &
+   DEALLOCATE(Sp%Map%albedo_band)
 
 ! Sub-band mapping
 IF (ALLOCATED(Sp%Map%weight_k_major)) &
@@ -1351,6 +1387,8 @@ IF (ALLOCATED(Sp%Var%solar_flux_var_band)) &
    DEALLOCATE(Sp%Var%solar_flux_var_band)
 IF (ALLOCATED(Sp%Var%total_solar_flux)) &
    DEALLOCATE(Sp%Var%total_solar_flux)
+IF (ALLOCATED(Sp%Var%julian_date)) &
+   DEALLOCATE(Sp%Var%julian_date)
 IF (ALLOCATED(Sp%Var%time)) &
    DEALLOCATE(Sp%Var%time)
 IF (ALLOCATED(Sp%Var%weight_uv_index)) &

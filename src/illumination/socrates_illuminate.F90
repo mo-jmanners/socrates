@@ -19,11 +19,11 @@ implicit none
 character(len=*), parameter, private :: ModuleName = 'SOCRATES_ILLUMINATE'
 contains
 
-subroutine illuminate( &
+subroutine illuminate(spectrum_name, spectrum, &
     l_calendar_360, l_observer, l_stellar_position, l_stellar_angle, &
-    l_slope, l_shading, &
+    l_stellar_variability, l_slope, l_shading, &
     n_profile, n_horiz_layer, n_horiz_ang, i_elements, i_spin, &
-    year, month, day_of_month, day_of_year, second_of_day, length_of_timestep, &
+    year, day_of_year, second_of_day, length_of_timestep, &
     epoch, eccentricity, eccentricity_inc, arg_periapsis, arg_periapsis_inc, &
     obliquity, obliquity_inc, semimajor_axis, semimajor_axis_inc, &
     mean_anomaly, mean_anomaly_inc, hour_angle, hour_angle_inc, &
@@ -37,18 +37,23 @@ subroutine illuminate( &
 
   use realtype_rd, only: RealK, RealExt
   use def_orbit, only: StrOrbit, set_orbit
+  use def_spectrum, only: StrSpecData
+  use socrates_set_spectrum, only: set_solar_variability
   use solpos_mod, only: solpos
   use solang_mod, only: solang
   use solinc_mod, only: solinc
 
   implicit none
 
+  character(len=*), intent(in), optional :: spectrum_name
+  type(StrSpecData), intent(inout), optional :: spectrum
+
   logical, intent(in), optional :: l_calendar_360, l_observer
   logical, intent(in), optional :: l_stellar_position, l_stellar_angle
-  logical, intent(in), optional :: l_slope, l_shading
+  logical, intent(in), optional :: l_stellar_variability, l_slope, l_shading
   integer, intent(in), optional :: n_profile, n_horiz_layer, n_horiz_ang
   integer, intent(in), optional :: i_elements, i_spin
-  integer, intent(in), optional :: year, month, day_of_month, day_of_year
+  integer, intent(in), optional :: year, day_of_year
   real(RealExt), intent(in), optional :: second_of_day, length_of_timestep
   real(RealExt), intent(in), optional :: &
     epoch, eccentricity, eccentricity_inc, arg_periapsis, arg_periapsis_inc, &
@@ -77,9 +82,10 @@ subroutine illuminate( &
 
   ! Local variables
   integer :: i, k, kk, l, ll
+  integer :: month, day_of_month
   type(StrOrbit) :: orbit
   real(RealK) :: eqt, sindec, scs, sindec_obs, eqt_obs, phase_obs
-  real(RealK) :: second, dt
+  real(RealK) :: second, dt, total_stellar_irradiance
   real(RealK), allocatable :: cos_zen(:), lit_frac(:), lat(:), lon(:)
   real(RealK), allocatable :: sol_azimuth(:), cosz_beg(:), cosz_end(:)
   real(RealK), allocatable :: slope_asp(:), slope_ang(:), orog_corr(:)
@@ -111,6 +117,40 @@ subroutine illuminate( &
 
   if (present(second_of_day)) second = real(second_of_day, RealK)
   if (present(length_of_timestep)) dt = real(length_of_timestep, RealK)
+  if (present(stellar_constant)) total_stellar_irradiance = stellar_constant
+
+
+  if (present(l_stellar_variability)) then
+  if (l_stellar_variability) then
+    month = 0
+    if (present(l_calendar_360)) then
+    if (l_calendar_360) then
+      month = 1 + (day_of_year-1)/30
+      day_of_month = 1 + mod(day_of_year-1, 30)
+    end if
+    end if
+    if (month > 0) then
+      ! 360 day calendar: set variability by month
+      call set_solar_variability( &
+        year = year, &
+        month = month, &
+        day = day_of_month, &
+        second = nint(second+dt/2.0_RealK), &
+        spectrum_name = spectrum_name, &
+        spectrum = spectrum, &
+        tsi = total_stellar_irradiance )
+    else
+      ! Gregorian calendar
+      call set_solar_variability( &
+        year = year, &
+        day = day_of_year, &
+        second = nint(second+dt/2.0_RealK), &
+        spectrum_name = spectrum_name, &
+        spectrum = spectrum, &
+        tsi = total_stellar_irradiance )
+    end if
+  end if
+  end if
 
 
   if (present(l_stellar_position)) then
@@ -159,8 +199,8 @@ subroutine illuminate( &
       lit_fraction(1:n_profile) = real(lit_frac, RealExt)
     if (present(cos_zenith_angle)) &
       cos_zenith_angle(1:n_profile) = real(cos_zen, RealExt)
-    if (present(stellar_irradiance).and.present(stellar_constant)) &
-      stellar_irradiance(1:n_profile) = stellar_constant &
+    if (present(stellar_irradiance)) &
+      stellar_irradiance(1:n_profile) = total_stellar_irradiance &
         * real(scs, RealExt) * real(lit_frac, RealExt)
 
     deallocate(lit_frac, lon, lat)
