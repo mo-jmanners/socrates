@@ -1,7 +1,20 @@
+! *****************************COPYRIGHT*******************************
+! (C) Crown copyright Met Office. All rights reserved.
+! For further details please refer to the file COPYRIGHT.txt
+! which you should have received as part of this distribution.
+! *****************************COPYRIGHT*******************************
+!
+! Calculate mean Lyman-alpha solar spectra for the WHI observation periods
+!
+! High resolution input spectra for this routine can be obtained from:
+! Kretzschmar, Snow and Curdt (2018), GRL, 45, 2138. DOI:10.1002/2017GL076318
+! https://lasp.colorado.edu/lisird/data/lyman_alpha_model_ssi
+!------------------------------------------------------------------------------
 program lya2sol
 
 use realtype_rd, only: RealK
 use def_solarspec, only: StrSolarSpec
+use socrates_ereport, only: ereport, errormessagelength, i_err_fatal
 use netcdf
 
 implicit none
@@ -26,6 +39,9 @@ integer :: ierr
 integer :: i, j, k
 integer, allocatable :: jd(:, :)
 real (RealK), allocatable :: wl(:, :), irradiance(:, :, :)
+
+character (len=errormessagelength) :: cmessage
+character (len=*), parameter :: RoutineName = 'LYA2SOL'
 
 call get_command_argument(1, input_file)
 call get_command_argument(2, output_file)
@@ -127,8 +143,9 @@ contains
   subroutine nf(status)
     integer, intent(IN):: status
     if (status /= NF90_NOERR) then
-       write(*,*) 'netCDF-ERROR: ',nf90_strerror(status)
-       stop 'STOPPED!'
+       cmessage = nf90_strerror(status)
+       ierr = i_err_fatal
+       call ereport(RoutineName//':netCDF-ERROR', ierr, cmessage)
     end if
   end subroutine nf
 

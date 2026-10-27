@@ -1,9 +1,22 @@
+! *****************************COPYRIGHT*******************************
+! (C) Crown copyright Met Office. All rights reserved.
+! For further details please refer to the file COPYRIGHT.txt
+! which you should have received as part of this distribution.
+! *****************************COPYRIGHT*******************************
+!
+! Mean the SOLARIS-HEPPA CMIP7 solar forcing spectra over a given time period
+!
+! The input CMIP7 solar forcing data come from:
+! Funke et al. (2024), GMD, 17, DOI:10.5194/gmd-17-1217-2024
+! https://www.solarisheppa.kit.edu/75.php
+!------------------------------------------------------------------------------
 program cmip2sol
 
 use realtype_rd, only: RealK
 use def_solarspec, only: StrSolarSpec
-use def_std_io_icf, only: iu_err
 use missing_data_mod, only: imdi
+use socrates_ereport, only: ereport, errormessagelength, &
+  i_err_usage, i_err_fatal
 use netcdf
 
 implicit none
@@ -27,6 +40,8 @@ integer :: i, j, k, jj
 real (RealK) :: scale_wv, scale_irr
 ! Scaling for wavelength and irradiance to correct units
 
+character (len=errormessagelength) :: cmessage
+character (len=*), parameter :: RoutineName = 'CMIP2SOL'
 
 l_cmipfile = .false.
 l_solfile = .false.
@@ -66,9 +81,9 @@ do
   end select
 end do
 if (.not.l_solfile) then
-  write(iu_err, '(a)') &
-    'Usage: cmip2sol cmipfile solfile [-y <year> -m <month> -d <day> -n <ntimes>]'
-  stop
+  cmessage = 'cmip2sol cmipfile solfile [-y <year> -m <month> -d <day> -n <ntimes>]'
+  ierr = i_err_usage
+  call ereport(RoutineName, ierr, cmessage)
 end if
 
 ! Open the file for reading
@@ -194,8 +209,9 @@ contains
   subroutine nf(status)
     integer, intent(IN):: status
     if (status /= NF90_NOERR) then
-       write(*,*) 'netCDF-ERROR: ',nf90_strerror(status)
-       stop 'STOPPED!'
+       cmessage = nf90_strerror(status)
+       ierr = i_err_fatal
+       call ereport(RoutineName//':netCDF-ERROR', ierr, cmessage)
     end if
   end subroutine nf
 

@@ -1,3 +1,14 @@
+Merged CMIP7, WHI and Lyman-alpha solar spectrum for solar cycle 23
+
+Integrated irradiance per bin of the CMIP7 solar reference spectrum is a mean
+over the months of September 1996 - December 2008 inclusive from the file:
+multiple_input4MIPs_solar_CMIP_SOLARIS-HEPPA-CMIP-4-6_gn_185001-202312.nc
+
+Sub CMIP7-bin irradiance is merged from the Whole Heliosphere Interval (WHI)
+Reference Spectra at 0.1 nm resolution below 310 nm, and from the Empirical
+Model of the Solar Lyman-alpha Spectral Irradiance (Kretzschmar 2018, DOI:
+10.1002/2017GL076318) between 121.427 - 121.708 nm at 0.001 nm resolution.
+
 *RADIUS
  6.957000000E+08
 *TEMPERATURE

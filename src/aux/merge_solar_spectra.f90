@@ -1,9 +1,18 @@
+! *****************************COPYRIGHT*******************************
+! (C) Crown copyright Met Office. All rights reserved.
+! For further details please refer to the file COPYRIGHT.txt
+! which you should have received as part of this distribution.
+! *****************************COPYRIGHT*******************************
+!
 ! Merge a high-resolution solar spectrum with a low-resolution spectrum
 ! keeping the same integrated flux as the low-resolution spectrum
+!------------------------------------------------------------------------------
 program merge_solar_spectra
 
 use realtype_rd, only: RealK
 use def_solarspec, only: StrSolarSpec
+use socrates_ereport, only: ereport, errormessagelength, &
+  i_err_usage, i_err_fatal
 
 implicit none
 
@@ -23,6 +32,9 @@ integer, allocatable :: i_short(:), i_long(:)
 real(RealK) :: sol_lr_binned, sol_hr_binned, scale_hr
 real(RealK) :: hr_min, hr_max
 real(RealK) :: tol=1.0e-6_RealK
+
+character (len=errormessagelength) :: cmessage
+character (len=*), parameter :: RoutineName = 'MERGE_SOLAR_SPECTRA'
 
 
 i = 0
@@ -62,23 +74,25 @@ do
   end select
 end do
 if (.not.l_outfile) then
-  write(*, '(a)') 'Usage: merge_solar_spectra sol_low_res sol_high_res outfile'
-  write(*, '(27x,a)') '[--single_scaling]'
-  write(*, '(27x,a)') '[--min_wavelength] <high_res min wavelength cutoff (m)>'
-  write(*, '(27x,a)') '[--max_wavelength] <high_res max wavelength cutoff (m)>'
-  stop
+  write(cmessage, '(a,3(9x,a))') &
+    'merge_solar_spectra sol_low_res sol_high_res outfile'//new_line('a'), &
+    '[--single_scaling]'//new_line('a'), &
+    '[--min_wavelength] <high_res min wavelength cutoff (m)>'//new_line('a'), &
+    '[--max_wavelength] <high_res max wavelength cutoff (m)>'//new_line('a')
+  ierr = i_err_usage
+  call ereport(RoutineName, ierr, cmessage)
 end if
 
-call get_free_unit(ierr, iu_sol_lr)
-open(iu_sol_lr, file=trim(sol_lr_file), iostat=ios, status='old')
+open(newunit=iu_sol_lr, file=trim(sol_lr_file), iostat=ios, status='old')
 call read_solar_spectrum_data(iu_sol_lr, sol_lr, ierr)
 
-call get_free_unit(ierr, iu_sol_hr)
-open(iu_sol_hr, file=trim(sol_hr_file), iostat=ios, status='old')
+open(newunit=iu_sol_hr, file=trim(sol_hr_file), iostat=ios, status='old')
 call read_solar_spectrum_data(iu_sol_hr, sol_hr_in, ierr)
 
 if (.not.sol_lr%l_binned .or. .not.sol_hr_in%l_binned) then
-  stop 'Requires input solar spectra to be in binned format'
+  cmessage = 'Requires input solar spectra to be in binned format'
+  ierr = i_err_fatal
+  call ereport(RoutineName, ierr, cmessage)
 end if
 
 ! Split high-res bins at the edges of low-res bins
@@ -90,6 +104,9 @@ allocate(sol_hr%bandsize(sol_hr%n_points))
 allocate(sol_hr%irrad(sol_hr%n_points))
 j=0
 do jj=1, sol_hr_in%n_points
+  ! Here jj is the loop index for the input sol_hr_in bins.
+  ! The output sol_hr bins are indexed with j. These are identical except
+  ! where we wish to insert an extra bin to match the sol_lr array. 
   j=j+1
   ii=0
   do i=1, sol_lr%n_points
@@ -97,11 +114,13 @@ do jj=1, sol_hr_in%n_points
          sol_hr_in%bandbnds(1, jj) + tol*sol_hr_in%bandsize(jj) .and. &
          sol_lr%bandbnds(1, i) < &
          sol_hr_in%bandbnds(2, jj) - tol*sol_hr_in%bandsize(jj) ) then
+      ! Index the sol_lr bin we wish to insert as ii
       ii=i
       exit
     end if
   end do
   if (ii > 0) then
+    ! Insert the extra bin into the sol_hr array and increment j
     sol_hr%bandbnds(1, j) = sol_hr_in%bandbnds(1, jj)
     sol_hr%bandbnds(2, j) = sol_lr%bandbnds(1, ii)
     sol_hr%bandsize(j) = sol_hr%bandbnds(2, j) - sol_hr%bandbnds(1, j)
@@ -116,6 +135,7 @@ do jj=1, sol_hr_in%n_points
                          + sol_hr%bandsize(j) / 2.0_RealK
     sol_hr%irrad(j) = sol_hr_in%irrad(jj)
   else
+    ! Copy across the bins from sol_hr_in to sol_hr
     sol_hr%wavelength(j) = sol_hr_in%wavelength(jj)
     sol_hr%bandbnds(:, j) = sol_hr_in%bandbnds(:, jj)
     sol_hr%bandsize(j) = sol_hr_in%bandsize(jj)

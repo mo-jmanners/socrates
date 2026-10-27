@@ -1,8 +1,21 @@
+! *****************************COPYRIGHT*******************************
+! (C) Crown copyright Met Office. All rights reserved.
+! For further details please refer to the file COPYRIGHT.txt
+! which you should have received as part of this distribution.
+! *****************************COPYRIGHT*******************************
+!
+! Mean the WHI Reference spectra over the three observation periods
+!
+! Whole Heliosphere Interval (WHI) Reference Spectra data come from:
+! Woods et al. (2009), GRL, 36, L01101, DOI:10.1029/2008GL036373
+! https://lasp.colorado.edu/lisird/data/whi_ref_spectra
+!------------------------------------------------------------------------------
 program whi2sol
 
 use realtype_rd, only: RealK
 use def_solarspec, only: StrSolarSpec
 use solar_intensity_nu_mod, only: solar_intensity_nu
+use socrates_ereport, only: ereport, errormessagelength, i_err_fatal
 
 implicit none
 
@@ -17,15 +30,22 @@ integer :: i, k, n_points
 real(RealK) :: source, wavelength
 real(RealK) :: obs_period(3)=[5.0_RealK, 6.0_RealK, 7.0_RealK]
 
+character (len=errormessagelength) :: cmessage
+character (len=*), parameter :: RoutineName = 'WHI2SOL'
+
+
 call get_command_argument(1, input_file)
 call get_command_argument(2, output_file)
 
 ! Read header from the input WHI reference solar spectrum file
-call get_free_unit(ierr, iu_input)
-open(unit=iu_input, file=input_file, iostat=ios, status='UNKNOWN')
+open(newunit=iu_input, file=input_file, iostat=ios, status='UNKNOWN')
 do
   read(iu_input, '(a)', IOSTAT=ios) line
-  if (ios /= 0) stop 'Error reading WHI reference file'
+  if (ios /= 0) then
+    cmessage = 'Error reading WHI reference file'
+    ierr = i_err_fatal
+    call ereport(RoutineName, ierr, cmessage)
+  end if
   if (line(1:6) == 'FORMAT') then
     read(iu_input, '(i6,/)', IOSTAT=ios) n_points
     exit
