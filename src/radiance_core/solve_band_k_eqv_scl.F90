@@ -485,7 +485,7 @@ SUBROUTINE solve_band_k_eqv_scl(ierr &
     , rayleigh_adjust(nd_k_term_inner_dummy)
 !       Adjustment to retrieve Rayleigh coefficient for k-term
 !       from band value
-    REAL (RealK) :: &
+  REAL (RealK) :: &
       flux_direct_part(nd_flux_profile, 0: nd_layer) &
 !       Partial direct flux
     , flux_direct_ground_part(nd_flux_profile) &
