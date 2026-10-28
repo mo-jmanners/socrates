@@ -77,6 +77,8 @@ Ccdf2cdl -o cdl_trop_xsw_photol_nlte.hrts          trop_xsw_photol_nlte.hrts > /
 Ccdf2cdl -o cdl_trop_sw_ga7.hrts                   trop_sw_ga7.hrts > /dev/null
 Ccdf2cdl -o cdl_trop_320_sg_ch.ph_rate_2           trop_320_sg_ch.ph_rate_2 > /dev/null
 Ccdf2cdl -o cdl_trop_320.hrts                      trop_320.hrts > /dev/null
+Ccdf2cdl -o cdl_trop_411rd_sg_ch.uvindex           trop_411rd_sg_ch.uvindex > /dev/null
+Ccdf2cdl -o cdl_trop_411rd.uvindex                 trop_411rd.uvindex > /dev/null
 Ccdf2cdl -o cdl_trop_411rd_sg_ch.dflx              trop_411rd_sg_ch.dflx > /dev/null
 Ccdf2cdl -o cdl_trop_411rd.dflx                    trop_411rd.dflx > /dev/null
 Ccdf2cdl -o cdl_trop_lw_ga7.hrts                   trop_lw_ga7.hrts > /dev/null
@@ -113,6 +115,10 @@ diff -q cdl_trop_320_sg_ch.ph_rate_2      gfortran_trop_320_sg_ch.ph_rate_2     
 diff -q cdl_trop_320_sg_ch.ph_rate_2      ref_trop_320_sg_ch.ph_rate_2           || \
     ierr=1
 diff -q cdl_trop_320.hrts                 ref_trop_320.hrts                      || ierr=1
+diff -q cdl_trop_411rd_sg_ch.uvindex      gfortran_trop_411rd_sg_ch.uvindex      || \
+diff -q cdl_trop_411rd_sg_ch.uvindex      ref_trop_411rd_sg_ch.uvindex           || \
+    ierr=1
+diff -q cdl_trop_411rd.uvindex            ref_trop_411rd.uvindex                 || ierr=1
 (diff -q cdl_trop_411rd_sg_ch.dflx        gfortran_trop_411rd_sg_ch.dflx         && \
   echo 'Matched gfortran output')                                                || \
 (diff -q cdl_trop_411rd_sg_ch.dflx        ref_trop_411rd_sg_ch.dflx              && \
