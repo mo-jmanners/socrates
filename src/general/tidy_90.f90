@@ -18,10 +18,11 @@ PROGRAM tidy_90
 !      modified spectral file is written out.
 !
 ! Modules used
-  USE realtype_rd
-  USE def_spectrum
-  USE def_std_io_icf
-  USE error_pcf
+  USE realtype_rd, ONLY: RealK
+  USE def_spectrum, ONLY: StrSpecData
+  USE def_std_io_icf, ONLY: iu_stdout, iu_stdin, iu_err
+  USE socrates_ereport, ONLY: ereport, errormessagelength, &
+    i_normal, i_err_exist, i_err_fatal, i_err_io, i_warning
   USE socrates_set_spectrum, ONLY: set_solar_variability
 !
   IMPLICIT NONE
@@ -34,11 +35,8 @@ PROGRAM tidy_90
 !   Character response variable
   CHARACTER (LEN=1)   :: char_yn
 !   Character response variable
-  INTEGER :: ierr = 0
+  INTEGER :: ierr = i_normal
 !   Error flag
-  LOGICAL :: l_interactive
-!   Flag for interactive operation
-!
   INTEGER :: i_process
 !   Process to be carried out
   INTEGER :: ios
@@ -58,9 +56,11 @@ PROGRAM tidy_90
 !
   TYPE(StrSpecData) :: Spectrum
 !   The spectral configuration to be defined
-!
-!
-!
+
+  CHARACTER (LEN=errormessagelength) :: cmessage
+  CHARACTER (LEN=*), PARAMETER :: RoutineName = 'TIDY_90'
+
+
 ! Read in the spectral file.
   WRITE(*, "(a)") "Enter the name of the spectral file."
   READ(*, "(a)") file_spectral
@@ -73,53 +73,31 @@ PROGRAM tidy_90
   WRITE(iu_stdout, '(6x, a)') &
     '"o" to overwrite the existing file;'
   WRITE(iu_stdout, '(6x, a)') &
-    '"n" to create a new file;'
-  WRITE(iu_stdout, '(6x, a)') &
-    '"q" to quit.'
+    '"n" to create a new file'
   WRITE(iu_stdout, '(/)')
-!
-  DO
-    READ(iu_stdin, '(a)') char_qna
-    SELECT CASE(char_qna)
-      CASE('o', 'O')
-        EXIT
-      CASE('n', 'N')
-        WRITE(iu_stdout, '(a)') 'Enter the name of the new file'
-        DO
-          READ(iu_stdin, '(a)') file_spectral
-!         Check for existence of file.
-          INQUIRE(file=file_spectral, exist=l_exist)
-          IF (l_exist) THEN
-            IF (l_interactive) THEN
-              WRITE(iu_stdout, '(/a)') &
-                'This file already exists: do you wish to overwrite? (y/n)'
-              DO
-                READ(iu_stdin, '(a)') char_yn
-                SELECT CASE(char_yn)
-                  CASE('n', 'N')
-                    STOP
-                  CASE('y', 'Y')
-                    EXIT
-                END SELECT
-              ENDDO
-            ELSE
-              STOP
-            ENDIF
-          ELSE
-            EXIT
-          ENDIF
-        ENDDO
-      CASE('q', 'Q')
-        STOP
-      CASE DEFAULT
-        WRITE(iu_err, '(a)') '+++ erroneous response:'
-        IF (.NOT.l_interactive) STOP
-    END SELECT
-    EXIT
-  ENDDO
-!
+
+  READ(iu_stdin, '(a)') char_qna
+  SELECT CASE(char_qna)
+    CASE('o', 'O')
+      ! File will be overwritten
+    CASE('n', 'N')
+      WRITE(iu_stdout, '(a)') 'Enter the name of the new file'
+      READ(iu_stdin, '(a)') file_spectral
+      ! Check for existence of file.
+      INQUIRE(file=file_spectral, exist=l_exist)
+      IF (l_exist) THEN
+        cmessage = 'File exists: will not overwrite.'
+        ierr = i_err_exist
+        CALL ereport(RoutineName, ierr, cmessage)
+      END IF
+    CASE DEFAULT
+      cmessage = 'Erroneous response'
+      ierr = i_err_fatal
+      CALL ereport(RoutineName, ierr, cmessage)
+  END SELECT
+
 ! Now decide which processes are needed.
-  DO
+  loop: DO
 !
     WRITE(iu_stdout, '(/a)') &
       'Select from the following list of operations.'
@@ -150,20 +128,13 @@ PROGRAM tidy_90
       '12.   Set the solar spectrum for a given time in the var file.'
     WRITE(iu_stdout, '(/5x, a//)') &
       '-1.  to finish.'
-!
-    DO
-      READ(iu_stdin, *, iostat=ios) i_process
-      IF (ios /= 0) THEN
-        WRITE(iu_err, '(a)') '+++ Erroneous input:'
-        IF (.NOT.l_interactive) THEN
-          STOP
-        ELSE
-          WRITE(iu_stdout, '(a)') 'Please re-type.'
-        ENDIF
-      ELSE
-        EXIT
-      ENDIF
-    ENDDO
+
+    READ(iu_stdin, *, iostat=ios) i_process
+    IF (ios /= 0) THEN
+      cmessage = 'Erroneous input'
+      ierr = i_err_io
+      CALL ereport(RoutineName, ierr, cmessage)
+    END IF
 !
 !
 !   For each valid process call the appropriate routine.
@@ -171,11 +142,10 @@ PROGRAM tidy_90
       CASE(-1)
 !       Write out the spectral file.
         CALL out_spectrum(file_spectral, Spectrum, ierr)
-        STOP
+        EXIT loop
       CASE(1)
         IF (Spectrum%Basic%l_present(5)) THEN
           CALL remove_weak
-          IF (ierr /= i_normal) STOP
         ELSE
           WRITE(iu_err,'(/a)') &
             'The file contains no k-distribution data: the process ' &
@@ -213,13 +183,13 @@ PROGRAM tidy_90
         ENDIF
       CASE(4)
         IF (Spectrum%Basic%l_present(9)) THEN
-!          CALL remove_weak_cont
-          IF (ierr /= i_normal) STOP
-      ELSE
-        WRITE(iu_err,'(/a)') &
-          'The file contains no continuum data: the process ' &
-          //'cannot be carried out.'
-      ENDIF
+          cmessage = 'remove_weak_cont not implemented'
+          ierr = i_warning
+        ELSE
+          WRITE(iu_err,'(/a)') &
+            'The file contains no continuum data: the process ' &
+            //'cannot be carried out.'
+        ENDIF
       CASE(5)
         IF (Spectrum%Basic%l_present(9)) THEN
           CALL remove_negative_cont_90( &
@@ -239,7 +209,6 @@ PROGRAM tidy_90
       CASE(6)
         IF (Spectrum%Basic%l_present(5)) THEN
           CALL set_major_gas_cont
-          IF (ierr /= i_normal) STOP
         ELSE
           WRITE(iu_err,'(/a)') &
             'The file contains no k-distribution data: the process ' &
@@ -248,7 +217,6 @@ PROGRAM tidy_90
       CASE(7)
         IF (Spectrum%Basic%l_present(11)) THEN
           CALL reorder_aerosols
-          IF (ierr /= i_normal) STOP
         ELSE
           WRITE(iu_err,'(/a)') &
             'The file contains no aerosol data: the process ' &
@@ -286,18 +254,14 @@ PROGRAM tidy_90
             //'cannot be carried out.'
         ENDIF
       CASE DEFAULT
-        WRITE(iu_err, '(a)') '+++ Invalid type of process:'
-        IF (l_interactive) THEN
-          WRITE(iu_stdout, '(a)') 'Please re-type.'
-        ELSE
-          STOP
-        ENDIF
+        cmessage = 'Invalid type of process'
+        ierr = i_warning
     END SELECT
-    IF (ierr /= i_normal) stop
-!
+    CALL ereport(RoutineName, ierr, cmessage)
+
     WRITE(iu_stdout, '(/a/)') 'specify next process.'
-!
-  ENDDO
+
+  END DO loop
 
 CONTAINS
 
@@ -349,7 +313,9 @@ CONTAINS
         IF (ios.NE.0) THEN
           WRITE(iu_err, '(A)') '+++ Erroneous response:'
           IF (lock_code(.TRUE.)) THEN
-            STOP
+            cmessage = 'Erroneous response'
+            ierr = i_err_io
+            CALL ereport(RoutineName, ierr, cmessage)
           ELSE
             WRITE(iu_stdout, '(A)') 'Please re-type.'
           ENDIF
@@ -371,7 +337,9 @@ CONTAINS
         IF (ios.NE.0) THEN
           WRITE(iu_err, '(A)') '+++ Erroneous response:'
           IF (lock_code(.TRUE.)) THEN
-            STOP
+            cmessage = 'Erroneous response'
+            ierr = i_err_io
+            CALL ereport(RoutineName, ierr, cmessage)
           ELSE
             WRITE(iu_stdout, '(A)') 'Please re-type.'
           ENDIF
@@ -388,7 +356,9 @@ CONTAINS
       IF (ios.NE.0) THEN
         WRITE(iu_err, '(A)') '+++ Erroneous response:'
         IF (lock_code(.TRUE.)) THEN
-          STOP
+          cmessage = 'Erroneous response'
+          ierr = i_err_io
+          CALL ereport(RoutineName, ierr, cmessage)
         ELSE
           WRITE(iu_stdout, '(A)') 'Please re-type.'
         ENDIF
@@ -493,7 +463,7 @@ CONTAINS
 !     Pressure at current level
     REAL (RealK) :: p_column(3)
 !     Pressure for different gas cumulative column amounts
-    REAL (RealK), PARAMETER :: p_toa = 1.0_RealK
+    REAL (RealK), PARAMETER :: p_toa = 0.001_RealK
 !     Pressure at TOA
     REAL (RealK), PARAMETER :: p_inc = 10.0**(0.1_RealK)
 !     Factor to increment pressure across a layer
@@ -535,8 +505,9 @@ CONTAINS
         READ(column, *, IOSTAT=ios) column_gas(1:n_column(i_gas), i_gas)
         IF (ios /= 0) THEN
           IF (n_column(i_gas) == 1) THEN
-            WRITE(iu_err, '(A)') '+++ Erroneous response'
-            STOP
+            cmessage = 'Erroneous response'
+            ierr = i_err_fatal
+            CALL ereport(RoutineName, ierr, cmessage)
           ELSE
             n_column(i_gas) = n_column(i_gas) - 1
           END IF
@@ -558,7 +529,9 @@ CONTAINS
         IF (ios.NE.0) THEN
           WRITE(iu_err, '(A)') '+++ Erroneous response:'
           IF (lock_code(.TRUE.)) THEN
-            STOP
+            cmessage = 'Erroneous response'
+            ierr = i_err_io
+            CALL ereport(RoutineName, ierr, cmessage)
           ELSE
             WRITE(iu_stdout, '(A)') 'Please re-type.'
           ENDIF
@@ -574,8 +547,9 @@ CONTAINS
         WRITE(iu_stdout, '(/,A)') 'Enter the column pressures (low to high)'
         READ(iu_stdin, *, IOSTAT=ios) p_column(1:n_column_p)
         IF (ios /= 0 .OR. ANY(p_column(1:n_column_p) <= 0.0_RealK)) THEN
-          WRITE(iu_err, '(A)') '+++ Erroneous response'
-          STOP
+          cmessage = 'Erroneous response'
+          ierr = i_err_io
+          CALL ereport(RoutineName, ierr, cmessage)
         ELSE
           p_surf=MAXVAL(p_column(1:n_column_p))
         END IF
@@ -583,8 +557,9 @@ CONTAINS
         WRITE(iu_stdout, '(/,A)') 'Enter the surface pressure.'
         READ(iu_stdin, *, IOSTAT=ios) p_surf
         IF (ios /= 0 .OR. p_surf <= 0.0_RealK) THEN
-          WRITE(iu_err, '(A)') '+++ Erroneous response'
-          STOP
+          cmessage = 'Erroneous response'
+          ierr = i_err_io
+          CALL ereport(RoutineName, ierr, cmessage)
         END IF
       END IF
     ELSE
@@ -606,7 +581,9 @@ CONTAINS
         ELSE
           WRITE(iu_err, '(A)') '+++ Erroneous response:'
           IF (lock_code(.TRUE.)) THEN
-            STOP
+            cmessage = 'Erroneous response'
+            ierr = i_err_fatal
+            CALL ereport(RoutineName, ierr, cmessage)
           ELSE
             WRITE(iu_stdout, '(A)') 'Please re-type.'
           ENDIF
@@ -810,7 +787,9 @@ CONTAINS
         IF (ios /= 0) THEN
           WRITE(iu_err, '(a)') '+++ Erroneous response:'
           IF (lock_code(.TRUE.)) THEN
-            STOP
+            cmessage = 'Erroneous response'
+            ierr = i_err_io
+            CALL ereport(RoutineName, ierr, cmessage)
           ELSE
             WRITE(iu_stdout, '(a)') 'Please re-type.'
           ENDIF
@@ -829,7 +808,9 @@ CONTAINS
             IF (index_gas == 0) THEN
               WRITE(iu_err, '(a)') '+++ Erroneous response:'
               IF (lock_code(.TRUE.)) THEN
-                STOP
+                cmessage = 'Erroneous response'
+                ierr = i_err_fatal
+                CALL ereport(RoutineName, ierr, cmessage)
               ELSE
                 WRITE(iu_stdout, '(a)') 'Please re-type.'
               ENDIF
@@ -958,8 +939,9 @@ CONTAINS
         name_absorb(Spectrum%Gas%type_absorb(i))
       READ(iu_stdin, *, IOSTAT=ios) column_gas(i)
       IF (ios.NE.0) THEN
-        WRITE(iu_err, '(A)') '+++ Erroneous response.'
-        STOP
+        cmessage = 'Erroneous response'
+        ierr = i_err_io
+        CALL ereport(RoutineName, ierr, cmessage)
       END IF
     END DO
 
@@ -968,8 +950,9 @@ CONTAINS
       'Enter the column optical depth threshold for neglecting scattering.'
     READ(iu_stdin, *, IOSTAT=ios) tau_max
     IF (ios.NE.0) THEN
-      WRITE(iu_err, '(A)') '+++ Erroneous response.'
-      STOP
+      cmessage = 'Erroneous response'
+      ierr = i_err_io
+      CALL ereport(RoutineName, ierr, cmessage)
     END IF
 
     DO i_band=1, Spectrum%Basic%n_band

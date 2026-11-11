@@ -49,6 +49,10 @@ Cl_run_cdf -B tropical -s sp_411rd_photol -S -R 1 411 -g 4 -r -C 5 -sg -ch 411
 fmove tropical trop_411rd_sg_ch
 Cl_run_cdf -B tropical -s sp_411rd_photol -S -R 1 411 -g 4 -r -C 5
 fmove tropical trop_411rd
+Cl_run_cdf -B tropical -s sp_411rd_photol -S -R 1 411 -g 4 -r -C 5 -sg -ch 411 -z 5
+fmove tropical trop_411rd_sg_ch_z5
+Cl_run_cdf -B tropical -s sp_411rd_photol -S -R 1 411 -g 4 -r -C 5 -z 5
+fmove tropical trop_411rd_z5
 
 cp tropical.surflw tropical.surf
 Cl_run_cdf -B tropical -s $RAD_DATA/spectra/ga7/sp_lw_ga7 -I -R 1 9 -g 4 -C 5 -c
@@ -81,6 +85,8 @@ Ccdf2cdl -o cdl_trop_411rd_sg_ch.uvindex           trop_411rd_sg_ch.uvindex > /d
 Ccdf2cdl -o cdl_trop_411rd.uvindex                 trop_411rd.uvindex > /dev/null
 Ccdf2cdl -o cdl_trop_411rd_sg_ch.dflx              trop_411rd_sg_ch.dflx > /dev/null
 Ccdf2cdl -o cdl_trop_411rd.dflx                    trop_411rd.dflx > /dev/null
+Ccdf2cdl -o cdl_trop_411rd_sg_ch_z5.vflx           trop_411rd_sg_ch_z5.vflx > /dev/null
+Ccdf2cdl -o cdl_trop_411rd_z5.vflx                 trop_411rd_z5.vflx > /dev/null
 Ccdf2cdl -o cdl_trop_lw_ga7.hrts                   trop_lw_ga7.hrts > /dev/null
 Ccdf2cdl -o cdl_trop_lw_ga7_nlte.hrts              trop_lw_ga7_nlte.hrts > /dev/null
 
@@ -119,6 +125,10 @@ diff -q cdl_trop_411rd_sg_ch.uvindex      gfortran_trop_411rd_sg_ch.uvindex     
 diff -q cdl_trop_411rd_sg_ch.uvindex      ref_trop_411rd_sg_ch.uvindex           || \
     ierr=1
 diff -q cdl_trop_411rd.uvindex            ref_trop_411rd.uvindex                 || ierr=1
+diff -q cdl_trop_411rd_sg_ch_z5.vflx      gfortran_trop_411rd_sg_ch_z5.vflx      || \
+diff -q cdl_trop_411rd_sg_ch_z5.vflx      ref_trop_411rd_sg_ch_z5.vflx           || \
+    ierr=1
+diff -q cdl_trop_411rd_z5.vflx            ref_trop_411rd_z5.vflx                 || ierr=1
 (diff -q cdl_trop_411rd_sg_ch.dflx        gfortran_trop_411rd_sg_ch.dflx         && \
   echo 'Matched gfortran output')                                                || \
 (diff -q cdl_trop_411rd_sg_ch.dflx        ref_trop_411rd_sg_ch.dflx              && \
