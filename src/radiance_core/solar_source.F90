@@ -15,7 +15,7 @@ SUBROUTINE solar_source(control, bound, n_profile, n_layer              &
      , flux_inc_direct                                                  &
      , trans_0_dir, trans_0, source_coeff                               &
      , l_scale_solar, adjust_solar_ke                                   &
-     , flux_direct                                                      &
+     , flux_direct, flux_direct_dir                                     &
      , s_down, s_up                                                     &
      , nd_profile, nd_layer, nd_source_coeff                            &
      )
@@ -75,6 +75,8 @@ SUBROUTINE solar_source(control, bound, n_profile, n_layer              &
   REAL (RealK), INTENT(OUT) ::                                          &
       flux_direct(nd_profile, 0: nd_layer)                              &
 !       Direct flux
+    , flux_direct_dir(nd_profile, 0: nd_layer)                          &
+!       Direct flux without scaling
     , s_down(nd_profile, nd_layer)                                      &
 !       Downward source function
     , s_up(nd_profile, nd_layer)
@@ -82,15 +84,10 @@ SUBROUTINE solar_source(control, bound, n_profile, n_layer              &
 
 
 ! Local variables.
-  INTEGER                                                               &
-      i                                                                 &
-!       Loop variable
-    , l
-!       Loop variable
-
-  REAL (RealK) ::                                                       &
-      flux_direct_dir(nd_profile, 0: nd_layer)
-!       Direct flux without scaling
+  INTEGER :: i, l
+!       Loop variables
+  REAL (RealK) :: orog_flux(nd_profile)
+!       Extra surface flux due to orography correction
 
 
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
@@ -115,20 +112,34 @@ SUBROUTINE solar_source(control, bound, n_profile, n_layer              &
   IF (l_scale_solar) THEN
 !   The solar flux may be multiplied by a scaling factor if an
 !   equivalent extinction is used.
-    DO i=1, n_layer
-      DO l=1, n_profile
-!       The delta-scaled direct flux is used for the source terms
-!       and the total downwards flux.
-        flux_direct(l, i)                                               &
-          =flux_direct(l, i-1)*trans_0(l, i)                            &
-          *adjust_solar_ke(l, i)
-        s_up(l, i)=source_coeff(l, i, ip_scf_solar_up)                  &
-          *flux_direct(l, i-1)
-        s_down(l, i)=(source_coeff(l, i, ip_scf_solar_down)             &
-          -trans_0(l, i))*flux_direct(l, i-1)                           &
-          +flux_direct(l, i)
+    IF (control%l_diffuse_2stream) THEN
+      DO i=1, n_layer
+        DO l=1, n_profile
+          flux_direct(l, i)                                             &
+            =flux_direct(l, i-1)*trans_0(l, i)                          &
+            *adjust_solar_ke(l, i)
+          s_up(l, i)=source_coeff(l, i, ip_scf_solar_up)                &
+            *flux_direct(l, i-1)
+          s_down(l, i)=source_coeff(l, i, ip_scf_solar_down)            &
+            *flux_direct(l, i-1)
+        END DO
       END DO
-    END DO
+    ELSE
+      DO i=1, n_layer
+        DO l=1, n_profile
+!         The delta-scaled direct flux is used for the source terms
+!         and the total downwards flux.
+          flux_direct(l, i)                                             &
+            =flux_direct(l, i-1)*trans_0(l, i)                          &
+            *adjust_solar_ke(l, i)
+          s_up(l, i)=source_coeff(l, i, ip_scf_solar_up)                &
+            *flux_direct(l, i-1)
+          s_down(l, i)=(source_coeff(l, i, ip_scf_solar_down)           &
+            -trans_0(l, i))*flux_direct(l, i-1)                         &
+            +flux_direct(l, i)
+        END DO
+      END DO
+    END IF
     IF (control%i_direct_tau == ip_direct_noscaling .OR.                &
         control%i_direct_tau == ip_direct_csr_scaling) THEN
       DO i=1, n_layer
@@ -165,44 +176,37 @@ SUBROUTINE solar_source(control, bound, n_profile, n_layer              &
   END IF
 
 
-  IF (control%i_direct_tau == ip_direct_noscaling .OR.                  &
-      control%i_direct_tau == ip_direct_csr_scaling) THEN
-!   From this point, use the unscaled direct flux as the direct component.
-    DO i= 0, n_layer
-      DO l=1, n_profile
-        flux_direct(l, i)=flux_direct_dir(l, i)
-      END DO
-    END DO
-  END IF
-
-
 ! Correct the direct flux at the ground for sloping terrain
   IF (control%l_orog) THEN
-    IF (control%l_orog_fix) THEN
-!     The total flux at the surface must also add the correction made
-!     to the direct flux.
-      s_down(1:n_profile, n_layer) =                                    &
-        s_down(1:n_profile, n_layer) +                                  &
-        flux_direct(1:n_profile, n_layer) *                             &
-        (bound%orog_corr(1:n_profile) - 1.0_RealK)
-
-      flux_direct(1:n_profile, n_layer) =                               &
-        flux_direct(1:n_profile, n_layer) *                             &
+    IF (control%i_direct_tau == ip_direct_noscaling .OR. &
+        control%i_direct_tau == ip_direct_csr_scaling) THEN
+      orog_flux(1:n_profile) = flux_direct_dir(1:n_profile, n_layer) &
+        * (bound%orog_corr(1:n_profile) - 1.0_RealK)
+      flux_direct_dir(1:n_profile, n_layer) = &
+        flux_direct_dir(1:n_profile, n_layer) * &
         bound%orog_corr(1:n_profile)
     ELSE
-      flux_direct(1:n_profile, n_layer) =                               &
-        flux_direct(1:n_profile, n_layer) *                             &
+      orog_flux(1:n_profile) = flux_direct(1:n_profile, n_layer) &
+        * (bound%orog_corr(1:n_profile) - 1.0_RealK)
+    END IF
+    IF (control%l_diffuse_2stream) THEN
+      flux_direct(1:n_profile, n_layer) = &
+        flux_direct(1:n_profile, n_layer) + orog_flux(1:n_profile)
+    ELSE
+      flux_direct(1:n_profile, n_layer) = &
+        flux_direct(1:n_profile, n_layer) * &
         bound%orog_corr(1:n_profile)
-
-!     The total flux at the surface must also add the correction made
-!     to the direct flux.
-      s_down(1:n_profile, n_layer) =                                    &
-        s_down(1:n_profile, n_layer) +                                  &
-        flux_direct(1:n_profile, n_layer) *                             &
-        (bound%orog_corr(1:n_profile) - 1.0_RealK)
+      IF (control%l_orog_fix) THEN
+        s_down(1:n_profile, n_layer) = &
+          s_down(1:n_profile, n_layer) + orog_flux(1:n_profile)
+      ELSE
+        s_down(1:n_profile, n_layer) = &
+          s_down(1:n_profile, n_layer) + &
+          flux_direct(1:n_profile, n_layer) * &
+          (bound%orog_corr(1:n_profile) - 1.0_RealK)
+      END IF
     END IF
   END IF
-
 
   IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName,zhook_out,zhook_handle)
 

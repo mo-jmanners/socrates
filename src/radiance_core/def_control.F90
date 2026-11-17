@@ -395,6 +395,8 @@ TYPE StrCtrl
 !   Flag to use Lanczos smoothing of solar phf
   LOGICAL :: l_euler_trnf                                         = .FALSE.
 !   Flag to apply Euler's transformation to alternating series
+  LOGICAL :: l_diffuse_2stream                                    = .FALSE.
+!   Only include the diffuse flux in the two-stream calculation
   REAL (RealK) :: accuracy_adaptive                               = rmdi
 !   Accuracy for adaptive truncation
   REAL (RealK) :: euler_factor                                    = rmdi

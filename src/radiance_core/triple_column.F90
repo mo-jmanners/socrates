@@ -68,6 +68,7 @@ SUBROUTINE triple_column(ierr                                           &
   USE rad_pcf, ONLY: i_err_fatal, ip_infra_red, ip_solar,               &
                      ip_scatter_full, ip_scatter_approx,                &
                      ip_no_scatter_abs, ip_no_scatter_ext,              &
+                     ip_direct_csr_scaling, ip_direct_noscaling,        &
                      ip_region_clear, ip_region_strat, ip_region_conv,  &
                      ip_solver_triple, ip_solver_triple_hogan,          &
                      ip_solver_triple_app_scat
@@ -242,11 +243,12 @@ SUBROUTINE triple_column(ierr                                           &
 
 ! Source functions at the ground
   REAL (RealK) ::                                                       &
-      source_flux_ground(nd_profile, nd_region)                         &
+      source_flux_ground(nd_profile, nd_region)
 !       Source of flux from ground
-    , flux_direct_ground(nd_profile, nd_region)
-!       Direct flux at ground in each region
 
+  REAL (RealK) ::                                                       &
+      flux_direct_dir(nd_profile, 0: nd_layer)
+!       Direct flux without scaling
 
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
@@ -370,26 +372,16 @@ SUBROUTINE triple_column(ierr                                           &
       , cloud_overlap(1, id_ct-1, 7)                                    &
       , cloud_overlap(1, id_ct-1, 8)                                    &
       , cloud_overlap(1, id_ct-1, 9)                                    &
-      , flux_direct, flux_direct_ground                                 &
+      , diffuse_albedo, direct_albedo                                   &
+      , flux_direct, flux_direct_dir                                    &
+      , source_flux_ground                                              &
       , s_up, s_down                                                    &
       , nd_profile, nd_layer, id_ct, nd_source_coeff, nd_region         &
       )
   END IF
 
 !   Set the partitioned source functions at the ground.
-    IF (isolir == ip_solar) THEN
-      DO l=1, n_profile
-        source_flux_ground(l, ip_region_clear)                          &
-          =(direct_albedo(l)-diffuse_albedo(l))                         &
-          *flux_direct_ground(l, ip_region_clear)
-        source_flux_ground(l, ip_region_strat)                          &
-          =(direct_albedo(l)-diffuse_albedo(l))                         &
-          *flux_direct_ground(l, ip_region_strat)
-        source_flux_ground(l, ip_region_conv)                           &
-          =(direct_albedo(l)-diffuse_albedo(l))                         &
-          *flux_direct_ground(l, ip_region_conv)
-      END DO
-    ELSE
+    IF (isolir == ip_infra_red) THEN
       DO l=1, n_profile
         source_flux_ground(l, ip_region_clear)                          &
           =cloud_overlap(l, n_layer, 10)                                &
@@ -544,6 +536,23 @@ SUBROUTINE triple_column(ierr                                           &
 
   END SELECT
 
+  IF (isolir == ip_solar .AND. control%l_diffuse_2stream .AND. &
+    .NOT. control%l_spherical_solar) THEN
+    DO i=0, n_layer
+      DO l=1, n_profile
+        flux_total(l, 2*i+2) = flux_total(l, 2*i+2) + flux_direct(l, i)
+      END DO
+    END DO
+  END IF
+
+  IF (control%i_direct_tau == ip_direct_noscaling .OR. &
+      control%i_direct_tau == ip_direct_csr_scaling) THEN
+    DO i=0, n_layer
+      DO l=1, n_profile
+        flux_direct(l, i) = flux_direct_dir(l, i)
+      END DO
+    END DO
+  END IF
 
 
   IF (l_clear) THEN

@@ -22,8 +22,9 @@ SUBROUTINE triple_solar_source(control, bound                           &
      , l_scale_solar, adjust_solar_ke                                   &
      , trans_0_dir, trans_0, source_coeff                               &
      , v11, v12, v13, v21, v22, v23, v31, v32, v33                      &
-     , flux_direct                                                      &
-     , flux_direct_ground                                               &
+     , diffuse_albedo, direct_albedo                                    &
+     , flux_direct, flux_direct_dir                                     &
+     , source_flux_ground                                               &
      , s_up, s_down                                                     &
      , nd_profile, nd_layer, id_ct, nd_source_coeff, nd_region          &
      )
@@ -115,12 +116,21 @@ SUBROUTINE triple_solar_source(control, bound                           &
     , v33(nd_profile, id_ct-1: nd_layer)
 !       Energy transfer coefficient
 
+! Albedos
+  REAL (RealK), INTENT(IN) ::                                           &
+      diffuse_albedo(nd_profile)                                        &
+!       Diffuse albedo
+    , direct_albedo(nd_profile)
+!       Direct albedo
+  
 ! Calculated direct flux and source terms:
   REAL (RealK), INTENT(OUT) ::                                          &
       flux_direct(nd_profile, 0: nd_layer)                              &
 !       Overall direct flux
-    , flux_direct_ground(nd_profile, nd_region)                         &
-!       Direct fluxes at ground beneath each region
+    , flux_direct_dir(nd_profile, 0: nd_layer)                          &
+!       Overall unscaled direct flux
+    , source_flux_ground(nd_profile, nd_region)                         &
+!       Source of fluxes from ground in each region
     , s_up(nd_profile, nd_layer, nd_region)                             &
 !       Upward source functions
     , s_down(nd_profile, nd_layer, nd_region)
@@ -139,10 +149,8 @@ SUBROUTINE triple_solar_source(control, bound                           &
   REAL (RealK) ::                                                       &
       solar_top(nd_profile, nd_region)                                  &
 !       Solar fluxes at top of layer
-    , solar_base(nd_profile, nd_region)                                 &
+    , solar_base(nd_profile, nd_region)
 !       Solar fluxes at base of layer
-    , flux_direct_dir(nd_profile, 0: nd_layer)
-!       Overall unscaled direct flux
 
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
@@ -170,20 +178,36 @@ SUBROUTINE triple_solar_source(control, bound                           &
 ! With equivalent extinction the direct solar flux must be corrected.
   IF (l_scale_solar) THEN
 
-    DO i=1, n_cloud_top-1
-      DO l=1, n_profile
-        flux_direct(l, i)                                               &
-          =flux_direct(l, i-1)*trans_0(l, i, ip_region_clear)           &
-          *adjust_solar_ke(l, i)
-        s_up(l, i, ip_region_clear)                                     &
-          =source_coeff(l, i, ip_scf_solar_up, ip_region_clear)         &
-          *flux_direct(l, i-1)
-        s_down(l, i, ip_region_clear)                                   &
-          =(source_coeff(l, i, ip_scf_solar_down, ip_region_clear)      &
-          -trans_0(l, i, ip_region_clear))*flux_direct(l, i-1)          &
-          +flux_direct(l, i)
+    IF (control%l_diffuse_2stream) THEN
+      DO i=1, n_cloud_top-1
+        DO l=1, n_profile
+          flux_direct(l, i)                                             &
+            =flux_direct(l, i-1)*trans_0(l, i, ip_region_clear)         &
+            *adjust_solar_ke(l, i)
+          s_up(l, i, ip_region_clear)                                   &
+            =source_coeff(l, i, ip_scf_solar_up, ip_region_clear)       &
+            *flux_direct(l, i-1)
+          s_down(l, i, ip_region_clear)                                 &
+            =source_coeff(l, i, ip_scf_solar_down, ip_region_clear)     &
+            *flux_direct(l, i-1)
+        END DO
       END DO
-    END DO
+    ELSE
+      DO i=1, n_cloud_top-1
+        DO l=1, n_profile
+          flux_direct(l, i)                                             &
+            =flux_direct(l, i-1)*trans_0(l, i, ip_region_clear)         &
+            *adjust_solar_ke(l, i)
+          s_up(l, i, ip_region_clear)                                   &
+            =source_coeff(l, i, ip_scf_solar_up, ip_region_clear)       &
+            *flux_direct(l, i-1)
+          s_down(l, i, ip_region_clear)                                 &
+            =(source_coeff(l, i, ip_scf_solar_down, ip_region_clear)    &
+            -trans_0(l, i, ip_region_clear))*flux_direct(l, i-1)        &
+            +flux_direct(l, i)
+        END DO
+      END DO
+    END IF
 
     IF (control%i_direct_tau == ip_direct_noscaling .OR.                &
         control%i_direct_tau == ip_direct_csr_scaling) THEN
@@ -259,20 +283,36 @@ SUBROUTINE triple_solar_source(control, bound                           &
 !   Propagate the fluxes through the layer:
     IF (l_scale_solar) THEN
 
-      DO k=1, n_region
-        DO l=1, n_profile
-          solar_base(l, k)                                              &
-            =solar_top(l, k)                                            &
-            *trans_0(l, i, k)*adjust_solar_ke(l, i)
-          s_up(l, i, k)                                                 &
-            =source_coeff(l, i, ip_scf_solar_up, k)                     &
-            *solar_top(l, k)
-          s_down(l, i, k)                                               &
-            =(source_coeff(l, i, ip_scf_solar_down, k)                  &
-            -trans_0(l, i, k))*solar_top(l, k)                          &
-            +solar_base(l, k)
+      IF (control%l_diffuse_2stream) THEN
+        DO k=1, n_region
+          DO l=1, n_profile
+            solar_base(l, k)                                            &
+              =solar_top(l, k)                                          &
+              *trans_0(l, i, k)*adjust_solar_ke(l, i)
+            s_up(l, i, k)                                               &
+              =source_coeff(l, i, ip_scf_solar_up, k)                   &
+              *solar_top(l, k)
+            s_down(l, i, k)                                             &
+              =source_coeff(l, i, ip_scf_solar_down, k)                 &
+              *solar_top(l, k)
+          END DO
         END DO
-      END DO
+      ELSE
+        DO k=1, n_region
+          DO l=1, n_profile
+            solar_base(l, k)                                            &
+              =solar_top(l, k)                                          &
+              *trans_0(l, i, k)*adjust_solar_ke(l, i)
+            s_up(l, i, k)                                               &
+              =source_coeff(l, i, ip_scf_solar_up, k)                   &
+              *solar_top(l, k)
+            s_down(l, i, k)                                             &
+              =(source_coeff(l, i, ip_scf_solar_down, k)                &
+              -trans_0(l, i, k))*solar_top(l, k)                        &
+              +solar_base(l, k)
+          END DO
+        END DO
+      END IF
 
     ELSE
 
@@ -305,6 +345,15 @@ SUBROUTINE triple_solar_source(control, bound                           &
 ! Repeat for direct flux using trans without scaling
   IF (control%i_direct_tau == ip_direct_noscaling .OR.                  &
       control%i_direct_tau == ip_direct_csr_scaling) THEN
+
+    IF (control%l_diffuse_2stream) THEN
+      ! Save the last value at the base of the cloud.
+      DO k=1, n_region
+        DO l=1, n_profile
+          source_flux_ground(l, k)=solar_base(l, k)
+        END DO
+      END DO
+    END IF
 
 !   Clear and cloudy region.
 !   Initialize partial fluxes:
@@ -367,42 +416,79 @@ SUBROUTINE triple_solar_source(control, bound                           &
     
     END DO
 
+    IF (control%l_diffuse_2stream) THEN
+      DO k=1, n_region
+        DO l=1, n_profile
+          source_flux_ground(l, k)=solar_base(l, k)*direct_albedo(l)    &
+            -(solar_base(l, k)-source_flux_ground(l, k))                &
+            *diffuse_albedo(l)
+        END DO
+      END DO
+    END IF
 
-!   From this point, use the unscaled direct flux as the direct component.
-    DO i= 0, n_layer
+  ELSE IF (control%l_diffuse_2stream) THEN
+    
+    DO k=1, n_region
       DO l=1, n_profile
-        flux_direct(l, i)=flux_direct_dir(l, i)
+        source_flux_ground(l, k)=solar_base(l, k)*direct_albedo(l)
       END DO
     END DO
 
   END IF
 
-
-! Pass the last value at the base of the cloud out.
-  DO k=1, n_region
-    DO l=1, n_profile
-      flux_direct_ground(l, k)=solar_base(l, k)
+  IF (.NOT.control%l_diffuse_2stream) THEN
+    DO k=1, n_region
+      DO l=1, n_profile
+        source_flux_ground(l, k)=(direct_albedo(l)-diffuse_albedo(l))   &
+          *solar_base(l, k)
+      END DO
     END DO
-  END DO
+  END IF
 
 
 ! Correct the direct flux at the ground for sloping terrain
   IF (control%l_orog) THEN
-     flux_direct(1:n_profile, n_layer) =                                &
-        flux_direct(1:n_profile, n_layer) *                             &
-        bound%orog_corr(1:n_profile)
+    IF (control%i_direct_tau == ip_direct_noscaling .OR. &
+        control%i_direct_tau == ip_direct_csr_scaling) THEN
+      IF (control%l_diffuse_2stream) THEN
+        DO l=1, n_profile
+          flux_direct(l, n_layer) = flux_direct(l, n_layer) &
+            + flux_direct_dir(l, n_layer) &
+            * (bound%orog_corr(l) - 1.0_RealK)
+        END DO
+      END IF
+      DO l=1, n_profile
+        flux_direct_dir(l, n_layer) = flux_direct_dir(l, n_layer) &
+          * bound%orog_corr(l)
+      END DO
+    ELSE
+      DO l=1, n_profile
+        flux_direct(l, n_layer) = flux_direct(l, n_layer) &
+          * bound%orog_corr(l)
+      END DO
+    END IF
+    
+    IF (control%l_diffuse_2stream) THEN
+      DO k=1, n_region
+        DO l=1, n_profile
+          source_flux_ground(l, k) = source_flux_ground(l, k) &
+            + solar_base(l, k) * direct_albedo(l) &
+            * (bound%orog_corr(l) - 1.0_RealK)
+        END DO
+      END DO
+    ELSE
+      DO k=1, n_region
+        DO l=1, n_profile
+          source_flux_ground(l, k) = source_flux_ground(l, k) &
+            + solar_base(l, k) * (direct_albedo(l)-diffuse_albedo(l)) &
+            * (bound%orog_corr(l) - 1.0_RealK)
 
-     DO k=1, n_region
-        flux_direct_ground(1:n_profile, k) =                            &
-           flux_direct_ground(1:n_profile, k) *                         &
-           bound%orog_corr(1:n_profile)
-
-        s_down(1:n_profile, n_layer, k) =                               &
-           s_down(1:n_profile, n_layer, k) +                            &
-           solar_base(1:n_profile, k) *                                 &
-           (bound%orog_corr(1:n_profile) - 1.0_RealK)
-
-     END DO
+          s_down(l, n_layer, k) = s_down(l, n_layer, k) &
+            + solar_base(l, k) &
+            * (bound%orog_corr(l) - 1.0_RealK)
+        END DO
+      END DO
+    END IF
   END IF
 
 

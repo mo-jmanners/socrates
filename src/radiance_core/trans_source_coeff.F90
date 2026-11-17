@@ -200,16 +200,27 @@ SUBROUTINE trans_source_coeff(control, n_profile                        &
           END DO
           CALL exp_v(n_profile,temp,trans_0_dir(1,i))
         END IF
-        DO l=1, n_profile
-          source_coeff(l, i, ip_scf_solar_up)                           &
-            =(gamma_up(l, i)-reflect(l, i)                              &
-            *(1.0_RealK+gamma_down(l, i)))                              &
-            -gamma_up(l, i)*trans(l, i)*trans_0(l, i)
-          source_coeff(l, i, ip_scf_solar_down)=trans_0(l, i)           &
-            *(1.0_RealK+gamma_down(l, i)                                &
-            -gamma_up(l, i)*reflect(l, i))                              &
-            -(1.0_RealK+gamma_down(l, i))*trans(l, i)
-        END DO
+        IF (control%l_diffuse_2stream) THEN
+          DO l=1, n_profile
+            source_coeff(l, i, ip_scf_solar_up)                         &
+              = gamma_up(l, i)-reflect(l, i)*gamma_down(l, i)           &
+              - gamma_up(l, i)*trans(l, i)*trans_0(l, i)
+            source_coeff(l, i, ip_scf_solar_down)=trans_0(l, i)         &
+              *(gamma_down(l, i)-gamma_up(l, i)*reflect(l, i))          &
+              - gamma_down(l, i)*trans(l, i)
+          END DO
+        ELSE
+          DO l=1, n_profile
+            source_coeff(l, i, ip_scf_solar_up)                         &
+              =(gamma_up(l, i)-reflect(l, i)                            &
+              *(1.0_RealK+gamma_down(l, i)))                            &
+              -gamma_up(l, i)*trans(l, i)*trans_0(l, i)
+            source_coeff(l, i, ip_scf_solar_down)=trans_0(l, i)         &
+              *(1.0_RealK+gamma_down(l, i)                              &
+              -gamma_up(l, i)*reflect(l, i))                            &
+              -(1.0_RealK+gamma_down(l, i))*trans(l, i)
+          END DO
+        END IF
       END DO
     END IF
 

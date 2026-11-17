@@ -465,6 +465,12 @@ SUBROUTINE solve_band_without_gas(ierr                                  &
           flux_inc_down(l)         = 0.0e+00_RealK
           flux_inc_direct(l)       = 0.0e+00_RealK
         END DO
+      ELSE IF (control%l_diffuse_2stream) THEN
+        DO l=1, n_profile
+          d_planck_flux_surface(l) = 0.0e+00_RealK
+          flux_inc_down(l)         = 0.0e+00_RealK
+          flux_inc_direct(l)       = solar_irrad(l)/zen_0(l)
+        END DO
       ELSE
         DO l=1, n_profile
           d_planck_flux_surface(l)=0.0e+00_RealK

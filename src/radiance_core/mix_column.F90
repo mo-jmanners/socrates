@@ -67,6 +67,7 @@ SUBROUTINE mix_column(ierr                                              &
   USE def_spherical_geometry, ONLY: StrSphGeo
   USE rad_pcf, ONLY: ip_solver_mix_app_scat,ip_solver_mix_direct,       &
                      ip_solver_mix_direct_hogan, ip_solar, ip_infra_red,&
+                     ip_direct_csr_scaling, ip_direct_noscaling,        &
                      i_err_fatal
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
@@ -278,11 +279,13 @@ SUBROUTINE mix_column(ierr                                              &
   REAL (RealK) ::                                                       &
       source_ground_free(nd_profile)                                    &
 !       Source from ground under clear skies
-    , source_ground_cloud(nd_profile)                                   &
+    , source_ground_cloud(nd_profile)
 !       Source from ground under cloudy skies
-    , flux_direct_ground_cloud(nd_profile)
-!       Direct flux at ground under cloudy skies
 
+  REAL (RealK) ::                                                       &
+      flux_direct_dir(nd_profile, 0: nd_layer)
+!       Direct flux without scaling
+  
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
   REAL(KIND=jprb)               :: zhook_handle
@@ -423,8 +426,9 @@ SUBROUTINE mix_column(ierr                                              &
       , cloud_overlap(1, id_ct-1, i_ovp_dn_fc)                          &
       , cloud_overlap(1, id_ct-1, i_ovp_dn_cc)                          &
       , trans_0_cloud_dir, trans_0_cloud, source_coeff_cloud            &
-      , flux_direct                                                     &
-      , flux_direct_ground_cloud                                        &
+      , diffuse_albedo, direct_albedo                                   &
+      , flux_direct, flux_direct_dir                                    &
+      , source_ground_cloud, source_ground_free                         &
       , s_up_free, s_down_free                                          &
       , s_up_cloud, s_down_cloud                                        &
       , nd_profile, nd_layer, id_ct, nd_source_coeff                    &
@@ -460,17 +464,7 @@ SUBROUTINE mix_column(ierr                                              &
   CASE (ip_solver_mix_direct, ip_solver_mix_direct_hogan)
 
 !   Set the partitioned source functions at the ground.
-    IF (isolir == ip_solar) THEN
-      DO l=1, n_profile
-        source_ground_free(l)=(direct_albedo(l)                         &
-          -diffuse_albedo(l))                                           &
-          *(flux_direct(l, n_layer)                                     &
-          -flux_direct_ground_cloud(l))
-        source_ground_cloud(l)=(direct_albedo(l)                        &
-          -diffuse_albedo(l))                                           &
-          *flux_direct_ground_cloud(l)
-      END DO
-    ELSE
+    IF (isolir == ip_infra_red) THEN
       DO l=1, n_profile
         source_ground_free(l)                                           &
           =cloud_overlap(l, n_layer, i_ovp_up_ff)                       &
@@ -531,6 +525,23 @@ SUBROUTINE mix_column(ierr                                              &
 
   END SELECT
 
+  IF (isolir == ip_solar .AND. control%l_diffuse_2stream .AND. &
+    .NOT. control%l_spherical_solar) THEN
+    DO i=0, n_layer
+      DO l=1, n_profile
+        flux_total(l, 2*i+2) = flux_total(l, 2*i+2) + flux_direct(l, i)
+      END DO
+    END DO
+  END IF
+
+  IF (control%i_direct_tau == ip_direct_noscaling .OR. &
+      control%i_direct_tau == ip_direct_csr_scaling) THEN
+    DO i=0, n_layer
+      DO l=1, n_profile
+        flux_direct(l, i) = flux_direct_dir(l, i)
+      END DO
+    END DO
+  END IF
 
 
   IF (l_clear) THEN

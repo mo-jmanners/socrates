@@ -39,7 +39,8 @@ SUBROUTINE column_solver(ierr, control, bound, sph_common, sph_comp     &
   USE def_spherical_geometry, ONLY: StrSphCommon, StrSphComp
   USE rad_pcf, ONLY: i_err_fatal, ip_solar, ip_no_scatter_abs,          &
                      ip_no_scatter_ext, ip_solver_pentadiagonal,        &
-                     ip_solver_homogen_direct
+                     ip_solver_homogen_direct,                          &
+                     ip_direct_csr_scaling, ip_direct_noscaling
   USE yomhook, ONLY: lhook, dr_hook
   USE parkind1, ONLY: jprb, jpim
   USE ereport_mod, ONLY: ereport
@@ -133,8 +134,8 @@ SUBROUTINE column_solver(ierr, control, bound, sph_common, sph_comp     &
 
 ! Local variabales.
   INTEGER ::                                                            &
-      l                                                                 &
-!       Loop variable
+      i, l                                                              &
+!       Loop variables
     , n_equation
 !       Number of equations
   REAL (RealK) ::                                                       &
@@ -144,8 +145,10 @@ SUBROUTINE column_solver(ierr, control, bound, sph_common, sph_comp     &
 !       Pentadiagonal matrix
     , b(nd_profile, 2*nd_layer+2)                                       &
 !       Rhs of matrix equation
-    , work_1(nd_profile, 2*nd_layer+2)
+    , work_1(nd_profile, 2*nd_layer+2)                                  &
 !       Working array for solver
+    , flux_direct_dir(nd_profile, 0: nd_layer)
+!       Direct flux without scaling
 
   INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
   INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
@@ -173,12 +176,35 @@ SUBROUTINE column_solver(ierr, control, bound, sph_common, sph_comp     &
       CALL solar_source(control, bound, n_profile, n_layer,             &
         flux_inc_direct, trans_0_dir, trans_0, source_coeff,            &
         l_scale_solar, adjust_solar_ke,                                 &
-        flux_direct, s_down, s_up,                                      &
+        flux_direct, flux_direct_dir, s_down, s_up,                     &
         nd_profile, nd_layer, nd_source_coeff)
-      DO l=1, n_profile
-        source_ground(l)=(albedo_surface_dir(l)-albedo_surface_diff(l)) &
-          *flux_direct(l, n_layer)
-      END DO
+      IF (control%i_direct_tau == ip_direct_noscaling .OR. &
+          control%i_direct_tau == ip_direct_csr_scaling) THEN
+        IF (control%l_diffuse_2stream) THEN
+          DO l=1, n_profile
+            source_ground(l)=albedo_surface_dir(l) &
+              *flux_direct_dir(l, n_layer) &
+              -albedo_surface_diff(l) &
+              *(flux_direct_dir(l, n_layer)-flux_direct(l, n_layer))
+          END DO
+        ELSE
+          DO l=1, n_profile
+            source_ground(l)=(albedo_surface_dir(l)-albedo_surface_diff(l)) &
+              *flux_direct_dir(l, n_layer)
+          END DO
+        END IF
+      ELSE
+        IF (control%l_diffuse_2stream) THEN
+          DO l=1, n_profile
+            source_ground(l)=albedo_surface_dir(l)*flux_direct(l, n_layer)
+          END DO
+        ELSE
+          DO l=1, n_profile
+            source_ground(l)=(albedo_surface_dir(l)-albedo_surface_diff(l)) &
+              *flux_direct(l, n_layer)
+          END DO
+        END IF
+      END IF
     END IF
   ELSE
     DO l=1, n_profile
@@ -240,6 +266,24 @@ SUBROUTINE column_solver(ierr, control, bound, sph_common, sph_comp     &
      ierr=i_err_fatal
      CALL ereport(RoutineName, ierr, cmessage)
 
+  END IF
+
+  IF (isolir == ip_solar .AND. control%l_diffuse_2stream .AND. &
+    .NOT. control%l_spherical_solar) THEN
+    DO i=0, n_layer
+      DO l=1, n_profile
+        flux_total(l, 2*i+2) = flux_total(l, 2*i+2) + flux_direct(l, i)
+      END DO
+    END DO
+  END IF
+
+  IF (control%i_direct_tau == ip_direct_noscaling .OR. &
+      control%i_direct_tau == ip_direct_csr_scaling) THEN
+    DO i=0, n_layer
+      DO l=1, n_profile
+        flux_direct(l, i) = flux_direct_dir(l, i)
+      END DO
+    END DO
   END IF
 
 
