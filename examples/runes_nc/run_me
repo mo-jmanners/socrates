@@ -7,27 +7,43 @@
 ./prep_conf
 
 # Run the offline driver and write ascii output
-
 cp lfric_diag.nc lfric_runes_diag.nc
 
 runes_nc -conf_file  conf.tmp \
          -input_file lfric_runes_diag.nc \
          -spectral_dir ${RAD_DATA}/spectra/ga9/ \
          -ascii
-                
-# Use ascii output to compare against KGO
 
+mv sw_fluxes_offline.txt sw_fluxes_ga9.txt
+mv lw_fluxes_offline.txt lw_fluxes_ga9.txt
+
+# Run the offline driver using the high-resolution spectral files
+cp lfric_diag.nc lfric_runes_diag.nc
+
+runes_nc -conf_file  conf.tmp \
+         -input_file lfric_runes_diag.nc \
+         -spectral_dir ${RAD_DATA}/spectra/ga9/ \
+         -ascii \
+         -sw ${RAD_DATA}/spectra/ga9_ref/sp_sw_260_jm3 \
+         -lw ${RAD_DATA}/spectra/ga9_ref/sp_lw_300_jm3 \
+         -mcica_data ${RAD_DATA}/spectra/ga9_ref/mcica_data
+
+mv sw_fluxes_offline.txt sw_fluxes_ga9_ref.txt
+mv lw_fluxes_offline.txt lw_fluxes_ga9_ref.txt
+
+# Use ascii output to compare against KGO
 ierr=0
 
-(diff -q sw_fluxes_offline.txt kgo_sw_fluxes_offline.txt && \
- echo 'Matched SW output') || ierr=1
-(diff -q lw_fluxes_offline.txt kgo_lw_fluxes_offline.txt && \
- echo 'Matched LW output') || ierr=1
+diff -q sw_fluxes_ga9.txt kgo_sw_fluxes_ga9.txt || ierr=1
+diff -q lw_fluxes_ga9.txt kgo_lw_fluxes_ga9.txt || ierr=1
+diff -q sw_fluxes_ga9_ref.txt kgo_sw_fluxes_ga9_ref.txt || ierr=1
+diff -q lw_fluxes_ga9_ref.txt kgo_lw_fluxes_ga9_ref.txt || ierr=1
 
 if [ $ierr -gt 0 ] ; then
   exit 1
 else
-  rm -f sw_fluxes_offline.txt lw_fluxes_offline.txt
+  rm -f sw_fluxes_ga9.txt lw_fluxes_ga9.txt
+  rm -f sw_fluxes_ga9_ref.txt lw_fluxes_ga9_ref.txt
   rm -f sw_fluxes_lfric.txt lw_fluxes_lfric.txt
   rm -f conf.tmp lfric_runes_diag.nc
   echo OK
