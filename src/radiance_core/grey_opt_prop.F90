@@ -20,24 +20,14 @@ MODULE grey_opt_prop_mod
 IMPLICIT NONE
 CHARACTER(LEN=*), PARAMETER, PRIVATE :: ModuleName = 'GREY_OPT_PROP_MOD'
 CONTAINS
-SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
+SUBROUTINE grey_opt_prop(ierr, control, spectrum, aer, radout, i_band   &
     , n_profile, n_layer, p, t, density                                 &
     , n_order_phase, l_solar_phf, n_direction, cos_sol_view             &
     , i_rayleigh_scheme, n_gas_rayleigh, index_rayleigh                 &
     , rayleigh_coeff_tot, rayleigh_coeff_gas                            &
     , gas_mix_ratio                                                     &
     , l_continuum, n_continuum, k_continuum, amount_continuum           &
-    , n_aerosol_mr, aerosol_mix_ratio                                   &
-    , aerosol_mr_source, aerosol_mr_type_index                          &
-    , i_aerosol_parametrization                                         &
-    , i_humidity_pointer, humidities, delta_humidity                    &
-    , mean_rel_humidity                                                 &
-    , aerosol_absorption, aerosol_scattering, aerosol_phase_fnc         &
-    , n_ukca_mode, ukca_modal_mixr                                      &
-    , ukca_absorption, ukca_scattering, ukca_asymmetry                  &
-    , n_opt_level_aerosol_prsc, aerosol_pressure_prsc                   &
-    , aerosol_absorption_prsc, aerosol_scattering_prsc                  &
-    , aerosol_phase_fnc_prsc                                            &
+    , i_humidity_pointer, delta_humidity                                &
     , n_cloud_profile, i_cloud_profile                                  &
     , n_cloud_top, n_condensed, l_cloud_cmp, i_phase_cmp                &
     , i_condensed_param, condensed_param_list                           &
@@ -57,20 +47,21 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
     , nd_profile, nd_radiance_profile, nd_layer                         &
     , nd_layer_clr, id_ct                                               &
     , nd_continuum, nd_species                                          &
-    , nd_aerosol_species, nd_aerosol_mixratio                           &
-    , nd_humidities, nd_cloud_parameter, nd_cloud_component             &
+    , nd_cloud_parameter, nd_cloud_component                            &
     , nd_cloud_type, nd_phase_term                                      &
     , nd_phf_term_aerosol_prsc, nd_phf_term_cloud_prsc                  &
     , nd_max_order, nd_direction                                        &
-    , nd_ukca_mode, nd_profile_aerosol_prsc, nd_profile_cloud_prsc      &
+    , nd_profile_aerosol_prsc, nd_profile_cloud_prsc                    &
     , nd_opt_level_aerosol_prsc, nd_opt_level_cloud_prsc                &
     )
 
 
-  USE realtype_rd, ONLY: RealK
-  USE def_control, ONLY: StrCtrl
-  USE def_out,     ONLY: StrOut
-  USE def_ss_prop, ONLY: str_ss_prop
+  USE realtype_rd,  ONLY: RealK
+  USE def_control,  ONLY: StrCtrl
+  USE def_spectrum, ONLY: StrSpecData
+  USE def_aer,      ONLY: StrAer
+  USE def_out,      ONLY: StrOut
+  USE def_ss_prop,  ONLY: str_ss_prop
   USE rad_pcf, ONLY: i_err_fatal, ip_rayleigh_total, ip_rayleigh_custom,&
                      ip_cairns, ip_cloud_mcica, ip_cloud_type_si,       &
                      ip_cloud_type_sw, ip_direct_csr_scaling,           &
@@ -90,10 +81,16 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 
 
 ! Control options:
-  TYPE(StrCtrl),      INTENT(IN)    :: control
+  TYPE(StrCtrl),     INTENT(IN)    :: control
+
+! Spectral data:
+  TYPE(StrSpecData), INTENT(IN)    :: spectrum
+
+! Aerosol properties:
+  TYPE(StrAer),      INTENT(IN)    :: aer
 
 ! Output fields:
-  TYPE(StrOut),       INTENT(INOUT) :: radout
+  TYPE(StrOut),      INTENT(INOUT) :: radout
 
 ! Sizes of dummy arrays
   INTEGER, INTENT(IN) ::                                                &
@@ -112,12 +109,6 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !       Size allocated for viewing directions
     , nd_species                                                        &
 !       Size allocated for nd_species
-    , nd_aerosol_species                                                &
-!       Size allocated for aerosols in spectral information
-    , nd_aerosol_mixratio                                               &
-!       Size allocated for aerosols in aerosol_mix_ratio array
-    , nd_humidities                                                     &
-!       Size allocated for humidities
     , nd_continuum                                                      &
 !       Size allocated for continua
     , nd_phase_term                                                     &
@@ -134,8 +125,6 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 !       Size allocated for components of clouds
     , nd_cloud_type                                                     &
 !       Size allocated for types of clouds
-    , nd_ukca_mode                                                      &
-!       Size allocated for UKCA aerosols
     , nd_profile_aerosol_prsc                                           &
 !       Size allocated for profiles of prescribed
 !       cloudy optical properties
@@ -229,73 +218,12 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 
 ! Properties of aerosols:
   INTEGER, INTENT(IN) ::                                                &
-      n_aerosol_mr                                                      &
-!       Number of aerosol species in aerosol_mix_ratio array
-    , aerosol_mr_type_index(nd_aerosol_mixratio)                        &
-!       Index relating aerosol_mix_ratio aerosols to aerosols in
-!       the spectral information
-    , aerosol_mr_source(nd_aerosol_mixratio)                            &
-!       Scheme/source of the aerosol data, to determine use in
-!       changing radiative fluxes and use in diagnostics
-    , i_aerosol_parametrization(nd_aerosol_species)                     &
-!       Parametrizations of aerosols
-    , i_humidity_pointer(nd_profile,  nd_layer)
+      i_humidity_pointer(nd_profile,  nd_layer)
 !       Pointer to aerosol look-up table
 
   REAL (RealK), INTENT(IN) ::                                           &
-      aerosol_mix_ratio(nd_profile, nd_layer, nd_aerosol_mixratio)      &
-!       Number densty of aerosols
-    , aerosol_absorption(nd_humidities, nd_aerosol_species)             &
-!       Aerosol absorption in band for a mixing ratio of unity
-    , aerosol_scattering(nd_humidities, nd_aerosol_species)             &
-!       Aerosol scattering in band for a mixing ratio of unity
-    , aerosol_phase_fnc(nd_humidities                                   &
-        , nd_phase_term, nd_aerosol_species)                            &
-!       Aerosol phase function in band
-    , humidities(nd_humidities, nd_aerosol_species)                     &
-!       Array of humidities
-    , delta_humidity                                                    &
+      delta_humidity
 !       Increment in humidity
-    , mean_rel_humidity(nd_profile, nd_layer)
-!       Mixing ratio of water vapour
-
-
-! Properties of UKCA aerosols:
-  INTEGER, INTENT(IN) ::                                                &
-      n_ukca_mode
-!       Actual number of UKCA aerosol modes
-
-  REAL (RealK), INTENT(IN) ::                                           &
-      ukca_modal_mixr(nd_profile, nd_layer, MAX(1,nd_ukca_mode))        &
-!       Modal mass mixing ratio
-    , ukca_absorption(nd_profile, nd_layer, MAX(1,nd_ukca_mode))        &
-!       Waveband-averaged specific coefficient for absorption
-    , ukca_scattering(nd_profile, nd_layer, MAX(1,nd_ukca_mode))        &
-!       Waveband-averaged specific coefficient for scattering
-    , ukca_asymmetry(nd_profile, nd_layer, MAX(1,nd_ukca_mode))
-!       Waveband-averaged asymmetry factor
-
-! Observational properties of aerosols:
-  INTEGER, INTENT(IN) ::                                                &
-      n_opt_level_aerosol_prsc(nd_aerosol_species)
-!       Number of levels of prescribed optical properties
-!       of aerosols
-
-  REAL  (RealK), INTENT(IN) ::                                          &
-      aerosol_pressure_prsc(nd_profile_aerosol_prsc                     &
-        , nd_opt_level_aerosol_prsc, nd_aerosol_species)                &
-!       Pressures at which optical properties of aerosols
-!       are prescribed
-    , aerosol_absorption_prsc(nd_profile_aerosol_prsc                   &
-        , nd_opt_level_aerosol_prsc, nd_aerosol_species)                &
-!       Prescribed absorption by aerosols
-    , aerosol_scattering_prsc(nd_profile_aerosol_prsc                   &
-        , nd_opt_level_aerosol_prsc, nd_aerosol_species)                &
-!       Prescribed scattering by aerosols
-    , aerosol_phase_fnc_prsc(nd_profile_aerosol_prsc                    &
-        , nd_opt_level_aerosol_prsc                                     &
-        , nd_phf_term_aerosol_prsc, nd_aerosol_species)
-!       Prescribed phase functions of aerosols
 
 
 ! Properties of clouds:
@@ -404,20 +332,10 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
 
 ! Local variables.
   INTEGER ::                                                            &
-      l                                                                 &
-!       Loop variable
-    , ll                                                                &
-!       Loop variable
-    , i                                                                 &
-!       Loop variable
-    , id                                                                &
-!       Loop variable
-    , j                                                                 &
-!       Loop variable
-    , k                                                                 &
-!       Loop variable
-    , ls                                                                &
-!       Loop variable
+      l, ll, i, id, j, k, ls                                            &
+!       Loop variables
+    , aer_band                                                          &
+!       Aerosol band
     , n_index                                                           &
 !       Number of indices satisfying the test
     , indx(nd_profile)
@@ -659,24 +577,28 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
       , n_profile, 1, n_cloud_top-1                                     &
       , n_order_phase, control%l_rescale, control%n_order_forward       &
       , control%l_henyey_greenstein_pf                                  &
-      , n_aerosol_mr, aerosol_mix_ratio                                 &
-      , aerosol_mr_source, aerosol_mr_type_index                        &
-      , i_aerosol_parametrization                                       &
-      , i_humidity_pointer, humidities, delta_humidity                  &
-      , mean_rel_humidity                                               &
-      , aerosol_absorption, aerosol_scattering, aerosol_phase_fnc       &
+      , spectrum%aerosol%n_aerosol_mr, aer%mix_ratio                    &
+      , aer%mr_source, aer%mr_type_index                                &
+      , spectrum%aerosol%i_aerosol_parm                                 &
+      , i_humidity_pointer, spectrum%aerosol%humidities, delta_humidity &
+      , aer%mean_rel_humidity                                           &
+      , spectrum%aerosol%abs(:, :, i_band)                              &
+      , spectrum%aerosol%scat(:, :, i_band)                             &
+      , spectrum%aerosol%phf_fnc(:, :, :, i_band)                       &
       , l_solar_phf, control%n_order_phase_solar, n_direction           &
       , cos_sol_view                                                    &
       , p, density                                                      &
-      , n_opt_level_aerosol_prsc, aerosol_pressure_prsc                 &
-      , aerosol_absorption_prsc, aerosol_scattering_prsc                &
-      , aerosol_phase_fnc_prsc                                          &
+      , aer%n_opt_level_prsc, aer%pressure_prsc                         &
+      , aer%absorption_prsc(:, :, :, i_band)                            &
+      , aer%scattering_prsc(:, :, :, i_band)                            &
+      , aer%phase_fnc_prsc(:, :, :, :, i_band)                          &
       , ss_prop%k_grey_tot_clr, ss_prop%k_ext_scat_clr                  &
       , ss_prop%phase_fnc_clr, ss_prop%forward_scatter_clr              &
       , ss_prop%forward_solar_clr, ss_prop%phase_fnc_solar_clr          &
       , nd_profile, nd_radiance_profile, nd_layer                       &
       , 1, nd_layer_clr                                                 &
-      , nd_aerosol_species, nd_aerosol_mixratio, nd_humidities          &
+      , spectrum%dim%nd_aerosol_species, spectrum%dim%nd_aerosol_mr     &
+      , spectrum%dim%nd_humidity                                        &
       , nd_phase_term, nd_max_order, nd_direction                       &
       , nd_profile_aerosol_prsc, nd_opt_level_aerosol_prsc              &
       , nd_phf_term_aerosol_prsc                                        &
@@ -686,18 +608,21 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
       , n_profile, n_cloud_top, n_layer                                 &
       , n_order_phase, control%l_rescale, control%n_order_forward       &
       , control%l_henyey_greenstein_pf                                  &
-      , n_aerosol_mr, aerosol_mix_ratio                                 &
-      , aerosol_mr_source, aerosol_mr_type_index                        &
-      , i_aerosol_parametrization                                       &
-      , i_humidity_pointer, humidities, delta_humidity                  &
-      , mean_rel_humidity                                               &
-      , aerosol_absorption, aerosol_scattering, aerosol_phase_fnc       &
+      , spectrum%aerosol%n_aerosol_mr, aer%mix_ratio                    &
+      , aer%mr_source, aer%mr_type_index                                &
+      , spectrum%aerosol%i_aerosol_parm                                 &
+      , i_humidity_pointer, spectrum%aerosol%humidities, delta_humidity &
+      , aer%mean_rel_humidity                                           &
+      , spectrum%aerosol%abs(:, :, i_band)                              &
+      , spectrum%aerosol%scat(:, :, i_band)                             &
+      , spectrum%aerosol%phf_fnc(:, :, :, i_band)                       &
       , l_solar_phf, control%n_order_phase_solar, n_direction           &
       , cos_sol_view                                                    &
       , p, density                                                      &
-      , n_opt_level_aerosol_prsc, aerosol_pressure_prsc                 &
-      , aerosol_absorption_prsc, aerosol_scattering_prsc                &
-      , aerosol_phase_fnc_prsc                                          &
+      , aer%n_opt_level_prsc, aer%pressure_prsc                         &
+      , aer%absorption_prsc(:, :, :, i_band)                            &
+      , aer%scattering_prsc(:, :, :, i_band)                            &
+      , aer%phase_fnc_prsc(:, :, :, :, i_band)                          &
       , ss_prop%k_grey_tot(:, :, 0)                                     &
       , ss_prop%k_ext_scat(:, :, 0)                                     &
       , ss_prop%phase_fnc(:, :, :, 0)                                   &
@@ -706,7 +631,8 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
       , ss_prop%phase_fnc_solar(:, :, :, 0)                             &
       , nd_profile, nd_radiance_profile, nd_layer                       &
       , id_ct, nd_layer                                                 &
-      , nd_aerosol_species, nd_aerosol_mixratio, nd_humidities          &
+      , spectrum%dim%nd_aerosol_species, spectrum%dim%nd_aerosol_mr     &
+      , spectrum%dim%nd_humidity                                        &
       , nd_phase_term, nd_max_order, nd_direction                       &
       , nd_profile_aerosol_prsc, nd_opt_level_aerosol_prsc              &
       , nd_phf_term_aerosol_prsc                                        &
@@ -714,29 +640,26 @@ SUBROUTINE grey_opt_prop(ierr, control, radout, i_band                  &
   END IF
 
   IF (control%l_aerosol_mode) THEN
+    aer_band = spectrum%map%aerosol_band(i_band)
 !   Include the effects of UKCA aerosols.
 !   Above clouds.
-    CALL opt_prop_ukca_aerosol(                                         &
-        n_profile, 1, n_cloud_top-1                                     &
-      , n_order_phase, control%l_rescale, control%n_order_forward       &
-      , n_ukca_mode, ukca_modal_mixr                                    &
-      , ukca_absorption, ukca_scattering, ukca_asymmetry                &
+    CALL opt_prop_ukca_aerosol(control, aer, aer_band                   &
+      , n_profile, 1, n_cloud_top-1                                     &
+      , n_order_phase                                                   &
       , ss_prop%k_grey_tot_clr, ss_prop%k_ext_scat_clr                  &
       , ss_prop%phase_fnc_clr, ss_prop%forward_scatter_clr              &
-      , nd_profile, nd_layer, 1, nd_layer_clr, nd_ukca_mode             &
+      , nd_profile, 1, nd_layer_clr                                     &
       , nd_max_order                                                    &
       )
 !   Within clouds:
-    CALL opt_prop_ukca_aerosol(                                         &
-        n_profile, n_cloud_top, n_layer                                 &
-      , n_order_phase, control%l_rescale, control%n_order_forward       &
-      , n_ukca_mode, ukca_modal_mixr                                    &
-      , ukca_absorption, ukca_scattering, ukca_asymmetry                &
+    CALL opt_prop_ukca_aerosol(control, aer, aer_band                   &
+      , n_profile, n_cloud_top, n_layer                                 &
+      , n_order_phase                                                   &
       , ss_prop%k_grey_tot(:, :, 0)                                     &
       , ss_prop%k_ext_scat(:, :, 0)                                     &
       , ss_prop%phase_fnc(:, :, :, 0)                                   &
       , ss_prop%forward_scatter(:, :, 0)                                &
-      , nd_profile, nd_layer, id_ct, nd_layer, nd_ukca_mode             &
+      , nd_profile, id_ct, nd_layer                                     &
       , nd_max_order                                                    &
       )
   END IF

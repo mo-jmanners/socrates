@@ -43,6 +43,8 @@ TYPE StrAer
 !   Waveband-averaged modal aerosol scattering
   REAL (RealK), ALLOCATABLE :: mode_asymmetry(:, :, :, :)
 !   Waveband-averaged modal aerosol asymmetry
+  REAL (RealK), ALLOCATABLE :: mode_forward_scatter(:, :, :, :)
+!   Waveband-averaged modal aerosol forward scattering
 
 ! Prescribed optical properties
   INTEGER, ALLOCATABLE :: n_opt_level_prsc(:)
@@ -98,19 +100,25 @@ IF (.NOT. ALLOCATED(aer%mode_absorption))                                      &
   ALLOCATE(aer%mode_absorption      ( dimen%nd_profile,                        &
                                       dimen%nd_layer,                          &
                                       dimen%nd_aerosol_mode,                   &
-                                      sp%dim%nd_band                         ))
+                                      dimen%nd_aerosol_band                  ))
 
 IF (.NOT. ALLOCATED(aer%mode_scattering))                                      &
   ALLOCATE(aer%mode_scattering      ( dimen%nd_profile,                        &
                                       dimen%nd_layer,                          &
                                       dimen%nd_aerosol_mode,                   &
-                                      sp%dim%nd_band                         ))
+                                      dimen%nd_aerosol_band                  ))
 
 IF (.NOT. ALLOCATED(aer%mode_asymmetry))                                       &
   ALLOCATE(aer%mode_asymmetry       ( dimen%nd_profile,                        &
                                       dimen%nd_layer,                          &
                                       dimen%nd_aerosol_mode,                   &
-                                      sp%dim%nd_band                         ))
+                                      dimen%nd_aerosol_band                  ))
+
+IF (.NOT. ALLOCATED(aer%mode_forward_scatter))                                 &
+  ALLOCATE(aer%mode_forward_scatter ( dimen%nd_profile,                        &
+                                      dimen%nd_layer,                          &
+                                      dimen%nd_aerosol_mode,                   &
+                                      dimen%nd_aerosol_band                  ))
 
 END SUBROUTINE allocate_aer
 !------------------------------------------------------------------------------
@@ -163,14 +171,15 @@ IMPLICIT NONE
 
 TYPE (StrAer), INTENT(INOUT) :: aer
 
-IF (ALLOCATED(aer%mode_asymmetry))    DEALLOCATE(aer%mode_asymmetry)
-IF (ALLOCATED(aer%mode_scattering))   DEALLOCATE(aer%mode_scattering)
-IF (ALLOCATED(aer%mode_absorption))   DEALLOCATE(aer%mode_absorption)
-IF (ALLOCATED(aer%mode_mix_ratio))    DEALLOCATE(aer%mode_mix_ratio)
-IF (ALLOCATED(aer%mean_rel_humidity)) DEALLOCATE(aer%mean_rel_humidity)
-IF (ALLOCATED(aer%mix_ratio))         DEALLOCATE(aer%mix_ratio)
-IF (ALLOCATED(aer%mr_source))         DEALLOCATE(aer%mr_source)
-IF (ALLOCATED(aer%mr_type_index))     DEALLOCATE(aer%mr_type_index)
+IF (ALLOCATED(aer%mode_forward_scatter)) DEALLOCATE(aer%mode_forward_scatter)
+IF (ALLOCATED(aer%mode_asymmetry))       DEALLOCATE(aer%mode_asymmetry)
+IF (ALLOCATED(aer%mode_scattering))      DEALLOCATE(aer%mode_scattering)
+IF (ALLOCATED(aer%mode_absorption))      DEALLOCATE(aer%mode_absorption)
+IF (ALLOCATED(aer%mode_mix_ratio))       DEALLOCATE(aer%mode_mix_ratio)
+IF (ALLOCATED(aer%mean_rel_humidity))    DEALLOCATE(aer%mean_rel_humidity)
+IF (ALLOCATED(aer%mix_ratio))            DEALLOCATE(aer%mix_ratio)
+IF (ALLOCATED(aer%mr_source))            DEALLOCATE(aer%mr_source)
+IF (ALLOCATED(aer%mr_type_index))        DEALLOCATE(aer%mr_type_index)
 
 END SUBROUTINE deallocate_aer
 !------------------------------------------------------------------------------

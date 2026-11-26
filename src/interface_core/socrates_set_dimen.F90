@@ -12,17 +12,18 @@ implicit none
 character(len=*), parameter, private :: ModuleName = 'SOCRATES_SET_DIMEN'
 contains
 
-subroutine set_dimen(dimen, control, n_profile, n_layer, mcica_data, &
+subroutine set_dimen(dimen, control, spectrum, n_profile, n_layer, mcica_data, &
   n_channel, n_tile, n_cloud_layer, n_aer_mode, n_subcol_gen, &
   n_direction, n_viewing_level, n_brdf_basis_fnc, n_brdf_trunc, &
   n_profile_aerosol_prsc, n_profile_cloud_prsc, &
   n_opt_level_aerosol_prsc, n_opt_level_cloud_prsc)
 
-use def_dimen,   only: StrDim
-use def_control, only: StrCtrl
-use def_mcica,   only: StrMcica, ip_mcica_full_sampling, &
+use def_dimen,    only: StrDim
+use def_control,  only: StrCtrl
+use def_spectrum, only: StrSpecData
+use def_mcica,    only: StrMcica, ip_mcica_full_sampling, &
   ip_mcica_single_sampling, ip_mcica_optimal_sampling
-use rad_pcf,     only: &
+use rad_pcf, only: &
   ip_cloud_homogen, ip_cloud_ice_water, ip_cloud_conv_strat, ip_cloud_csiw, &
   ip_cloud_combine_homogen, ip_cloud_combine_ice_water, &
   ip_cloud_split_homogen, ip_cloud_split_ice_water, &
@@ -41,6 +42,9 @@ type(StrDim), intent(inout) :: dimen
 
 ! Control options:
 type(StrCtrl), intent(in) :: control
+
+! Spectral data:
+type(StrSpecData), intent(in) :: spectrum
 
 ! Mcica data:
 type(StrMcica), intent(in), optional :: mcica_data
@@ -132,10 +136,15 @@ end if
 
 
 ! Aerosol
-if (present(n_aer_mode)) then
+if (control%l_aerosol_mode .and. present(n_aer_mode)) then
   dimen%nd_aerosol_mode = max(1,n_aer_mode)
+  dimen%nd_aerosol_band = spectrum%map%aerosol_band(0)
+else if (control%l_aerosol_mode .and. control%l_aerosol_combined) then
+  dimen%nd_aerosol_mode = 1
+  dimen%nd_aerosol_band = spectrum%map%aerosol_band(0)
 else
   dimen%nd_aerosol_mode = 1
+  dimen%nd_aerosol_band = 1
 end if
 
 ! Arrays for prescribed optical properties

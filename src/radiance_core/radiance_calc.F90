@@ -927,7 +927,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
 
 !   Calculate the grey extinction within the band.
 
-    CALL grey_opt_prop(ierr, control, radout, i_band                           &
+    CALL grey_opt_prop(ierr, control, spectrum, aer, radout, i_band            &
       , atm%n_profile, atm%n_layer, atm%p, atm%t, atm%density                  &
       , n_order_phase, l_solar_phf, atm%n_direction, cos_sol_view              &
       , spectrum%rayleigh%i_rayleigh_scheme, spectrum%rayleigh%n_gas_rayleigh  &
@@ -937,22 +937,7 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
       , atm%gas_mix_ratio                                                      &
       , l_grey_cont, n_continuum                                               &
       , k_continuum_mono, amount_continuum                                     &
-      , spectrum%aerosol%n_aerosol_mr, aer%mix_ratio                           &
-      , aer%mr_source, aer%mr_type_index                                       &
-      , spectrum%aerosol%i_aerosol_parm                                        &
-      , i_humidity_pointer, spectrum%aerosol%humidities, delta_humidity        &
-      , aer%mean_rel_humidity                                                  &
-      , spectrum%aerosol%abs(1, 1, i_band)                                     &
-      , spectrum%aerosol%scat(1, 1, i_band)                                    &
-      , spectrum%aerosol%phf_fnc(1, 1, 1, i_band)                              &
-      , aer%n_mode, aer%mode_mix_ratio                                         &
-      , aer%mode_absorption(1, 1, 1, i_band)                                   &
-      , aer%mode_scattering(1, 1, 1, i_band)                                   &
-      , aer%mode_asymmetry(1, 1, 1, i_band)                                    &
-      , aer%n_opt_level_prsc, aer%pressure_prsc                                &
-      , aer%absorption_prsc(1, 1, 1, i_band)                                   &
-      , aer%scattering_prsc(1, 1, 1, i_band)                                   &
-      , aer%phase_fnc_prsc(1, 1, 1, 1, i_band)                                 &
+      , i_humidity_pointer, delta_humidity                                     &
       , n_cloud_profile, i_cloud_profile                                       &
       , n_cloud_top, cld%n_condensed, l_cloud_cmp, i_phase_cmp                 &
       , cld%i_condensed_param                                                  &
@@ -976,12 +961,10 @@ SUBROUTINE radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
       , dimen%nd_profile, dimen%nd_radiance_profile, dimen%nd_layer            &
       , dimen%nd_layer_clr, dimen%id_cloud_top                                 &
       , spectrum%dim%nd_continuum, spectrum%dim%nd_species                     &
-      , spectrum%dim%nd_aerosol_species                                        &
-      , spectrum%dim%nd_aerosol_mr, spectrum%dim%nd_humidity                   &
       , spectrum%dim%nd_cloud_parameter, dimen%nd_cloud_component              &
       , dimen%nd_cloud_type, spectrum%dim%nd_phase_term                        &
       , dimen%nd_phf_term_aerosol_prsc, dimen%nd_phf_term_cloud_prsc           &
-      , dimen%nd_max_order, dimen%nd_direction, dimen%nd_aerosol_mode          &
+      , dimen%nd_max_order, dimen%nd_direction                                 &
       , dimen%nd_profile_aerosol_prsc, dimen%nd_profile_cloud_prsc             &
       , dimen%nd_opt_level_aerosol_prsc, dimen%nd_opt_level_cloud_prsc         &
       )

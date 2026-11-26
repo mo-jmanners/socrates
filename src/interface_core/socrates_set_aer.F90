@@ -15,7 +15,9 @@ contains
 subroutine set_aer(aer, control, dimen, spectrum, &
   n_profile, n_layer, n_aer_mode, profile_list, n_layer_stride, n_aer_layer, &
   aer_mix_ratio, aer_absorption, aer_scattering, aer_asymmetry, &
+  aer_forward_scatter, &
   aer_mix_ratio_1d, aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d, &
+  aer_forward_scatter_1d, &
   mean_rel_humidity, mean_rel_humidity_1d, &
   l_water_soluble, water_soluble, water_soluble_1d, &
   l_dust_like, dust_like, dust_like_1d, &
@@ -107,11 +109,11 @@ real(RealExt), intent(in), optional :: aer_mix_ratio_1d(:)
 !   1d MODE aerosol mass-mixing ratio (n_aer_layer*n_mode)
 
 real(RealExt), intent(in), dimension(:, :, :, :), optional :: &
-  aer_absorption, aer_scattering, aer_asymmetry
+  aer_absorption, aer_scattering, aer_asymmetry, aer_forward_scatter
 !   MODE aerosol optical properties (n_profile, n_layer, n_mode, n_band)
 
 real(RealExt), intent(in), dimension(:), optional :: &
-  aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d
+  aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d, aer_forward_scatter_1d
 !   1d MODE aerosol optical properties (n_aer_layer*n_mode*n_band)
 
 real(RealExt), intent(in), optional :: mean_rel_humidity(:, :)
@@ -298,6 +300,8 @@ end if
 ! Set MODE aerosol optical properties
 if (present(n_aer_mode).and.control%l_aerosol_mode) then
   aer%n_mode = n_aer_mode
+else if (control%l_aerosol_mode .and. control%l_aerosol_combined) then
+  aer%n_mode = 1
 else
   aer%n_mode = 0
 end if
@@ -307,6 +311,10 @@ if (aer%n_mode > 0) then
   call set_mode_opt_prop(aer%mode_absorption, aer_absorption, aer_absorption_1d)
   call set_mode_opt_prop(aer%mode_scattering, aer_scattering, aer_scattering_1d)
   call set_mode_opt_prop(aer%mode_asymmetry,  aer_asymmetry,  aer_asymmetry_1d)
+  if (control%l_aerosol_combined) then
+    call set_mode_opt_prop(aer%mode_forward_scatter, aer_forward_scatter,  &
+                                                     aer_forward_scatter_1d)
+  end if
 end if
 
 
@@ -501,30 +509,29 @@ contains
     real(RealExt), intent(in), optional :: oned_field(:)
 !     One-dimensional variable
 
-    integer :: band, aer_band, n_aer_band
+    integer :: aer_band, n_aer_band
 
+    n_aer_band = spectrum%map%aerosol_band(0)
     if (present(full_field)) then
       if (l_last) then
-        do band=control%first_band, control%last_band
-          aer_band = spectrum%map%aerosol_band(band)
+        do aer_band=1, n_aer_band
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
               do l=1, n_profile
-                out_field(l, i, j, band) &
+                out_field(l, i, j, aer_band) &
                   = real(full_field(ii, j, aer_band, list(l)), RealK)
               end do
             end do
           end do
         end do
       else
-        do band=control%first_band, control%last_band
-          aer_band = spectrum%map%aerosol_band(band)
+        do aer_band=1, n_aer_band
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
               do l=1, n_profile
-                out_field(l, i, j, band) &
+                out_field(l, i, j, aer_band) &
                   = real(full_field(list(l), ii, j, aer_band), RealK)
               end do
             end do
@@ -533,9 +540,7 @@ contains
       end if
     else if (present(oned_field)) then
       if (l_last) then
-        n_aer_band = spectrum%map%aerosol_band(0)
-        do band=control%first_band, control%last_band
-          aer_band = spectrum%map%aerosol_band(band)
+        do aer_band=1, n_aer_band
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
@@ -543,14 +548,13 @@ contains
                 ll = n_aer_band*aer%n_mode*stride_layer*(list(l)-1) &
                    + aer%n_mode*stride_layer*(aer_band-1) &
                    + stride_layer*(j-1) + ii
-                out_field(l, i, j, band) = real(oned_field(ll), RealK)
+                out_field(l, i, j, aer_band) = real(oned_field(ll), RealK)
               end do
             end do
           end do
         end do
       else
-        do band=control%first_band, control%last_band
-          aer_band = spectrum%map%aerosol_band(band)
+        do aer_band=1, n_aer_band
           do j=1, aer%n_mode
             do i=1, n_layer
               ii = abs(layer_offset-i)
@@ -558,7 +562,7 @@ contains
                 ll = aer%n_mode*stride_layer*n_profile*(aer_band-1) &
                    + stride_layer*n_profile*(j-1) &
                    + n_profile*(ii-1) + list(l)
-                out_field(l, i, j, band) = real(oned_field(ll), RealK)
+                out_field(l, i, j, aer_band) = real(oned_field(ll), RealK)
               end do
             end do
           end do

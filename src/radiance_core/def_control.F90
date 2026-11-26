@@ -56,6 +56,8 @@ TYPE StrCtrl
 !   Flag for aerosols
   LOGICAL :: l_aerosol_mode                                       = .FALSE.
 !   Flag for modal aerosols
+  LOGICAL :: l_aerosol_combined                                   = .FALSE.
+!   Flag for modal aerosols combined externally
   LOGICAL :: l_aerosol_ccn                                        = .FALSE.
 !   Flag for aerosols as CCN
   LOGICAL :: l_solar_tail_flux                                    = .FALSE.

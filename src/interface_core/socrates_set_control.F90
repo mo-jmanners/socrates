@@ -15,7 +15,7 @@ contains
 subroutine set_control(control, diag, spectrum, l_set_defaults, &
   l_rayleigh, l_gas, l_continuum, l_cont_gen, l_orog, l_solvar, &
   l_rescale, l_ir_source_quad, l_mixing_ratio, &
-  l_aerosol, l_aerosol_mode, l_aerosol_ccn, &
+  l_aerosol, l_aerosol_mode, l_aerosol_combined, l_aerosol_ccn, &
   l_tile, l_flux_ground, l_flux_tile, n_tile, n_cloud_layer, n_aer_mode, &
   isolir, i_scatter_method, i_gas_overlap, &
   i_cloud_representation, i_overlap, i_inhom, &
@@ -64,7 +64,7 @@ type(StrSpecData), intent(in), optional :: spectrum
 logical, intent(in), optional :: l_set_defaults, &
   l_rayleigh, l_gas, l_continuum, l_cont_gen, l_orog, l_solvar, &
   l_rescale, l_ir_source_quad, l_mixing_ratio, &
-  l_aerosol, l_aerosol_mode, l_aerosol_ccn, &
+  l_aerosol, l_aerosol_mode, l_aerosol_combined, l_aerosol_ccn, &
   l_tile, l_flux_ground, l_flux_tile(:)
 
 integer, intent(in), optional :: n_tile, n_cloud_layer, n_aer_mode
@@ -97,6 +97,7 @@ if (present(l_ir_source_quad)) control%l_ir_source_quad = l_ir_source_quad
 if (present(l_mixing_ratio)) control%l_mixing_ratio = l_mixing_ratio
 if (present(l_aerosol)) control%l_aerosol = l_aerosol
 if (present(l_aerosol_mode)) control%l_aerosol_mode = l_aerosol_mode
+if (present(l_aerosol_combined)) control%l_aerosol_combined = l_aerosol_combined
 if (present(l_aerosol_ccn)) control%l_aerosol_ccn = l_aerosol_ccn
 if (present(l_tile)) then
   control%l_tile = l_tile
@@ -379,6 +380,8 @@ if (present(l_set_defaults)) then
       if (.not.present(l_aerosol_mode)) control%l_aerosol_mode = .true.
       if (present(n_aer_mode)) then
         if (n_aer_mode < 1) control%l_aerosol_mode = .false.
+      else if (control%l_aerosol_combined) then
+        control%l_aerosol_mode = .true.
       else
         control%l_aerosol_mode = .false.
       end if

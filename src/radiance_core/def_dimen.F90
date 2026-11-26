@@ -52,6 +52,8 @@ TYPE StrDim
 !   Number of types of tile
   INTEGER :: nd_aerosol_mode = 1
 !   Number of aerosol modes
+  INTEGER :: nd_aerosol_band = 1
+!   Number of aerosol bands
   INTEGER :: nd_profile_aerosol_prsc = 1
 !   Number of profiles of prescribed cloudy optical properties
   INTEGER :: nd_profile_cloud_prsc = 1

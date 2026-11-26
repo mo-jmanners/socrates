@@ -130,9 +130,11 @@ subroutine runes(n_profile, n_layer, diag, &
   i_cloud_entrapment, i_mcica_sampling, &
   i_st_water, i_cnv_water, i_st_ice, i_cnv_ice, i_drop_re, &
   rand_seed, &
-  l_rayleigh, l_mixing_ratio, l_aerosol_mode, &
+  l_rayleigh, l_mixing_ratio, l_aerosol_mode, l_aerosol_combined, &
   aer_mix_ratio, aer_absorption, aer_scattering, aer_asymmetry, &
+  aer_forward_scatter, &
   aer_mix_ratio_1d, aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d, &
+  aer_forward_scatter_1d, &
   mean_rel_humidity, mean_rel_humidity_1d, &
   l_water_soluble, water_soluble, water_soluble_1d, &
   l_dust_like, dust_like, dust_like_1d, &
@@ -606,6 +608,9 @@ logical, intent(in), optional :: l_mixing_ratio
 logical, intent(in), optional :: l_aerosol_mode
 !   Include aerosol optical properties specified by mode
 
+logical, intent(in), optional :: l_aerosol_combined
+!   Include aerosol optical properties specified by combined modes
+
 real(RealExt), intent(in), optional :: aer_mix_ratio(:, :, :)
 !   MODE aerosol mass-mixing ratio (n_profile, n_layer, n_mode)
 
@@ -613,11 +618,11 @@ real(RealExt), intent(in), optional :: aer_mix_ratio_1d(:)
 !   1d MODE aerosol mass-mixing ratio (n_aer_layer*n_mode)
 
 real(RealExt), intent(in), dimension(:, :, :, :), optional :: &
-  aer_absorption, aer_scattering, aer_asymmetry
+  aer_absorption, aer_scattering, aer_asymmetry, aer_forward_scatter
 !   MODE aerosol optical properties (n_profile, n_layer, n_mode, n_band)
 
 real(RealExt), intent(in), dimension(:), optional :: &
-  aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d
+  aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d, aer_forward_scatter_1d
 !   1d MODE aerosol optical properties (n_aer_layer*n_mode*n_band)
 
 real(RealExt), intent(in), optional :: mean_rel_humidity(:, :)
@@ -783,6 +788,7 @@ call set_control(control, diag, spec, &
   l_orog                 = l_orog, &
   l_mixing_ratio         = l_mixing_ratio, &
   l_aerosol_mode         = l_aerosol_mode, &
+  l_aerosol_combined     = l_aerosol_combined, &
   l_tile                 = l_tile, &
   l_flux_ground          = l_flux_ground, &
   l_flux_tile            = l_flux_tile, &
@@ -803,7 +809,7 @@ call set_control(control, diag, spec, &
   i_drop_re              = i_drop_re, &
   l_set_defaults         = .true.)
 
-call set_dimen(dimen, control, n_profile, n_layer, &
+call set_dimen(dimen, control, spec, n_profile, n_layer, &
   mcica_data    = mcica, &
   n_tile        = n_tile, &
   n_cloud_layer = n_cloud_layer, &
@@ -969,7 +975,9 @@ call set_cld_mcica(cld, mcica, control, dimen, spec, atm, &
 call set_aer(aer, control, dimen, spec, &
   n_profile, n_layer, n_aer_mode, profile_list, n_layer_stride, n_aer_layer, &
   aer_mix_ratio, aer_absorption, aer_scattering, aer_asymmetry, &
+  aer_forward_scatter, &
   aer_mix_ratio_1d, aer_absorption_1d, aer_scattering_1d, aer_asymmetry_1d, &
+  aer_forward_scatter_1d, &
   mean_rel_humidity, mean_rel_humidity_1d, &
   l_water_soluble, water_soluble, water_soluble_1d, &
   l_dust_like, dust_like, dust_like_1d, &
